@@ -32,6 +32,8 @@ backend/app.db
 *.sqlite3
 .env
 backend/.env
+media/
+backend/media/
 
 # Node / Frontend
 node_modules/

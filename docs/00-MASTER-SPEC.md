@@ -94,21 +94,32 @@ DONE SO FAR:
   * backend/app/services/planning.py: Agronomy rules covering 6 soil types x 3 seasons, heuristic rotation rules, variety rules, and linear scaled variable-rate prescriptions with marked TODO(ml-swap) swap points.
   * backend/app/api/v1/planning.py: POST /crop-plan, GET /crop-plan/{farm_id}, POST /rotation-plan, POST /variety-recommendation, POST /variable-rate, GET /variable-rate/{id}/export (GeoJSON).
   * Alembic migration 4bd5c72d8d75 created & applied. All 6 endpoints tested live and confirmed.
+- Step 4 complete: Group 3 (health) implemented (#4 Crop Health AI, #13 Weed Classification, #20 Pest Spread, #56 Community Surveillance, #51 Livestock Health).
+  * backend/app/models/health.py: DiseaseReport (disease_reports), WeedReport (weed_reports), PestRiskScore (pest_risk_scores), Livestock (livestock), LivestockHealthReport (livestock_health_reports).
+  * backend/app/schemas/health.py: DiseaseDetectResponse, DiseaseReportRead, WeedDetectResponse, WeedReportRead, PestRiskEntry, SurveillanceMapEntry, LivestockCreate, LivestockRead, LivestockHealthCheckResponse, LivestockScheduleResponse.
+  * backend/app/services/health.py: OpenCV HSV colour heuristics for crop diseases & weed species, synthetic pest risk generator with deterministic village seeding, livestock image variance analysis & default vaccination schedules.
+  * backend/app/api/v1/health.py: POST /disease-detect, GET /disease-history/{farm_id}, POST /weed-detect, GET /pest-risk-map, GET /surveillance-map, POST /livestock, POST /livestock/{id}/health-check, GET /livestock/{id}/schedule.
+  * Alembic migration 1535432790c1 created & applied. All 8 endpoints tested live with multipart uploads.
 
 CURRENT FILE TREE:
 .gitignore
 backend/.env.example
 backend/alembic.ini
 backend/requirements.txt
+backend/sample_cow.jpg
+backend/sample_leaf.jpg
+backend/sample_weed.jpg
 backend/alembic/env.py
 backend/alembic/README
 backend/alembic/script.py.mako
+backend/alembic/versions/1535432790c1_create_disease_reports_weed_reports_.py
 backend/alembic/versions/4bd5c72d8d75_create_crop_plans_rotation_plans_.py
 backend/alembic/versions/6088d5eb1a27_create_users_farms_and_field_boundaries_.py
 backend/app/main.py
 backend/app/__init__.py
 backend/app/api/__init__.py
 backend/app/api/v1/farm.py
+backend/app/api/v1/health.py
 backend/app/api/v1/planning.py
 backend/app/api/v1/__init__.py
 backend/app/core/config.py
@@ -116,11 +127,14 @@ backend/app/core/db.py
 backend/app/core/__init__.py
 backend/app/ml/__init__.py
 backend/app/models/farm.py
+backend/app/models/health.py
 backend/app/models/planning.py
 backend/app/models/__init__.py
 backend/app/schemas/farm.py
+backend/app/schemas/health.py
 backend/app/schemas/planning.py
 backend/app/schemas/__init__.py
+backend/app/services/health.py
 backend/app/services/planning.py
 backend/app/services/__init__.py
 docs/00-MASTER-SPEC.md
@@ -132,10 +146,10 @@ frontend/package.json
 hardware-sim/simulate_sensors.py
 
 LAST WORKING STATE:
-FastAPI server running on http://127.0.0.1:8000. All Farm group endpoints and Planning group endpoints (/api/v1/planning/crop-plan, /api/v1/planning/rotation-plan, /api/v1/planning/variety-recommendation, /api/v1/planning/variable-rate, /api/v1/planning/variable-rate/{id}/export) fully tested live and returning 200/201 responses with GeoJSON downloads.
+FastAPI server running on http://127.0.0.1:8000. All Farm group, Planning group, and Health group endpoints (/api/v1/health/disease-detect, /api/v1/health/weed-detect, /api/v1/health/pest-risk-map, /api/v1/health/livestock, etc.) fully tested live with multipart uploads, return 200/201 responses.
 
 NEXT TASK:
-STEP 4 — Group 3: health (from docs/01-BUILD-SEQUENCE.md): Implement models/health.py, schemas/health.py, services/health.py, and api/v1/health.py (#4 Crop Health AI, #13 Weed Classification, #20 Pest Spread, #56 Community Surveillance, #51 Livestock Health), and wire into main.py.
+STEP 5 — Groups 4 & 5: water_soil, vision_forecast (from docs/01-BUILD-SEQUENCE.md): Implement models/water_soil.py, models/vision_forecast.py, schemas, services, and api/v1/water_soil.py + api/v1/vision_forecast.py (#3 Smart Irrigation, #17 Water Demand Forecast, #18 Soil Health, #11 Satellite Stress, #12 Drone Plant Counting, #14 Grain Quality, #15 Mandi Price, #16 Yield, #29 Climate Risk), and wire into main.py.
 
 CONSTRAINT: Match existing code style/imports exactly. Do not rename existing tables, routes, or files.
 ```

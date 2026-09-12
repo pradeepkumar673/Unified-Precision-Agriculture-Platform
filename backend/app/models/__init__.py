@@ -15,6 +15,15 @@ from app.models.planning import (  # noqa: F401
     SeasonEnum,
     VarietyRecommendation,
 )
+from app.models.health import (  # noqa: F401
+    AnimalType,
+    DiseaseReport,
+    DiseaseSeverity,
+    Livestock,
+    LivestockHealthReport,
+    PestRiskScore,
+    WeedReport,
+)
 
 __all__ = [
     "AnnualIncomeRange",
@@ -30,4 +39,11 @@ __all__ = [
     "RotationPlan",
     "SeasonEnum",
     "VarietyRecommendation",
+    "AnimalType",
+    "DiseaseReport",
+    "DiseaseSeverity",
+    "Livestock",
+    "LivestockHealthReport",
+    "PestRiskScore",
+    "WeedReport",
 ]
