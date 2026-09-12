@@ -1,0 +1,52 @@
+"""Pydantic v2 schemas for the vision_forecast feature-group."""
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from app.models.vision_forecast import GrainGrade, StressLevel
+
+
+class StressCheckRequest(BaseModel):
+    farm_id: UUID
+
+
+class StressCheckResponse(BaseModel):
+    ndvi_value: float
+    ndwi_value: float
+    stress_level: StressLevel
+
+
+class PlantCountResponse(BaseModel):
+    count: int
+    gaps_detected: int
+    growth_stage: str
+
+
+class GrainQualityResponse(BaseModel):
+    moisture_pct: float
+    broken_pct: float
+    foreign_matter_pct: float
+    grade: GrainGrade
+
+
+class PriceForecastResponse(BaseModel):
+    predicted_price: float
+    low_ci: float
+    high_ci: float
+
+
+class YieldForecastRequest(BaseModel):
+    farm_id: UUID
+    crop: str
+
+
+class YieldForecastResponse(BaseModel):
+    low_kg: float
+    median_kg: float
+    high_kg: float
+
+
+class ClimateRiskResponse(BaseModel):
+    drought_risk: float
+    flood_risk: float
+    heat_risk: float

@@ -24,6 +24,20 @@ from app.models.health import (  # noqa: F401
     PestRiskScore,
     WeedReport,
 )
+from app.models.water_soil import (  # noqa: F401
+    IrrigationSchedule,
+    SoilHealthMap,
+)
+from app.models.vision_forecast import (  # noqa: F401
+    ClimateRiskScore,
+    GrainGrade,
+    GrainQualityReport,
+    PlantCount,
+    PriceForecast,
+    StressAlert,
+    StressLevel,
+    YieldForecast,
+)
 
 __all__ = [
     "AnnualIncomeRange",
@@ -46,4 +60,14 @@ __all__ = [
     "LivestockHealthReport",
     "PestRiskScore",
     "WeedReport",
+    "IrrigationSchedule",
+    "SoilHealthMap",
+    "ClimateRiskScore",
+    "GrainGrade",
+    "GrainQualityReport",
+    "PlantCount",
+    "PriceForecast",
+    "StressAlert",
+    "StressLevel",
+    "YieldForecast",
 ]

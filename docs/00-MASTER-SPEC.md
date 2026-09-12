@@ -100,43 +100,62 @@ DONE SO FAR:
   * backend/app/services/health.py: OpenCV HSV colour heuristics for crop diseases & weed species, synthetic pest risk generator with deterministic village seeding, livestock image variance analysis & default vaccination schedules.
   * backend/app/api/v1/health.py: POST /disease-detect, GET /disease-history/{farm_id}, POST /weed-detect, GET /pest-risk-map, GET /surveillance-map, POST /livestock, POST /livestock/{id}/health-check, GET /livestock/{id}/schedule.
   * Alembic migration 1535432790c1 created & applied. All 8 endpoints tested live with multipart uploads.
+- Step 5 complete: Groups 4 & 5 (water_soil, vision_forecast) implemented (#3 Smart Irrigation, #17 Water Demand Forecast, #18 Soil Health, #11 Satellite Stress, #12 Drone Plant Counting, #14 Grain Quality, #15 Mandi Price, #16 Yield, #29 Climate Risk).
+  * backend/app/models/water_soil.py: IrrigationSchedule (irrigation_schedules), SoilHealthMap (soil_health_maps).
+  * backend/app/models/vision_forecast.py: StressMap (stress_maps), PlantCountReport (plant_count_reports), GrainQualityReport (grain_quality_reports), PriceForecast (price_forecasts), YieldForecast (yield_forecasts), ClimateRiskReport (climate_risk_reports).
+  * backend/app/schemas/water_soil.py: IrrigationRecommendationRequest/Response, IrrigationScheduleRead, SoilReadingPoint, SoilMapRequest, SoilGridCell, SoilMapResponse.
+  * backend/app/schemas/vision_forecast.py: StressCheckRequest/Response, PlantCountResponse, GrainQualityResponse, PriceForecastResponse, YieldForecastRequest/Response, ClimateRiskResponse.
+  * backend/app/services/water_soil.py: FAO-56 Penman-Monteith ET0 + Gaussian Process Regression (GPR RBF) 20x20 soil grid interpolation.
+  * backend/app/services/vision_forecast.py: Synthetic NDVI/NDWI satellite stress checks, video contour blob tracking for drone plant counts, grain defect/broken % analysis, mandi price trend/seasonality forecaster, regression-based yield prediction, haversine climate risk scoring.
+  * backend/app/api/v1/water_soil.py: POST /irrigation-recommendation, GET /irrigation-history/{farm_id}, POST /soil-map, GET /soil-map/{farm_id}.
+  * backend/app/api/v1/vision_forecast.py: POST /stress-check, POST /plant-count, POST /grain-quality, GET /price-forecast, POST /yield-forecast, GET /climate-risk/{farm_id}.
+  * Alembic migration 6407017bcef9 created & applied. All 10 endpoints tested live and confirmed.
 
 CURRENT FILE TREE:
 .gitignore
 backend/.env.example
 backend/alembic.ini
-backend/requirements.txt
-backend/sample_cow.jpg
-backend/sample_leaf.jpg
-backend/sample_weed.jpg
-backend/alembic/env.py
 backend/alembic/README
+backend/alembic/env.py
 backend/alembic/script.py.mako
 backend/alembic/versions/1535432790c1_create_disease_reports_weed_reports_.py
 backend/alembic/versions/4bd5c72d8d75_create_crop_plans_rotation_plans_.py
 backend/alembic/versions/6088d5eb1a27_create_users_farms_and_field_boundaries_.py
-backend/app/main.py
+backend/alembic/versions/6407017bcef9_create_water_soil_and_vision_forecast_.py
 backend/app/__init__.py
 backend/app/api/__init__.py
+backend/app/api/v1/__init__.py
 backend/app/api/v1/farm.py
 backend/app/api/v1/health.py
 backend/app/api/v1/planning.py
-backend/app/api/v1/__init__.py
+backend/app/api/v1/vision_forecast.py
+backend/app/api/v1/water_soil.py
+backend/app/core/__init__.py
 backend/app/core/config.py
 backend/app/core/db.py
-backend/app/core/__init__.py
+backend/app/main.py
 backend/app/ml/__init__.py
+backend/app/models/__init__.py
 backend/app/models/farm.py
 backend/app/models/health.py
 backend/app/models/planning.py
-backend/app/models/__init__.py
+backend/app/models/vision_forecast.py
+backend/app/models/water_soil.py
+backend/app/schemas/__init__.py
 backend/app/schemas/farm.py
 backend/app/schemas/health.py
 backend/app/schemas/planning.py
-backend/app/schemas/__init__.py
+backend/app/schemas/vision_forecast.py
+backend/app/schemas/water_soil.py
+backend/app/services/__init__.py
 backend/app/services/health.py
 backend/app/services/planning.py
-backend/app/services/__init__.py
+backend/app/services/vision_forecast.py
+backend/app/services/water_soil.py
+backend/requirements.txt
+backend/sample_cow.jpg
+backend/sample_leaf.jpg
+backend/sample_weed.jpg
 docs/00-MASTER-SPEC.md
 docs/01-BUILD-SEQUENCE.md
 docs/02-ML-TRAINING-PROMPTS.md
@@ -146,10 +165,11 @@ frontend/package.json
 hardware-sim/simulate_sensors.py
 
 LAST WORKING STATE:
-FastAPI server running on http://127.0.0.1:8000. All Farm group, Planning group, and Health group endpoints (/api/v1/health/disease-detect, /api/v1/health/weed-detect, /api/v1/health/pest-risk-map, /api/v1/health/livestock, etc.) fully tested live with multipart uploads, return 200/201 responses.
+FastAPI server running on http://127.0.0.1:8000. All Farm, Planning, Health, Water & Soil, and Vision & Forecasting endpoints (/api/v1/water_soil/irrigation-recommendation, /api/v1/water_soil/soil-map, /api/v1/vision_forecast/stress-check, /api/v1/vision_forecast/plant-count, /api/v1/vision_forecast/grain-quality, /api/v1/vision_forecast/price-forecast, /api/v1/vision_forecast/yield-forecast, /api/v1/vision_forecast/climate-risk, etc.) fully tested live, returning 200/201 responses.
 
 NEXT TASK:
-STEP 5 — Groups 4 & 5: water_soil, vision_forecast (from docs/01-BUILD-SEQUENCE.md): Implement models/water_soil.py, models/vision_forecast.py, schemas, services, and api/v1/water_soil.py + api/v1/vision_forecast.py (#3 Smart Irrigation, #17 Water Demand Forecast, #18 Soil Health, #11 Satellite Stress, #12 Drone Plant Counting, #14 Grain Quality, #15 Mandi Price, #16 Yield, #29 Climate Risk), and wire into main.py.
+STEP 6 — Groups 6 & 7: marketplace, finance (from docs/01-BUILD-SEQUENCE.md): Implement models/marketplace.py, models/finance.py, schemas, services, and api/v1/marketplace.py + api/v1/finance.py (#5 B2B Marketplace, #6 Equipment Rental, #24 Collective Bargaining, #7 Multi-tier Microfinance, #8 Parametric Insurance, #9 Government Scheme Engine, #25 Carbon Credit, #26 Dynamic Farm Valuation), and wire into main.py.
 
 CONSTRAINT: Match existing code style/imports exactly. Do not rename existing tables, routes, or files.
 ```
+
