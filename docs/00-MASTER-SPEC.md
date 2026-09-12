@@ -76,9 +76,48 @@ agri-platform/
 ## 5. Continuation snapshot (paste this + fill in when starting a NEW account mid-project)
 ```
 PROJECT: Unified Precision Agriculture Platform (see MASTER-SPEC pasted above)
-DONE SO FAR: <list files/features completed>
-CURRENT FILE TREE: <paste `find agri-platform -type f | grep -v node_modules | grep -v .git`>
-LAST WORKING STATE: <what ran successfully last>
-NEXT TASK: <the single next step from 01-BUILD-SEQUENCE.md>
+DONE SO FAR:
+- Step 1 complete: Repository tree scaffolded according to MASTER-SPEC Section 1.
+- backend/requirements.txt created and all packages installed in backend/venv with PyTorch CUDA 12.1 support.
+- backend/app/main.py created with FastAPI app exposing GET /health (returns {"status": "ok"}).
+- backend/app/core/db.py wired with SQLAlchemy engine, SessionLocal, Base, and get_db dependency (using SQLite backend/app.db fallback, PostgreSQL compatible).
+- backend/app/core/config.py created with Pydantic BaseSettings.
+- Alembic initialized in backend/alembic and wired to Base.metadata and DATABASE_URL in env.py.
+- Git initialized and initial scaffold committed.
+- Server tested and running on http://127.0.0.1:8000 with GET /health returning 200 OK.
+
+CURRENT FILE TREE:
+.gitignore
+backend/.env.example
+backend/alembic.ini
+backend/requirements.txt
+backend/alembic/env.py
+backend/alembic/README
+backend/alembic/script.py.mako
+backend/app/main.py
+backend/app/__init__.py
+backend/app/api/__init__.py
+backend/app/api/v1/__init__.py
+backend/app/core/config.py
+backend/app/core/db.py
+backend/app/core/__init__.py
+backend/app/ml/__init__.py
+backend/app/models/__init__.py
+backend/app/schemas/__init__.py
+backend/app/services/__init__.py
+docs/00-MASTER-SPEC.md
+docs/01-BUILD-SEQUENCE.md
+docs/02-ML-TRAINING-PROMPTS.md
+docs/03-HARDWARE-INTERFACE-SPECS.md
+docs/04-FEATURE-CHECKLIST.md
+frontend/package.json
+hardware-sim/simulate_sensors.py
+
+LAST WORKING STATE:
+FastAPI server running on http://127.0.0.1:8000; curl http://127.0.0.1:8000/health returns HTTP 200 {"status":"ok"}. PyTorch CUDA acceleration verified active (torch.cuda.is_available() == True). Database and Alembic migrations configured.
+
+NEXT TASK:
+STEP 2 — Group 1: farm (from docs/01-BUILD-SEQUENCE.md): Implement models/farm.py (users & farms tables), schemas, API routes in api/v1/farm.py (#1 Digital Farm Profile, #41 GPS Field Mapping), and wire into main.py.
+
 CONSTRAINT: Match existing code style/imports exactly. Do not rename existing tables, routes, or files.
 ```
