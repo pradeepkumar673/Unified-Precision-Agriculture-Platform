@@ -7,6 +7,14 @@ from app.models.farm import (  # noqa: F401
     UserRole,
     WaterSource,
 )
+from app.models.planning import (  # noqa: F401
+    CropPlan,
+    PlanStatusEnum,
+    PrescriptionMap,
+    RotationPlan,
+    SeasonEnum,
+    VarietyRecommendation,
+)
 
 __all__ = [
     "AnnualIncomeRange",
@@ -16,4 +24,10 @@ __all__ = [
     "User",
     "UserRole",
     "WaterSource",
+    "CropPlan",
+    "PlanStatusEnum",
+    "PrescriptionMap",
+    "RotationPlan",
+    "SeasonEnum",
+    "VarietyRecommendation",
 ]

@@ -83,12 +83,17 @@ DONE SO FAR:
 - backend/app/core/db.py wired with SQLAlchemy engine, SessionLocal, Base, and get_db dependency (using SQLite backend/app.db fallback, PostgreSQL compatible).
 - backend/app/core/config.py created with Pydantic BaseSettings.
 - Alembic initialized in backend/alembic and wired to Base.metadata and DATABASE_URL in env.py.
-- Step 2 complete: Group 1 (farm) implemented.
-  * backend/app/models/farm.py: User (users table), Farm (farms table), FieldBoundary (field_boundaries table) with exact fields, enums, JSON columns, and relationships.
-  * backend/app/schemas/farm.py: FarmCreate, FarmRead, FarmUpdate, BoundaryCreate, BoundaryResponse, Zone schemas.
-  * backend/app/api/v1/farm.py: POST /api/v1/farm/profile, GET /api/v1/farm/profile/{farm_id}, PUT /api/v1/farm/profile/{farm_id}, POST /api/v1/farm/{farm_id}/boundary (shoelace polygon area + KMeans zone clustering), GET /api/v1/farm/{farm_id}/zones.
-  * Alembic migration revision generated and applied (6088d5eb1a27_create_users_farms_and_field_boundaries_).
-  * All 5 endpoints tested with live curl calls and returned verified 200/201 and 404 responses.
+- Step 2 complete: Group 1 (farm) implemented (#1 Digital Farm Profile, #41 GPS Field Mapping).
+  * backend/app/models/farm.py: User (users), Farm (farms), FieldBoundary (field_boundaries).
+  * backend/app/schemas/farm.py: FarmCreate, FarmRead, FarmUpdate, BoundaryCreate, BoundaryResponse, Zone.
+  * backend/app/api/v1/farm.py: POST /profile, GET /profile/{id}, PUT /profile/{id}, POST /{id}/boundary (shoelace area + KMeans zoning), GET /{id}/zones.
+  * Alembic migration 6088d5eb1a27 created & applied. All endpoints tested live.
+- Step 3 complete: Group 2 (planning) implemented (#2 AI Crop Planning, #19 Variety Recommendation, #23 RL Crop Rotation, #40 Variable-Rate Application).
+  * backend/app/models/planning.py: CropPlan (crop_plans), RotationPlan (rotation_plans), VarietyRecommendation (variety_recommendations), PrescriptionMap (prescription_maps).
+  * backend/app/schemas/planning.py: CropPlanRequest/Response/Read, RotationPlanRequest/Response, VarietyRecommendationRequest/Response, VariableRateRequest/Response.
+  * backend/app/services/planning.py: Agronomy rules covering 6 soil types x 3 seasons, heuristic rotation rules, variety rules, and linear scaled variable-rate prescriptions with marked TODO(ml-swap) swap points.
+  * backend/app/api/v1/planning.py: POST /crop-plan, GET /crop-plan/{farm_id}, POST /rotation-plan, POST /variety-recommendation, POST /variable-rate, GET /variable-rate/{id}/export (GeoJSON).
+  * Alembic migration 4bd5c72d8d75 created & applied. All 6 endpoints tested live and confirmed.
 
 CURRENT FILE TREE:
 .gitignore
@@ -98,20 +103,25 @@ backend/requirements.txt
 backend/alembic/env.py
 backend/alembic/README
 backend/alembic/script.py.mako
+backend/alembic/versions/4bd5c72d8d75_create_crop_plans_rotation_plans_.py
 backend/alembic/versions/6088d5eb1a27_create_users_farms_and_field_boundaries_.py
 backend/app/main.py
 backend/app/__init__.py
 backend/app/api/__init__.py
 backend/app/api/v1/farm.py
+backend/app/api/v1/planning.py
 backend/app/api/v1/__init__.py
 backend/app/core/config.py
 backend/app/core/db.py
 backend/app/core/__init__.py
 backend/app/ml/__init__.py
 backend/app/models/farm.py
+backend/app/models/planning.py
 backend/app/models/__init__.py
 backend/app/schemas/farm.py
+backend/app/schemas/planning.py
 backend/app/schemas/__init__.py
+backend/app/services/planning.py
 backend/app/services/__init__.py
 docs/00-MASTER-SPEC.md
 docs/01-BUILD-SEQUENCE.md
@@ -122,10 +132,10 @@ frontend/package.json
 hardware-sim/simulate_sensors.py
 
 LAST WORKING STATE:
-FastAPI server running on http://127.0.0.1:8000. All Farm group endpoints (/api/v1/farm/profile, /api/v1/farm/{farm_id}/boundary, /api/v1/farm/{farm_id}/zones) fully tested and returning 200/201/404 as expected. Shoelace area computation and KMeans zoning verified live.
+FastAPI server running on http://127.0.0.1:8000. All Farm group endpoints and Planning group endpoints (/api/v1/planning/crop-plan, /api/v1/planning/rotation-plan, /api/v1/planning/variety-recommendation, /api/v1/planning/variable-rate, /api/v1/planning/variable-rate/{id}/export) fully tested live and returning 200/201 responses with GeoJSON downloads.
 
 NEXT TASK:
-STEP 3 — Group 2: planning (from docs/01-BUILD-SEQUENCE.md): Implement models/planning.py, schemas/planning.py, services/planning.py, and api/v1/planning.py (#2 AI Crop Planning, #19 Variety Recommendation, #23 RL Crop Rotation, #40 Variable-Rate Application), and wire into main.py.
+STEP 4 — Group 3: health (from docs/01-BUILD-SEQUENCE.md): Implement models/health.py, schemas/health.py, services/health.py, and api/v1/health.py (#4 Crop Health AI, #13 Weed Classification, #20 Pest Spread, #56 Community Surveillance, #51 Livestock Health), and wire into main.py.
 
 CONSTRAINT: Match existing code style/imports exactly. Do not rename existing tables, routes, or files.
 ```
