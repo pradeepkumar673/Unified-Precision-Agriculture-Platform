@@ -1,0 +1,41 @@
+{
+  "crops": [
+    "chickpea",
+    "cotton",
+    "groundnut",
+    "maize",
+    "rice",
+    "soybean",
+    "sugarcane",
+    "wheat"
+  ],
+  "feature_cols": [
+    "crop_enc",
+    "soil_score",
+    "rainfall_mm",
+    "ndvi_avg",
+    "days_since_sowing"
+  ],
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "quantile_files": {
+    "q10": "yield_q10.pkl",
+    "q50": "yield_q50.pkl",
+    "q90": "yield_q90.pkl"
+  },
+  "interval_coverage_80pct": 0.6108,
+  "interval_avg_width_kg": 394.2,
+  "crop_label_map": {
+    "0": "chickpea",
+    "1": "cotton",
+    "2": "groundnut",
+    "3": "maize",
+    "4": "rice",
+    "5": "soybean",
+    "6": "sugarcane",
+    "7": "wheat"
+  }
+}
