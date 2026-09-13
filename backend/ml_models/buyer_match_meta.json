@@ -1,0 +1,22 @@
+{
+  "features": [
+    "crop_match",
+    "grade_match",
+    "quantity_feasible",
+    "price_ok",
+    "location_proximity",
+    "organic_bonus",
+    "freshness_score",
+    "bulk_match",
+    "payment_terms_ok",
+    "seller_qty_log",
+    "price_ask_norm",
+    "buyer_max_price_norm",
+    "grade_gap",
+    "delivery_urgency"
+  ],
+  "mae": 0.0415,
+  "r2": 0.9364,
+  "score_threshold_good_match": 0.6,
+  "model_file": "buyer_match_xgb.pkl"
+}

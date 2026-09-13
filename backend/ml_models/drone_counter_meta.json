@@ -1,0 +1,48 @@
+{
+  "features": [
+    "blob_count_raw",
+    "mean_blob_area_px2",
+    "blob_density_per_m2",
+    "area_fraction_green",
+    "row_regularity_score",
+    "image_brightness",
+    "edge_density",
+    "altitude_m",
+    "field_area_m2",
+    "crop_type_code"
+  ],
+  "crop_names": [
+    "rice",
+    "wheat",
+    "maize",
+    "cotton",
+    "soybean"
+  ],
+  "plants_per_acre_reference": {
+    "0": [
+      350000,
+      50000
+    ],
+    "1": [
+      120000,
+      20000
+    ],
+    "2": [
+      30000,
+      5000
+    ],
+    "3": [
+      20000,
+      3000
+    ],
+    "4": [
+      180000,
+      25000
+    ]
+  },
+  "mae": 7300.0,
+  "r2": 0.9912,
+  "mape": 5.81,
+  "model_file": "drone_counter_lgbm.pkl",
+  "note": "Trained on synthetic image statistics. Replace with real drone image pipeline by extracting the same feature set via OpenCV before calling predict_drone_count()."
+}

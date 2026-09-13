@@ -1,0 +1,28 @@
+{
+  "features": [
+    "ndvi",
+    "evi",
+    "ndwi",
+    "lai",
+    "lst_celsius",
+    "soil_moisture_pct",
+    "days_since_rain",
+    "growth_stage_code",
+    "crop_type_code",
+    "rainfall_30d_mm"
+  ],
+  "classes": [
+    "none",
+    "mild",
+    "moderate",
+    "severe"
+  ],
+  "advice": {
+    "none": "No crop stress detected. Normal irrigation schedule.",
+    "mild": "Mild stress detected. Consider supplemental irrigation within 3 days.",
+    "moderate": "Moderate stress. Immediate irrigation required. Check for pest/disease.",
+    "severe": "Severe stress. Emergency intervention needed. Contact extension officer."
+  },
+  "accuracy": 0.9575,
+  "model_file": "satellite_stress_lgbm.pkl"
+}

@@ -1,0 +1,26 @@
+{
+  "features": [
+    "temperature_C",
+    "heart_rate_bpm",
+    "respiration_rpm",
+    "milk_yield_L",
+    "movement_score",
+    "eating_frequency_per_day",
+    "body_condition_score",
+    "days_since_last_vet",
+    "age_years",
+    "breed_code"
+  ],
+  "classes": [
+    "healthy",
+    "mild_illness",
+    "severe_illness"
+  ],
+  "advice": {
+    "healthy": "Animal is healthy. Schedule routine check in 30 days.",
+    "mild_illness": "Mild signs detected. Monitor closely; consult vet if symptoms persist >48h.",
+    "severe_illness": "Severe illness indicators. Contact veterinarian IMMEDIATELY."
+  },
+  "accuracy": 0.9933,
+  "model_file": "livestock_health_xgb.pkl"
+}

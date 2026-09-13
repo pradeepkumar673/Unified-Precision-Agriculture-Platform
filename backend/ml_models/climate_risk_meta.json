@@ -1,0 +1,39 @@
+{
+  "features": [
+    "temp_anomaly_C",
+    "rainfall_pct_normal",
+    "consecutive_dry_days",
+    "soil_moisture_deficit",
+    "wind_speed_kmh",
+    "historical_risk_score",
+    "month",
+    "crop_type_code",
+    "elevation_m",
+    "district_vulnerability"
+  ],
+  "risk_bands": [
+    {
+      "min": 0.8,
+      "category": "extreme",
+      "description": "Extreme climate risk. Activate disaster response protocol."
+    },
+    {
+      "min": 0.6,
+      "category": "high",
+      "description": "High risk. Advise crop insurance claim and contingency planting."
+    },
+    {
+      "min": 0.3,
+      "category": "moderate",
+      "description": "Moderate risk. Monitor closely; prepare irrigation backup."
+    },
+    {
+      "min": 0.0,
+      "category": "low",
+      "description": "Low climate risk. Normal farming operations can proceed."
+    }
+  ],
+  "mae": 0.0432,
+  "r2": 0.7482,
+  "model_file": "climate_risk_lgbm.pkl"
+}
