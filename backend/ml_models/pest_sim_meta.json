@@ -1,0 +1,416 @@
+{
+  "n_villages": 50,
+  "proximity_km": 80.0,
+  "base_beta": 0.18,
+  "gamma": 0.08,
+  "wind_boost": 0.45,
+  "crops": [
+    "cotton",
+    "soybean",
+    "rice",
+    "chickpea",
+    "wheat"
+  ],
+  "villages": [
+    {
+      "id": 0,
+      "name": "Village_00",
+      "lat": 19.81089041596577,
+      "lon": 80.33271545270507,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1914.6
+    },
+    {
+      "id": 1,
+      "name": "Village_01",
+      "lat": 21.827500072434706,
+      "lon": 79.26323052848613,
+      "dominant_crop": "wheat",
+      "crop_area_ha": 1621.8
+    },
+    {
+      "id": 2,
+      "name": "Village_02",
+      "lat": 21.06197879633992,
+      "lon": 80.16724417860304,
+      "dominant_crop": "rice",
+      "crop_area_ha": 1413.8
+    },
+    {
+      "id": 3,
+      "name": "Village_03",
+      "lat": 20.595304694689627,
+      "lon": 79.92155042735207,
+      "dominant_crop": "rice",
+      "crop_area_ha": 3626.5
+    },
+    {
+      "id": 4,
+      "name": "Village_04",
+      "lat": 19.04606524154853,
+      "lon": 78.28844988346097,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 4136.5
+    },
+    {
+      "id": 5,
+      "name": "Village_05",
+      "lat": 19.04598082117671,
+      "lon": 80.07030829262715,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 4116.5
+    },
+    {
+      "id": 6,
+      "name": "Village_06",
+      "lat": 18.7032926425887,
+      "lon": 75.48670876128556,
+      "dominant_crop": "rice",
+      "crop_area_ha": 1959.6
+    },
+    {
+      "id": 7,
+      "name": "Village_07",
+      "lat": 21.531616510212274,
+      "lon": 76.0779057433053,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1931.0
+    },
+    {
+      "id": 8,
+      "name": "Village_08",
+      "lat": 20.60390254110123,
+      "lon": 75.24875008900796,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 3414.6
+    },
+    {
+      "id": 9,
+      "name": "Village_09",
+      "lat": 20.97825402228616,
+      "lon": 76.78931681919795,
+      "dominant_crop": "wheat",
+      "crop_area_ha": 4373.3
+    },
+    {
+      "id": 10,
+      "name": "Village_10",
+      "lat": 18.57204573003531,
+      "lon": 77.13772509329215,
+      "dominant_crop": "rice",
+      "crop_area_ha": 2378.3
+    },
+    {
+      "id": 11,
+      "name": "Village_11",
+      "lat": 21.89468448256698,
+      "lon": 76.49241967475643,
+      "dominant_crop": "rice",
+      "crop_area_ha": 1712.4
+    },
+    {
+      "id": 12,
+      "name": "Village_12",
+      "lat": 21.413549242801476,
+      "lon": 79.55805630033561,
+      "dominant_crop": "rice",
+      "crop_area_ha": 1954.4
+    },
+    {
+      "id": 13,
+      "name": "Village_13",
+      "lat": 19.243186887373966,
+      "lon": 76.96214329681474,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 2317.3
+    },
+    {
+      "id": 14,
+      "name": "Village_14",
+      "lat": 19.136387385224854,
+      "lon": 76.54513980328059,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 4831.0
+    },
+    {
+      "id": 15,
+      "name": "Village_15",
+      "lat": 19.14191578448702,
+      "lon": 77.98482845737037,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 3705.2
+    },
+    {
+      "id": 16,
+      "name": "Village_16",
+      "lat": 19.564847850358383,
+      "lon": 75.7750832373612,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1700.5
+    },
+    {
+      "id": 17,
+      "name": "Village_17",
+      "lat": 20.336647510712833,
+      "lon": 79.41208339414722,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 731.7
+    },
+    {
+      "id": 18,
+      "name": "Village_18",
+      "lat": 20.011807565247405,
+      "lon": 75.41002854023874,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 3354.6
+    },
+    {
+      "id": 19,
+      "name": "Village_19",
+      "lat": 19.519301990693148,
+      "lon": 80.42787815130285,
+      "dominant_crop": "wheat",
+      "crop_area_ha": 2702.5
+    },
+    {
+      "id": 20,
+      "name": "Village_20",
+      "lat": 20.641485131528327,
+      "lon": 79.24734623113162,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 863.8
+    },
+    {
+      "id": 21,
+      "name": "Village_21",
+      "lat": 18.988228512282145,
+      "lon": 76.09293624843795,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 3777.0
+    },
+    {
+      "id": 22,
+      "name": "Village_22",
+      "lat": 19.522506269873265,
+      "lon": 75.03037164417981,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 4925.4
+    },
+    {
+      "id": 23,
+      "name": "Village_23",
+      "lat": 19.78226645152792,
+      "lon": 79.48503785650159,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1178.2
+    },
+    {
+      "id": 24,
+      "name": "Village_24",
+      "lat": 20.096244944759626,
+      "lon": 78.88771539116189,
+      "dominant_crop": "wheat",
+      "crop_area_ha": 4362.6
+    },
+    {
+      "id": 25,
+      "name": "Village_25",
+      "lat": 21.248115864875547,
+      "lon": 79.00953942422544,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 574.6
+    },
+    {
+      "id": 26,
+      "name": "Village_26",
+      "lat": 19.19885823755426,
+      "lon": 79.2419869067727,
+      "dominant_crop": "rice",
+      "crop_area_ha": 2069.0
+    },
+    {
+      "id": 27,
+      "name": "Village_27",
+      "lat": 20.29982053444764,
+      "lon": 75.40724558453749,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 3609.2
+    },
+    {
+      "id": 28,
+      "name": "Village_28",
+      "lat": 20.573450991017147,
+      "lon": 76.9715615069935,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 4269.7
+    },
+    {
+      "id": 29,
+      "name": "Village_29",
+      "lat": 18.662576444519992,
+      "lon": 75.63727982738821,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1010.6
+    },
+    {
+      "id": 30,
+      "name": "Village_30",
+      "lat": 20.626406981655034,
+      "lon": 79.74706884231577,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 1660.7
+    },
+    {
+      "id": 31,
+      "name": "Village_31",
+      "lat": 19.09683443290552,
+      "lon": 78.42813969755157,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 4919.8
+    },
+    {
+      "id": 32,
+      "name": "Village_32",
+      "lat": 18.727680575448478,
+      "lon": 76.81993913668957,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1588.3
+    },
+    {
+      "id": 33,
+      "name": "Village_33",
+      "lat": 21.821099380386666,
+      "lon": 75.34957092657314,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 3012.3
+    },
+    {
+      "id": 34,
+      "name": "Village_34",
+      "lat": 21.87971211576096,
+      "lon": 76.71040276943614,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 1754.9
+    },
+    {
+      "id": 35,
+      "name": "Village_35",
+      "lat": 21.329390718407613,
+      "lon": 76.78850827114711,
+      "dominant_crop": "rice",
+      "crop_area_ha": 4353.5
+    },
+    {
+      "id": 36,
+      "name": "Village_36",
+      "lat": 19.566148192106798,
+      "lon": 79.01283398085936,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 3389.1
+    },
+    {
+      "id": 37,
+      "name": "Village_37",
+      "lat": 18.841852399022343,
+      "lon": 78.50656609245367,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 4543.5
+    },
+    {
+      "id": 38,
+      "name": "Village_38",
+      "lat": 20.89481559279255,
+      "lon": 79.87967008416979,
+      "dominant_crop": "rice",
+      "crop_area_ha": 2175.3
+    },
+    {
+      "id": 39,
+      "name": "Village_39",
+      "lat": 20.040533728088604,
+      "lon": 77.59718208839072,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 522.8
+    },
+    {
+      "id": 40,
+      "name": "Village_40",
+      "lat": 18.927133821956726,
+      "lon": 75.65776835266065,
+      "dominant_crop": "soybean",
+      "crop_area_ha": 2685.3
+    },
+    {
+      "id": 41,
+      "name": "Village_41",
+      "lat": 20.233119185389445,
+      "lon": 78.92284632972647,
+      "dominant_crop": "wheat",
+      "crop_area_ha": 1509.2
+    },
+    {
+      "id": 42,
+      "name": "Village_42",
+      "lat": 18.620359823903264,
+      "lon": 79.18431776739294,
+      "dominant_crop": "cotton",
+      "crop_area_ha": 2722.5
+    },
+    {
+      "id": 43,
+      "name": "Village_43",
+      "lat": 21.682621407275736,
+      "lon": 78.08702458663223,
+      "dominant_crop": "rice",
+      "crop_area_ha": 3459.3
+    },
+    {
+      "id": 44,
+      "name": "Village_44",
+      "lat": 19.40572993560006,
+      "lon": 79.24031948975008,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 2789.7
+    },
+    {
+      "id": 45,
+      "name": "Village_45",
+      "lat": 20.818827995238937,
+      "lon": 77.71587578000415,
+      "dominant_crop": "wheat",
+      "crop_area_ha": 2690.3
+    },
+    {
+      "id": 46,
+      "name": "Village_46",
+      "lat": 19.59098876631294,
+      "lon": 77.87503056160097,
+      "dominant_crop": "rice",
+      "crop_area_ha": 4076.7
+    },
+    {
+      "id": 47,
+      "name": "Village_47",
+      "lat": 20.320238074122337,
+      "lon": 77.35147560097202,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 3510.2
+    },
+    {
+      "id": 48,
+      "name": "Village_48",
+      "lat": 20.41348597770148,
+      "lon": 75.13980519709253,
+      "dominant_crop": "chickpea",
+      "crop_area_ha": 3751.0
+    },
+    {
+      "id": 49,
+      "name": "Village_49",
+      "lat": 19.146990594339343,
+      "lon": 75.59340284846317,
+      "dominant_crop": "rice",
+      "crop_area_ha": 3958.5
+    }
+  ]
+}
