@@ -1,0 +1,47 @@
+{
+  "nutrients": [
+    "N",
+    "P",
+    "K",
+    "pH"
+  ],
+  "nutrient_ranges": {
+    "N": [
+      80,
+      280
+    ],
+    "P": [
+      10,
+      60
+    ],
+    "K": [
+      80,
+      300
+    ],
+    "pH": [
+      5.5,
+      8.5
+    ]
+  },
+  "grid_n": 20,
+  "field_x_max": 100.0,
+  "field_y_max": 100.0,
+  "kernels": {
+    "N": {
+      "kernel_str": "0.823**2 * RBF(length_scale=22.6) + WhiteKernel(noise_level=0.251)",
+      "log_likelihood": -404.541
+    },
+    "P": {
+      "kernel_str": "0.912**2 * RBF(length_scale=32.2) + WhiteKernel(noise_level=0.235)",
+      "log_likelihood": -378.2533
+    },
+    "K": {
+      "kernel_str": "0.813**2 * RBF(length_scale=23.6) + WhiteKernel(noise_level=0.246)",
+      "log_likelihood": -397.0363
+    },
+    "pH": {
+      "kernel_str": "1.08**2 * RBF(length_scale=43.5) + WhiteKernel(noise_level=0.142)",
+      "log_likelihood": -250.3844
+    }
+  }
+}
