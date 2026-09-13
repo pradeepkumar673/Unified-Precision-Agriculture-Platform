@@ -156,6 +156,8 @@ backend/app/models/marketplace.py
 backend/app/models/planning.py
 backend/app/models/vision_forecast.py
 backend/app/models/water_soil.py
+backend/app/models/gov_compliance.py
+backend/app/models/community.py
 backend/app/schemas/__init__.py
 backend/app/schemas/farm.py
 backend/app/schemas/finance.py
@@ -164,6 +166,8 @@ backend/app/schemas/marketplace.py
 backend/app/schemas/planning.py
 backend/app/schemas/vision_forecast.py
 backend/app/schemas/water_soil.py
+backend/app/schemas/gov_compliance.py
+backend/app/schemas/community.py
 backend/app/services/__init__.py
 backend/app/services/finance.py
 backend/app/services/health.py
@@ -171,11 +175,16 @@ backend/app/services/marketplace.py
 backend/app/services/planning.py
 backend/app/services/vision_forecast.py
 backend/app/services/water_soil.py
+backend/app/services/gov_compliance.py
+backend/app/services/community.py
+backend/app/api/v1/gov_compliance.py
+backend/app/api/v1/community.py
 backend/requirements.txt
 backend/sample_cow.jpg
 backend/sample_leaf.jpg
 backend/sample_weed.jpg
 backend/test_step6.py
+backend/test_step7.py
 docs/00-MASTER-SPEC.md
 docs/01-BUILD-SEQUENCE.md
 docs/02-ML-TRAINING-PROMPTS.md
@@ -184,11 +193,29 @@ docs/04-FEATURE-CHECKLIST.md
 frontend/package.json
 hardware-sim/simulate_sensors.py
 
-LAST WORKING STATE:
-FastAPI server running on http://127.0.0.1:8000. All Farm, Planning, Health, Water & Soil, Vision & Forecasting, Marketplace, and Finance endpoints (/api/v1/marketplace/products, /api/v1/marketplace/order, /api/v1/marketplace/equipment/book, /api/v1/marketplace/labor/book, /api/v1/marketplace/buyer-requirement, /api/v1/marketplace/exchange-match, /api/v1/marketplace/delivery-status, /api/v1/marketplace/b2b/standing-order, /api/v1/finance/payment/initiate, /api/v1/finance/payment/webhook, /api/v1/finance/ledger, /api/v1/finance/ledger/export [PDF], /api/v1/finance/warehouse/book, /api/v1/finance/warehouse/generate-enwr, /api/v1/finance/loan/apply, /api/v1/finance/insurance/claim, /api/v1/finance/fraud-check) fully tested live, returning 200/201 responses.
+LAST WORKING STATE (Step 7 complete):
+FastAPI server running on http://127.0.0.1:8000. All 12 Step 7 tests pass live.
+Gov Compliance endpoints fully operational:
+  GET  /api/v1/gov/schemes/match/{farm_id}   -- 6-scheme seeded DB (PM-KISAN, PMFBY, KCC, PM-KUSUM, TN Uzhavar, Karnataka RytaBandhu). Tamil Nadu farm returns 5 eligible schemes.
+  POST /api/v1/gov/documents/upload          -- Multipart upload + graceful pytesseract OCR (returns ocr_extracted dict; structured fields populated when Tesseract installed).
+  POST /api/v1/gov/documents/{doc_id}/autofill/{scheme_id} -- 14 form fields auto-populated from OCR + farm profile.
+Community endpoints fully operational:
+  GET  /api/v1/community/alerts/{farm_id}             -- 3 synthetic rule-based alerts (irrigation, pest, spray_window) generated from StressAlert and farm data.
+  GET  /api/v1/community/season-report/{farm_id}      -- Aggregates transactions + CropPlan + YieldForecast. Real ROI 60% for test farm.
+  POST /api/v1/community/support-ticket               -- Ticket created with status=open.
+  POST /api/v1/community/shg/create                   -- SHG group with member_farm_ids.
+  POST /api/v1/community/shg/{id}/book                -- SHG cost-split equipment booking.
+  GET  /api/v1/community/grower-score/{farm_id}       -- Score 600/1000, 75th percentile district.
+  POST /api/v1/community/fpo/create                   -- FPO group created.
+  POST /api/v1/community/fpo/{id}/pool-purchase       -- Pooled purchase appended (Urea, Rs 8500).
+  POST /api/v1/community/fpo/{id}/pool-sale           -- Pooled sale appended (Paddy Grade-A, Rs 176000).
+Alembic migration 71c57daec0d6 applied (12 new tables: fpo_groups, schemes, shg_groups, alerts, documents, eligibility_matches, grower_scores, season_reports, support_tickets, shg_bookings).
+All previous steps (1-6) remain fully functional.
 
 NEXT TASK:
-STEP 7 — Groups 8 & 9: gov_compliance, community (from docs/01-BUILD-SEQUENCE.md): Implement models/gov_compliance.py, models/community.py, schemas, services, and api/v1/gov_compliance.py + api/v1/community.py (#8 Gov Scheme Engine, #42 Auto Eligibility Engine, #43 Document Vault/OCR, #5 Smart Alerts, #10 Season Report, #34 Digital Sakhi, #35 SHG Bookings, #36 Grower Score, #53 FPO Suite), and wire into main.py.
+STEP 8 — Groups 10 & 11: IoT / Hardware Ingestion and CEA (Controlled Environment Agriculture).
+Implement hardware ingestion endpoints (MQTT topic contracts), sensor DB tables, simulator script updates, and CEA endpoints from docs/01-BUILD-SEQUENCE.md.
+Features: #30-33 (IoT sensors), #37-39 (hardware integrations), #48 (equipment telemetry), #44-45 (CEA grow cycles and environment control).
 
 CONSTRAINT: Match existing code style/imports exactly. Do not rename existing tables, routes, or files.
 ```

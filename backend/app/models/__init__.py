@@ -63,6 +63,24 @@ from app.models.finance import (  # noqa: F401
     TransactionType,
     WarehouseBooking,
 )
+from app.models.gov_compliance import (  # noqa: F401
+    DocType,
+    Document,
+    EligibilityMatch,
+    Scheme,
+    SchemeLevel,
+)
+from app.models.community import (  # noqa: F401
+    Alert,
+    AlertType,
+    FPOGroup,
+    GrowerScore,
+    SeasonReport,
+    SHGBooking,
+    SHGGroup,
+    SupportTicket,
+    TicketStatus,
+)
 
 __all__ = [
     "AnnualIncomeRange",
@@ -116,4 +134,18 @@ __all__ = [
     "TransactionStatus",
     "TransactionType",
     "WarehouseBooking",
+    "DocType",
+    "Document",
+    "EligibilityMatch",
+    "Scheme",
+    "SchemeLevel",
+    "Alert",
+    "AlertType",
+    "FPOGroup",
+    "GrowerScore",
+    "SeasonReport",
+    "SHGBooking",
+    "SHGGroup",
+    "SupportTicket",
+    "TicketStatus",
 ]
