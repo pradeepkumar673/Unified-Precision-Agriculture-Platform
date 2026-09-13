@@ -244,11 +244,11 @@ def _build_agri_dataset() -> Tuple[np.ndarray, np.ndarray]:
 def run_federated_learning_round() -> Tuple[float, List[float], List[str]]:
     """Run 5 rounds of FedAvg with 4 simulated farm clients.
 
-    Each farm trains a LogisticRegression on its private data shard.
+    Each farm trains a SGDClassifier locally via partial_fit for a few epochs.
     Server aggregates via weighted-mean (FedAvg) of coef_ + intercept_.
     Returns (aggregate_accuracy, round_accuracies, participating_farm_ids).
     """
-    from sklearn.linear_model import LogisticRegression
+    from sklearn.linear_model import SGDClassifier
     from sklearn.metrics import accuracy_score
     from sklearn.preprocessing import StandardScaler
 
@@ -265,9 +265,9 @@ def run_federated_learning_round() -> Tuple[float, List[float], List[str]]:
 
     participating_ids = [f"farm-sim-{i+1:02d}" for i in range(N_CLIENTS)]
 
-    # Initialise global model params
-    global_coef = np.zeros(N_FEATURES)
-    global_intercept = np.zeros(1)
+    # Initialise global model params randomly so it actually has to learn
+    global_coef = np.random.RandomState(0).uniform(-0.5, 0.5, N_FEATURES)
+    global_intercept = np.array([-0.1])
     round_accuracies: List[float] = []
 
     for rnd in range(1, N_ROUNDS + 1):
@@ -275,9 +275,16 @@ def run_federated_learning_round() -> Tuple[float, List[float], List[str]]:
         local_intercepts: List[float] = []
 
         for Xc, yc in client_data:
-            # Each client trains fresh from global params (warm start simulation)
-            clf = LogisticRegression(max_iter=300, random_state=42 + rnd, C=1.0)
-            clf.fit(Xc, yc)
+            # Each client receives global params and trains locally
+            clf = SGDClassifier(loss='log_loss', learning_rate='constant', eta0=0.005, random_state=42 + rnd)
+            clf.classes_ = np.array([0, 1])
+            clf.coef_ = global_coef.reshape(1, -1).copy()
+            clf.intercept_ = global_intercept.copy()
+            
+            # Local training passes (e.g. 2 epochs)
+            for _ in range(2):
+                clf.partial_fit(Xc, yc, classes=np.array([0, 1]))
+                
             local_coefs.append(clf.coef_[0])
             local_intercepts.append(clf.intercept_[0])
 
@@ -286,11 +293,11 @@ def run_federated_learning_round() -> Tuple[float, List[float], List[str]]:
         global_intercept = np.array([np.mean(local_intercepts)])
 
         # Evaluate on held-out test set
-        eval_clf = LogisticRegression(max_iter=1, random_state=0)
-        eval_clf.fit(X_test, y_test)  # one step to init class structure
+        eval_clf = SGDClassifier(loss='log_loss')
+        eval_clf.classes_ = np.array([0, 1])
         eval_clf.coef_ = global_coef.reshape(1, -1)
         eval_clf.intercept_ = global_intercept
-        eval_clf.classes_ = np.array([0, 1])
+        
         preds = eval_clf.predict(X_test)
         acc = float(accuracy_score(y_test, preds))
         round_accuracies.append(round(acc, 4))
@@ -414,12 +421,18 @@ def run_whatif_simulation(
     if treatment_diff == 0:
         yield_delta = 0.0
         profit_delta = 0.0
+        naive_estimate = 0.0
     else:
         yield_delta = round(float(estimate.value) * abs(treatment_diff), 2)
         # Sign: positive diff with positive estimate = gain; apply sign of diff
         if treatment_diff < 0:
             yield_delta = -yield_delta
         profit_delta = round(yield_delta * 22.0, 2)
+        
+        # Calculate naive correlation estimate (simple difference in means)
+        mean_treat = df[df[treatment] == treat_val]["yield_kg_ha"].mean()
+        mean_control = df[df[treatment] == control_val]["yield_kg_ha"].mean()
+        naive_estimate = round(mean_treat - mean_control, 2)
 
     # Human-readable irrigation labels
     irrigation_labels = {0: "flood", 1: "drip", 2: "sprinkler"}
@@ -453,6 +466,7 @@ def run_whatif_simulation(
         "profit_delta_inr_ha": profit_delta,
         "method": "backdoor.linear_regression",
         "causal_estimate_value": float(estimate.value),
+        "naive_correlation_estimate": naive_estimate,
     }
 
     return yield_delta, profit_delta, explanation, projected_delta

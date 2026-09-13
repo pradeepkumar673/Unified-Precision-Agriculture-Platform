@@ -129,6 +129,8 @@ def test_advanced_ai():
     assert resp.status_code == 201, resp.text
     sim = resp.json()
     print("simulation_id:", sim["simulation_id"])
+    print(f"==> causal_estimate (DoWhy ATE): {sim['causal_estimate']:.2f}")
+    print(f"==> naive_correlation_estimate: {sim['naive_correlation_estimate']:.2f}")
     print(f"==> projected_yield_delta_kg_ha: {sim['projected_yield_delta_kg_ha']:.2f} kg/ha")
     print(f"==> projected_profit_delta_inr_ha: {sim['projected_profit_delta_inr_ha']:+.2f} INR/ha")
     print("explanation:", sim["explanation"][:200])
@@ -145,6 +147,9 @@ def test_advanced_ai():
     })
     assert resp.status_code == 201, resp.text
     sim2 = resp.json()
+    print("simulation_id:", sim2["simulation_id"])
+    print(f"==> causal_estimate (DoWhy ATE): {sim2['causal_estimate']:.2f}")
+    print(f"==> naive_correlation_estimate: {sim2['naive_correlation_estimate']:.2f}")
     print(f"==> projected_yield_delta_kg_ha: {sim2['projected_yield_delta_kg_ha']:.2f} kg/ha")
     print(f"==> projected_profit_delta_inr_ha: {sim2['projected_profit_delta_inr_ha']:+.2f} INR/ha")
     print("explanation:", sim2["explanation"][:200])

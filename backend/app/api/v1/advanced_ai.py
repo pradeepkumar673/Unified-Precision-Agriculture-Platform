@@ -218,6 +218,8 @@ def whatif_simulate(
     return WhatIfResponse(
         simulation_id=sim.id,
         farm_id=sim.farm_id,
+        causal_estimate=projected_delta.get("causal_estimate_value", yield_delta),
+        naive_correlation_estimate=projected_delta.get("naive_correlation_estimate", 0.0),
         projected_yield_delta_kg_ha=yield_delta,
         projected_profit_delta_inr_ha=profit_delta,
         explanation=explanation,

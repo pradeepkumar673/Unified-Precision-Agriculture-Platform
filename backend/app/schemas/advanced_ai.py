@@ -61,6 +61,8 @@ class WhatIfRequest(BaseModel):
 class WhatIfResponse(BaseModel):
     simulation_id: UUID
     farm_id: UUID
+    causal_estimate: float
+    naive_correlation_estimate: float
     projected_yield_delta_kg_ha: float
     projected_profit_delta_inr_ha: float
     explanation: str
