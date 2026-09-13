@@ -1,0 +1,65 @@
+{
+  "crops": {
+    "0": {
+      "name": "wheat",
+      "type": "cereal",
+      "profit": 12000,
+      "n_delta": -0.08,
+      "oc_delta": 0.03
+    },
+    "1": {
+      "name": "rice",
+      "type": "cereal",
+      "profit": 14000,
+      "n_delta": -0.1,
+      "oc_delta": 0.02
+    },
+    "2": {
+      "name": "cotton",
+      "type": "cash",
+      "profit": 20000,
+      "n_delta": -0.12,
+      "oc_delta": -0.04
+    },
+    "3": {
+      "name": "soybean",
+      "type": "legume",
+      "profit": 9000,
+      "n_delta": 0.15,
+      "oc_delta": 0.05
+    },
+    "4": {
+      "name": "maize",
+      "type": "cereal",
+      "profit": 11000,
+      "n_delta": -0.08,
+      "oc_delta": 0.03
+    },
+    "5": {
+      "name": "chickpea",
+      "type": "legume",
+      "profit": 8500,
+      "n_delta": 0.1,
+      "oc_delta": 0.04
+    }
+  },
+  "episode_seasons": 10,
+  "legumes": [
+    3,
+    5
+  ],
+  "cereals": [
+    0,
+    1,
+    4
+  ],
+  "reward_params": {
+    "nitrogen_bonus_scale": 3000,
+    "monoculture_penalty": 6000,
+    "legume_rotation_bonus": 4000,
+    "low_n_cost_scale": 8000,
+    "low_oc_cost_scale": 5000,
+    "reward_scale": 20000
+  },
+  "random_baseline_reward": 6.1073
+}
