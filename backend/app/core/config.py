@@ -1,6 +1,6 @@
 import os
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Union
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Unified Precision Agriculture Platform"
@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     # Integrations
     RAZORPAY_KEY_ID: str = "rzp_test_mock"
     RAZORPAY_KEY_SECRET: str = "mock_secret"
+    # Optional: set this to the secret configured on the Razorpay Dashboard
+    # webhook settings page to enable signature verification on the webhook
+    # endpoint. Left blank = verification skipped (fine for local testing).
+    RAZORPAY_WEBHOOK_SECRET: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

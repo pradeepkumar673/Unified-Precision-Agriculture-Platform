@@ -7,6 +7,8 @@ from app.api.v1.planning import router as planning_router
 from app.api.v1.health import router as health_router
 from app.api.v1.water_soil import router as water_soil_router
 from app.api.v1.vision_forecast import router as vision_forecast_router
+from app.api.v1.marketplace import router as marketplace_router
+from app.api.v1.finance import router as finance_router
 from app.core.db import Base, engine
 
 app = FastAPI(
@@ -32,6 +34,8 @@ app.include_router(planning_router)
 app.include_router(health_router)
 app.include_router(water_soil_router)
 app.include_router(vision_forecast_router)
+app.include_router(marketplace_router)
+app.include_router(finance_router)
 
 
 @app.get("/health")

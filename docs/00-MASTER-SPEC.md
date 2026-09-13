@@ -111,6 +111,16 @@ DONE SO FAR:
   * backend/app/api/v1/vision_forecast.py: POST /stress-check, POST /plant-count, POST /grain-quality, GET /price-forecast, POST /yield-forecast, GET /climate-risk/{farm_id}.
   * Alembic migration 6407017bcef9 created & applied. All 10 endpoints tested live and confirmed.
 
+- Step 6 complete: Groups 6 & 7 (marketplace, finance) implemented (#6 Inputs Marketplace, #7 Machinery Rental, #9 Harvest & Market, #24 Dynamic Routing, #44 AI Input Ranking, #45 Delivery Tracking, #52 Labor Marketplace, #55 B2B Channel, #26 Learned Buyer Matching, #46 Payment Gateway, #47 Transaction Ledger, #49 Cold Storage+Receipt Financing, #50 Credit Marketplace, #54 Insurance Claims, #28 Anomaly Detection).
+  * backend/app/models/marketplace.py: Product (products), Order (orders), EquipmentListing (equipment_listings), EquipmentBooking (equipment_bookings), LaborListing (labor_listings), LaborBooking (labor_bookings), BuyerRequirement (buyer_requirements), ExchangeMatch (exchange_matches), B2BStandingOrder (b2b_standing_orders).
+  * backend/app/models/finance.py: Transaction (transactions), WarehouseBooking (warehouse_bookings), Loan (loans), InsuranceClaim (insurance_claims), FraudFlag (fraud_flags).
+  * backend/app/schemas/marketplace.py & backend/app/schemas/finance.py: Complete Pydantic v2 schemas mirroring all models and API requests/responses.
+  * backend/app/services/marketplace.py: Product ranking with predicted yield impact scoring, Haversine route ETA for equipment transit, crop demand exchange aggregator.
+  * backend/app/services/finance.py: Razorpay test-mode payment gateway integration & webhook processor, ReportLab PDF ledger statement generator, WDRA mock e-NWR generator, multi-factor rule-based credit scoring engine, insurance claim evidence aggregator, anomaly / fraud detector.
+  * backend/app/api/v1/marketplace.py: GET /products, POST /order, POST /equipment/book, POST /labor/book, POST /buyer-requirement, POST /exchange-match, GET /delivery-status/{order_id}, POST /b2b/standing-order.
+  * backend/app/api/v1/finance.py: POST /payment/initiate, POST /payment/webhook, GET /ledger/{farm_id}, GET /ledger/{farm_id}/export (PDF), POST /warehouse/book, POST /warehouse/{booking_id}/generate-enwr, POST /loan/apply, POST /insurance/claim, GET /insurance/claim/{claim_id}, POST /fraud-check.
+  * Alembic migration d9fcf803d7a5 created & applied. All 16 endpoints + edge cases tested live and confirmed.
+
 CURRENT FILE TREE:
 .gitignore
 backend/.env.example
@@ -122,11 +132,14 @@ backend/alembic/versions/1535432790c1_create_disease_reports_weed_reports_.py
 backend/alembic/versions/4bd5c72d8d75_create_crop_plans_rotation_plans_.py
 backend/alembic/versions/6088d5eb1a27_create_users_farms_and_field_boundaries_.py
 backend/alembic/versions/6407017bcef9_create_water_soil_and_vision_forecast_.py
+backend/alembic/versions/d9fcf803d7a5_create_marketplace_and_finance_tables.py
 backend/app/__init__.py
 backend/app/api/__init__.py
 backend/app/api/v1/__init__.py
 backend/app/api/v1/farm.py
+backend/app/api/v1/finance.py
 backend/app/api/v1/health.py
+backend/app/api/v1/marketplace.py
 backend/app/api/v1/planning.py
 backend/app/api/v1/vision_forecast.py
 backend/app/api/v1/water_soil.py
@@ -137,18 +150,24 @@ backend/app/main.py
 backend/app/ml/__init__.py
 backend/app/models/__init__.py
 backend/app/models/farm.py
+backend/app/models/finance.py
 backend/app/models/health.py
+backend/app/models/marketplace.py
 backend/app/models/planning.py
 backend/app/models/vision_forecast.py
 backend/app/models/water_soil.py
 backend/app/schemas/__init__.py
 backend/app/schemas/farm.py
+backend/app/schemas/finance.py
 backend/app/schemas/health.py
+backend/app/schemas/marketplace.py
 backend/app/schemas/planning.py
 backend/app/schemas/vision_forecast.py
 backend/app/schemas/water_soil.py
 backend/app/services/__init__.py
+backend/app/services/finance.py
 backend/app/services/health.py
+backend/app/services/marketplace.py
 backend/app/services/planning.py
 backend/app/services/vision_forecast.py
 backend/app/services/water_soil.py
@@ -156,6 +175,7 @@ backend/requirements.txt
 backend/sample_cow.jpg
 backend/sample_leaf.jpg
 backend/sample_weed.jpg
+backend/test_step6.py
 docs/00-MASTER-SPEC.md
 docs/01-BUILD-SEQUENCE.md
 docs/02-ML-TRAINING-PROMPTS.md
@@ -165,10 +185,10 @@ frontend/package.json
 hardware-sim/simulate_sensors.py
 
 LAST WORKING STATE:
-FastAPI server running on http://127.0.0.1:8000. All Farm, Planning, Health, Water & Soil, and Vision & Forecasting endpoints (/api/v1/water_soil/irrigation-recommendation, /api/v1/water_soil/soil-map, /api/v1/vision_forecast/stress-check, /api/v1/vision_forecast/plant-count, /api/v1/vision_forecast/grain-quality, /api/v1/vision_forecast/price-forecast, /api/v1/vision_forecast/yield-forecast, /api/v1/vision_forecast/climate-risk, etc.) fully tested live, returning 200/201 responses.
+FastAPI server running on http://127.0.0.1:8000. All Farm, Planning, Health, Water & Soil, Vision & Forecasting, Marketplace, and Finance endpoints (/api/v1/marketplace/products, /api/v1/marketplace/order, /api/v1/marketplace/equipment/book, /api/v1/marketplace/labor/book, /api/v1/marketplace/buyer-requirement, /api/v1/marketplace/exchange-match, /api/v1/marketplace/delivery-status, /api/v1/marketplace/b2b/standing-order, /api/v1/finance/payment/initiate, /api/v1/finance/payment/webhook, /api/v1/finance/ledger, /api/v1/finance/ledger/export [PDF], /api/v1/finance/warehouse/book, /api/v1/finance/warehouse/generate-enwr, /api/v1/finance/loan/apply, /api/v1/finance/insurance/claim, /api/v1/finance/fraud-check) fully tested live, returning 200/201 responses.
 
 NEXT TASK:
-STEP 6 — Groups 6 & 7: marketplace, finance (from docs/01-BUILD-SEQUENCE.md): Implement models/marketplace.py, models/finance.py, schemas, services, and api/v1/marketplace.py + api/v1/finance.py (#5 B2B Marketplace, #6 Equipment Rental, #24 Collective Bargaining, #7 Multi-tier Microfinance, #8 Parametric Insurance, #9 Government Scheme Engine, #25 Carbon Credit, #26 Dynamic Farm Valuation), and wire into main.py.
+STEP 7 — Groups 8 & 9: gov_compliance, community (from docs/01-BUILD-SEQUENCE.md): Implement models/gov_compliance.py, models/community.py, schemas, services, and api/v1/gov_compliance.py + api/v1/community.py (#8 Gov Scheme Engine, #42 Auto Eligibility Engine, #43 Document Vault/OCR, #5 Smart Alerts, #10 Season Report, #34 Digital Sakhi, #35 SHG Bookings, #36 Grower Score, #53 FPO Suite), and wire into main.py.
 
 CONSTRAINT: Match existing code style/imports exactly. Do not rename existing tables, routes, or files.
 ```

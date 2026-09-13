@@ -25,3 +25,4 @@ razorpay
 ortools
 openai-whisper
 python-dotenv
+reportlab
