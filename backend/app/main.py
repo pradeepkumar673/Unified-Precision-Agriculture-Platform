@@ -11,6 +11,7 @@ from app.api.v1.marketplace import router as marketplace_router
 from app.api.v1.finance import router as finance_router
 from app.api.v1.gov_compliance import router as gov_compliance_router
 from app.api.v1.community import router as community_router
+from app.api.v1.advanced_ai import router as advanced_ai_router
 from app.core.db import Base, engine
 
 app = FastAPI(
@@ -40,6 +41,7 @@ app.include_router(marketplace_router)
 app.include_router(finance_router)
 app.include_router(gov_compliance_router)
 app.include_router(community_router)
+app.include_router(advanced_ai_router)
 
 
 @app.get("/health")

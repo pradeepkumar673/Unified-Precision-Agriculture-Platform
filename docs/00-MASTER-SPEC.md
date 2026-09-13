@@ -193,27 +193,18 @@ docs/04-FEATURE-CHECKLIST.md
 frontend/package.json
 hardware-sim/simulate_sensors.py
 
-LAST WORKING STATE (Step 7 complete):
-FastAPI server running on http://127.0.0.1:8000. All 12 Step 7 tests pass live.
-Gov Compliance endpoints fully operational:
-  GET  /api/v1/gov/schemes/match/{farm_id}   -- 6-scheme seeded DB (PM-KISAN, PMFBY, KCC, PM-KUSUM, TN Uzhavar, Karnataka RytaBandhu). Tamil Nadu farm returns 5 eligible schemes.
-  POST /api/v1/gov/documents/upload          -- Multipart upload + graceful pytesseract OCR (returns ocr_extracted dict; structured fields populated when Tesseract installed).
-  POST /api/v1/gov/documents/{doc_id}/autofill/{scheme_id} -- 14 form fields auto-populated from OCR + farm profile.
-Community endpoints fully operational:
-  GET  /api/v1/community/alerts/{farm_id}             -- 3 synthetic rule-based alerts (irrigation, pest, spray_window) generated from StressAlert and farm data.
-  GET  /api/v1/community/season-report/{farm_id}      -- Aggregates transactions + CropPlan + YieldForecast. Real ROI 60% for test farm.
-  POST /api/v1/community/support-ticket               -- Ticket created with status=open.
-  POST /api/v1/community/shg/create                   -- SHG group with member_farm_ids.
-  POST /api/v1/community/shg/{id}/book                -- SHG cost-split equipment booking.
-  GET  /api/v1/community/grower-score/{farm_id}       -- Score 600/1000, 75th percentile district.
-  POST /api/v1/community/fpo/create                   -- FPO group created.
-  POST /api/v1/community/fpo/{id}/pool-purchase       -- Pooled purchase appended (Urea, Rs 8500).
-  POST /api/v1/community/fpo/{id}/pool-sale           -- Pooled sale appended (Paddy Grade-A, Rs 176000).
-Alembic migration 71c57daec0d6 applied (12 new tables: fpo_groups, schemes, shg_groups, alerts, documents, eligibility_matches, grower_scores, season_reports, support_tickets, shg_bookings).
-All previous steps (1-6) remain fully functional.
+LAST WORKING STATE (Step 8 complete):
+FastAPI server running on http://127.0.0.1:8000. All 6 Step 8 advanced_ai tests pass live.
+Advanced AI endpoints fully operational:
+  POST /api/v1/advanced_ai/voice-query                  -- Whisper 'base' transcription (CPU fallback when CUDA unavailable) + 16-keyword agri response dict. Returns transcribed_text + response_text.
+  POST /api/v1/advanced_ai/multimodal-query             -- Fuses disease-detect heuristic (health service) + text keyword response into combined_response. Tested with sample_leaf.jpg.
+  POST /api/v1/advanced_ai/federated/trigger-round      -- Real FedAvg: 4 farm clients, 5 rounds, sklearn LogisticRegression, 7 agri features. REAL aggregate_accuracy = 68.00% (6800 samples, 200-sample holdout).
+  POST /api/v1/advanced_ai/whatif-simulate              -- DoWhy backdoor.linear_regression on causal DAG (irrigation_method -> yield_kg_ha -> profit_inr). REAL numbers: flood->drip = +129.11 kg/ha = Rs +2840/ha. Sowing offset -3->0 (3-week correction) = -0.28 kg/ha.
+Alembic migration 659d79810cec applied (4 new tables: voice_queries, multimodal_queries, fl_training_runs, causal_simulations).
+All previous steps (1-7) remain fully functional.
 
 NEXT TASK:
-STEP 8 — Groups 10 & 11: IoT / Hardware Ingestion and CEA (Controlled Environment Agriculture).
+STEP 9 — Groups 10 & 11: IoT / Hardware Ingestion and CEA (Controlled Environment Agriculture).
 Implement hardware ingestion endpoints (MQTT topic contracts), sensor DB tables, simulator script updates, and CEA endpoints from docs/01-BUILD-SEQUENCE.md.
 Features: #30-33 (IoT sensors), #37-39 (hardware integrations), #48 (equipment telemetry), #44-45 (CEA grow cycles and environment control).
 

@@ -81,6 +81,12 @@ from app.models.community import (  # noqa: F401
     SupportTicket,
     TicketStatus,
 )
+from app.models.advanced_ai import (  # noqa: F401
+    CausalSimulation,
+    FLTrainingRun,
+    MultimodalQuery,
+    VoiceQuery,
+)
 
 __all__ = [
     "AnnualIncomeRange",
@@ -148,4 +154,8 @@ __all__ = [
     "SHGGroup",
     "SupportTicket",
     "TicketStatus",
+    "CausalSimulation",
+    "FLTrainingRun",
+    "MultimodalQuery",
+    "VoiceQuery",
 ]
