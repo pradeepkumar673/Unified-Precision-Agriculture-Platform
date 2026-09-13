@@ -1,0 +1,257 @@
+{
+  "wheat|Pune": {
+    "base_price": 2200,
+    "district_prem": 0.05,
+    "n_obs": 731,
+    "y_mean": 2362.68,
+    "y_std": 150.17,
+    "mae_insample": 82.48,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "wheat|Ludhiana": {
+    "base_price": 2200,
+    "district_prem": -0.02,
+    "n_obs": 731,
+    "y_mean": 2198.23,
+    "y_std": 171.95,
+    "mae_insample": 86.52,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "wheat|Warangal": {
+    "base_price": 2200,
+    "district_prem": -0.04,
+    "n_obs": 731,
+    "y_mean": 2173.62,
+    "y_std": 156.94,
+    "mae_insample": 85.33,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "rice|Pune": {
+    "base_price": 2100,
+    "district_prem": 0.05,
+    "n_obs": 731,
+    "y_mean": 2283.4,
+    "y_std": 157.12,
+    "mae_insample": 82.84,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "rice|Ludhiana": {
+    "base_price": 2100,
+    "district_prem": -0.02,
+    "n_obs": 731,
+    "y_mean": 2112.31,
+    "y_std": 155.56,
+    "mae_insample": 83.11,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "rice|Warangal": {
+    "base_price": 2100,
+    "district_prem": -0.04,
+    "n_obs": 731,
+    "y_mean": 2072.93,
+    "y_std": 163.37,
+    "mae_insample": 76.4,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "cotton|Pune": {
+    "base_price": 6200,
+    "district_prem": 0.05,
+    "n_obs": 731,
+    "y_mean": 6597.91,
+    "y_std": 603.77,
+    "mae_insample": 394.59,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "cotton|Ludhiana": {
+    "base_price": 6200,
+    "district_prem": -0.02,
+    "n_obs": 731,
+    "y_mean": 6170.81,
+    "y_std": 679.12,
+    "mae_insample": 408.21,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "cotton|Warangal": {
+    "base_price": 6200,
+    "district_prem": -0.04,
+    "n_obs": 731,
+    "y_mean": 6041.69,
+    "y_std": 713.67,
+    "mae_insample": 472.51,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "soybean|Pune": {
+    "base_price": 4400,
+    "district_prem": 0.05,
+    "n_obs": 731,
+    "y_mean": 4743.57,
+    "y_std": 393.46,
+    "mae_insample": 261.01,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "soybean|Ludhiana": {
+    "base_price": 4400,
+    "district_prem": -0.02,
+    "n_obs": 731,
+    "y_mean": 4431.86,
+    "y_std": 413.52,
+    "mae_insample": 253.69,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "soybean|Warangal": {
+    "base_price": 4400,
+    "district_prem": -0.04,
+    "n_obs": 731,
+    "y_mean": 4330.07,
+    "y_std": 413.12,
+    "mae_insample": 271.91,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "tomato|Pune": {
+    "base_price": 1800,
+    "district_prem": 0.05,
+    "n_obs": 731,
+    "y_mean": 1898.62,
+    "y_std": 408.92,
+    "mae_insample": 274.33,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "tomato|Ludhiana": {
+    "base_price": 1800,
+    "district_prem": -0.02,
+    "n_obs": 731,
+    "y_mean": 1783.42,
+    "y_std": 437.4,
+    "mae_insample": 317.21,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  },
+  "tomato|Warangal": {
+    "base_price": 1800,
+    "district_prem": -0.04,
+    "n_obs": 731,
+    "y_mean": 1694.92,
+    "y_std": 434.69,
+    "mae_insample": 303.16,
+    "festival_cols": [
+      "fest_diwali",
+      "fest_holi",
+      "fest_baisakhi",
+      "fest_independence",
+      "fest_makarsankranti",
+      "fest_onam",
+      "fest_eid"
+    ]
+  }
+}
