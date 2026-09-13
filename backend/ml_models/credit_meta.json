@@ -1,0 +1,120 @@
+{
+  "features": [
+    "crop_plan_adherence",
+    "yield_score",
+    "yield_consistency",
+    "txn_ledger_consistency",
+    "repayment_history",
+    "n_loans_taken",
+    "loan_size_norm",
+    "income_stability",
+    "district_risk_score",
+    "land_holding_ha"
+  ],
+  "feature_labels": {
+    "crop_plan_adherence": "Crop-plan adherence",
+    "yield_score": "Yield performance",
+    "yield_consistency": "Yield consistency",
+    "txn_ledger_consistency": "Transaction ledger consistency",
+    "repayment_history": "Past repayment history",
+    "n_loans_taken": "Number of loans taken",
+    "loan_size_norm": "Loan size (relative)",
+    "income_stability": "Income stability",
+    "district_risk_score": "District climate risk",
+    "land_holding_ha": "Land holding (ha)"
+  },
+  "score_range": [
+    300,
+    900
+  ],
+  "score_bands": [
+    {
+      "min": 800,
+      "name": "Excellent",
+      "description": "Very low credit risk. Eligible for highest loan amounts at best rates."
+    },
+    {
+      "min": 700,
+      "name": "Very Good",
+      "description": "Low credit risk. Eligible for standard agricultural loan products."
+    },
+    {
+      "min": 600,
+      "name": "Good",
+      "description": "Moderate credit risk. May require co-signer or smaller loan tranche."
+    },
+    {
+      "min": 500,
+      "name": "Fair",
+      "description": "Elevated risk. Recommend smaller loan with crop insurance requirement."
+    },
+    {
+      "min": 300,
+      "name": "Poor",
+      "description": "High credit risk. Consider microfinance or government-backed scheme."
+    }
+  ],
+  "eval_metrics": {
+    "test_auc": 0.8309,
+    "test_accuracy": 0.8317,
+    "precision": 0.942,
+    "recall": 0.8617,
+    "f1": 0.9001,
+    "cv_auc_mean": 0.8177,
+    "cv_auc_std": 0.0169,
+    "global_feature_importance": [
+      {
+        "feature": "repayment_history",
+        "label": "Past repayment history",
+        "mean_shap": 0.7206
+      },
+      {
+        "feature": "loan_size_norm",
+        "label": "Loan size (relative)",
+        "mean_shap": 0.475
+      },
+      {
+        "feature": "txn_ledger_consistency",
+        "label": "Transaction ledger consistency",
+        "mean_shap": 0.3537
+      },
+      {
+        "feature": "yield_consistency",
+        "label": "Yield consistency",
+        "mean_shap": 0.3478
+      },
+      {
+        "feature": "yield_score",
+        "label": "Yield performance",
+        "mean_shap": 0.3138
+      },
+      {
+        "feature": "income_stability",
+        "label": "Income stability",
+        "mean_shap": 0.3067
+      },
+      {
+        "feature": "crop_plan_adherence",
+        "label": "Crop-plan adherence",
+        "mean_shap": 0.2807
+      },
+      {
+        "feature": "district_risk_score",
+        "label": "District climate risk",
+        "mean_shap": 0.2803
+      },
+      {
+        "feature": "land_holding_ha",
+        "label": "Land holding (ha)",
+        "mean_shap": 0.1518
+      },
+      {
+        "feature": "n_loans_taken",
+        "label": "Number of loans taken",
+        "mean_shap": 0.0967
+      }
+    ]
+  },
+  "n_samples": 3000,
+  "repayment_rate": 0.8793
+}
