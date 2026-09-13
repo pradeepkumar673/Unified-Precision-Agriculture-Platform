@@ -1,0 +1,194 @@
+{
+  "n_clients": 4,
+  "n_rounds": 5,
+  "local_epochs": 3,
+  "n_classes": 19,
+  "embed_dim": 128,
+  "disease_classes": [
+    "Apple___Apple_scab",
+    "Apple___Black_rot",
+    "Apple___Cedar_apple_rust",
+    "Corn___Cercospora_leaf_spot",
+    "Corn___Common_rust",
+    "Corn___Northern_Leaf_Blight",
+    "Grape___Black_rot",
+    "Grape___Leaf_blight",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Rice___Bacterial_blight",
+    "Rice___Blast",
+    "Rice___Brown_spot",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Leaf_Mold",
+    "Tomato___Mosaic_virus",
+    "Tomato___healthy"
+  ],
+  "centralised_accuracy": 0.425,
+  "federated_final_accuracy": 0.4875,
+  "federation_time_s": 0.69,
+  "round_log": [
+    {
+      "round": 1,
+      "accuracy": 0.22,
+      "loss": 2.8117,
+      "elapsed_s": 0.14,
+      "per_client": [
+        {
+          "client_id": 0,
+          "accuracy": 0.33,
+          "loss": 2.7773,
+          "n_val": 100
+        },
+        {
+          "client_id": 1,
+          "accuracy": 0.16,
+          "loss": 2.8265,
+          "n_val": 100
+        },
+        {
+          "client_id": 2,
+          "accuracy": 0.2,
+          "loss": 2.8174,
+          "n_val": 100
+        },
+        {
+          "client_id": 3,
+          "accuracy": 0.19,
+          "loss": 2.8257,
+          "n_val": 100
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "accuracy": 0.38,
+      "loss": 2.457,
+      "elapsed_s": 0.14,
+      "per_client": [
+        {
+          "client_id": 0,
+          "accuracy": 0.51,
+          "loss": 2.3634,
+          "n_val": 100
+        },
+        {
+          "client_id": 1,
+          "accuracy": 0.35,
+          "loss": 2.4688,
+          "n_val": 100
+        },
+        {
+          "client_id": 2,
+          "accuracy": 0.34,
+          "loss": 2.4949,
+          "n_val": 100
+        },
+        {
+          "client_id": 3,
+          "accuracy": 0.32,
+          "loss": 2.501,
+          "n_val": 100
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "accuracy": 0.45,
+      "loss": 1.9599,
+      "elapsed_s": 0.14,
+      "per_client": [
+        {
+          "client_id": 0,
+          "accuracy": 0.57,
+          "loss": 1.8009,
+          "n_val": 100
+        },
+        {
+          "client_id": 1,
+          "accuracy": 0.42,
+          "loss": 1.9498,
+          "n_val": 100
+        },
+        {
+          "client_id": 2,
+          "accuracy": 0.41,
+          "loss": 2.0506,
+          "n_val": 100
+        },
+        {
+          "client_id": 3,
+          "accuracy": 0.4,
+          "loss": 2.0383,
+          "n_val": 100
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "accuracy": 0.4675,
+      "loss": 1.7342,
+      "elapsed_s": 0.13,
+      "per_client": [
+        {
+          "client_id": 0,
+          "accuracy": 0.59,
+          "loss": 1.5399,
+          "n_val": 100
+        },
+        {
+          "client_id": 1,
+          "accuracy": 0.44,
+          "loss": 1.6853,
+          "n_val": 100
+        },
+        {
+          "client_id": 2,
+          "accuracy": 0.42,
+          "loss": 1.8947,
+          "n_val": 100
+        },
+        {
+          "client_id": 3,
+          "accuracy": 0.42,
+          "loss": 1.8167,
+          "n_val": 100
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "accuracy": 0.4875,
+      "loss": 1.6736,
+      "elapsed_s": 0.14,
+      "per_client": [
+        {
+          "client_id": 0,
+          "accuracy": 0.61,
+          "loss": 1.4565,
+          "n_val": 100
+        },
+        {
+          "client_id": 1,
+          "accuracy": 0.49,
+          "loss": 1.5856,
+          "n_val": 100
+        },
+        {
+          "client_id": 2,
+          "accuracy": 0.41,
+          "loss": 1.9115,
+          "n_val": 100
+        },
+        {
+          "client_id": 3,
+          "accuracy": 0.44,
+          "loss": 1.7406,
+          "n_val": 100
+        }
+      ]
+    }
+  ],
+  "demo_note": "SIMULATED FL DEMO \u2014 single machine, 4 Python client objects. Data stays private per client; only weights shared via FedAvg. Not a production multi-device deployment."
+}
