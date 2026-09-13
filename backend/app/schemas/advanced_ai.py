@@ -63,6 +63,7 @@ class WhatIfResponse(BaseModel):
     farm_id: UUID
     causal_estimate: float
     naive_correlation_estimate: float
+    confounding_bias_kg_ha: float          # naive - causal; shows cost of ignoring confounders
     projected_yield_delta_kg_ha: float
     projected_profit_delta_inr_ha: float
     explanation: str

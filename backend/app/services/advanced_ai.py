@@ -455,17 +455,30 @@ def run_federated_learning_round() -> Tuple[float, List[float], List[str]]:
 # #58 What-If Causal Simulation — DoWhy backdoor adjustment
 # ---------------------------------------------------------------------------
 
-# The causal graph (DAG): irrigation_method -> yield_kg_ha -> profit_inr
-#                         sowing_week_offset -> yield_kg_ha
-#                         rainfall_mm        -> yield_kg_ha
-#                         soil_quality       -> yield_kg_ha
+# The causal graph (DAG) for the what-if simulation.
+#
+# Confounding structure (the key to making this a real causal demo):
+#   soil_quality      -> irrigation_method  (richer soil => farmer can afford drip)
+#   rainfall_mm       -> irrigation_method  (wetter regions prefer flood; drier prefer drip)
+#   soil_quality      -> yield_kg_ha        (direct agronomic effect)
+#   rainfall_mm       -> yield_kg_ha        (direct agronomic effect)
+#
+# Because soil_quality and rainfall_mm are common causes of BOTH the treatment
+# (irrigation_method) and the outcome (yield_kg_ha), a naive difference-in-means
+# is badly confounded: drip farms already have better soil, so raw means overstate
+# the benefit of drip by ~100-140 kg/ha.  DoWhy's backdoor adjustment removes
+# this bias by conditioning on both confounders.
+#
+# sowing_weeks_late: monotone 0-4 weeks (no confounders; linear -120 kg/ha/week penalty).
 _CAUSAL_GRAPH = """
 digraph {
+    soil_quality      -> irrigation_method;
+    rainfall_mm       -> irrigation_method;
     irrigation_method -> yield_kg_ha;
-    sowing_week_offset -> yield_kg_ha;
-    rainfall_mm -> yield_kg_ha;
-    soil_quality -> yield_kg_ha;
-    yield_kg_ha -> profit_inr;
+    sowing_weeks_late -> yield_kg_ha;
+    rainfall_mm       -> yield_kg_ha;
+    soil_quality      -> yield_kg_ha;
+    yield_kg_ha       -> profit_inr;
 }
 """
 
@@ -482,31 +495,68 @@ def _build_causal_data():
     rng = np.random.RandomState(42)
     N = 1200
 
-    irrigation_method = rng.choice([0, 1, 2], N)      # 0=flood, 1=drip, 2=sprinkler
-    sowing_week_offset = rng.randint(-3, 4, N)          # weeks from optimal
-    rainfall_mm = rng.normal(400, 100, N)
-    soil_quality = rng.uniform(0.4, 1.0, N)
+    # ------------------------------------------------------------------
+    # Generate confounders first (common causes of treatment AND outcome)
+    # ------------------------------------------------------------------
+    soil_quality      = rng.uniform(0.4, 1.0, N)   # land richness (0-1 scale)
+    rainfall_mm       = rng.normal(400, 100, N)      # annual rainfall
+    # sowing_weeks_late: 0 = sown on time, 1-4 = weeks late.
+    # Monotone so linear regression correctly recovers -120 kg/ha/week.
+    sowing_weeks_late = rng.randint(0, 5, N)          # 0=optimal, 4=very late
 
-    # Structural equations (ground-truth causal mechanism)
+    # ------------------------------------------------------------------
+    # CONFOUNDED treatment assignment.
+    # Real-world mechanism: farmers with better soil AND higher rainfall
+    # have more capital and can adopt drip irrigation; those in drier
+    # regions with marginal soil tend to stick with flood irrigation.
+    #
+    # This creates a strong confounder: drip farms already have higher
+    # soil_quality on average, so a naive yield comparison overestimates
+    # the benefit of drip irrigation by ~100-140 kg/ha.
+    # ------------------------------------------------------------------
+    logit_drip = -3.5 + 5.0 * soil_quality + 0.004 * rainfall_mm
+    prob_drip  = 1.0 / (1.0 + np.exp(-logit_drip))         # P(drip)
+    prob_sprinkler = 0.35 * prob_drip                        # sprinkler less common
+    prob_flood = np.clip(1.0 - prob_drip - prob_sprinkler, 0.05, 1.0)
+    # Normalise so probabilities sum to 1
+    total = prob_flood + prob_drip + prob_sprinkler
+    prob_flood /= total
+    prob_drip  /= total
+    prob_sprinkler /= total
+
+    # Sample irrigation method from the above probabilities
+    cumprob = np.column_stack([
+        prob_flood,
+        prob_flood + prob_drip,
+        np.ones(N),
+    ])
+    u = rng.uniform(0, 1, N)
+    irrigation_method = (u[:, None] > cumprob).sum(axis=1)  # 0=flood, 1=drip, 2=sprinkler
+
+    # ------------------------------------------------------------------
+    # Structural equations (ground-truth causal mechanism).
+    # TRUE causal effects: drip +400 kg/ha, sprinkler +250 kg/ha.
+    # Sowing penalty: -120 kg/ha per week late (linear, recoverable by OLS).
+    # Confounders affect *who* adopts drip, not *how well* drip works.
+    # ------------------------------------------------------------------
     yield_kg_ha = (
         2800
-        + 400 * (irrigation_method == 1)      # drip benefit
-        + 250 * (irrigation_method == 2)      # sprinkler benefit
-        - 120 * np.abs(sowing_week_offset)    # late/early penalty
-        + 0.8 * rainfall_mm
-        + 600 * soil_quality
+        + 400 * (irrigation_method == 1)        # drip ATE  = +400 kg/ha
+        + 250 * (irrigation_method == 2)        # sprinkler ATE = +250 kg/ha
+        - 120 * sowing_weeks_late               # linear late-sowing penalty (-120/week)
+        + 0.8 * rainfall_mm                     # direct rainfall effect
+        + 600 * soil_quality                    # direct soil effect
         + rng.normal(0, 150, N)
     )
     profit_inr = yield_kg_ha * 22.0 - 18000 + rng.normal(0, 2000, N)
 
-    import pandas as pd
     _causal_df = pd.DataFrame({
-        "irrigation_method": irrigation_method,
-        "sowing_week_offset": sowing_week_offset,
-        "rainfall_mm": rainfall_mm,
-        "soil_quality": soil_quality,
-        "yield_kg_ha": yield_kg_ha,
-        "profit_inr": profit_inr,
+        "irrigation_method":  irrigation_method,
+        "sowing_weeks_late":  sowing_weeks_late,
+        "rainfall_mm":        rainfall_mm,
+        "soil_quality":       soil_quality,
+        "yield_kg_ha":        yield_kg_ha,
+        "profit_inr":         profit_inr,
     })
     return _causal_df
 
@@ -517,8 +567,9 @@ def run_whatif_simulation(
 ) -> Tuple[float, float, str, Dict[str, Any]]:
     """Use DoWhy backdoor adjustment to estimate causal effect of proposed change.
 
-    Supported treatment variables: irrigation_method, sowing_week_offset
-    Default treatment: irrigation_method (flood->drip)
+    Supported treatment variables:
+      irrigation_method  -- categorical (0=flood, 1=drip, 2=sprinkler)
+      sowing_weeks_late  -- integer 0-4 (0=on-time, positive=weeks late)
 
     Returns (yield_delta, profit_delta, explanation, projected_delta_dict).
     """
@@ -527,24 +578,38 @@ def run_whatif_simulation(
     df = _build_causal_data()
 
     # Determine treatment from proposed_change vs current_decision
-    # Priority: irrigation_method if it changes; else sowing_week_offset
+    # Priority: irrigation_method if it changes; else sowing_weeks_late
     treatment = "irrigation_method"
     control_val = int(current_decision.get("irrigation_method", 0))
     treat_val = int(proposed_change.get("irrigation_method", control_val))
 
     irr_changed = treat_val != control_val
-    sow_curr = int(current_decision.get("sowing_week_offset", 0))
-    sow_treat = int(proposed_change.get("sowing_week_offset", sow_curr))
+    sow_curr  = int(current_decision.get("sowing_weeks_late", 0))
+    sow_treat = int(proposed_change.get("sowing_weeks_late", sow_curr))
     sow_changed = sow_treat != sow_curr
 
-    # Override with sowing_week_offset only if irrigation_method did NOT change
+    # Override with sowing_weeks_late only if irrigation_method did NOT change
     if not irr_changed and sow_changed:
-        treatment = "sowing_week_offset"
+        treatment = "sowing_weeks_late"
         control_val = sow_curr
         treat_val = sow_treat
 
+    # For categorical treatments (irrigation_method), subset the data to the two
+    # specific irrigation types being compared.  This makes DoWhy's
+    # backdoor.linear_regression treat it as a proper binary contrast (0 vs 1
+    # after encoding) rather than fitting a single ordinal slope across all 3
+    # categories (which produces a misleadingly low ATE of ~28 instead of ~400).
+    if treatment == "irrigation_method":
+        df_model = df[df[treatment].isin([control_val, treat_val])].copy()
+        # Recode to 0/1 so linear regression is correctly binary
+        df_model[treatment] = (df_model[treatment] == treat_val).astype(int)
+        model_ctrl, model_treat = 0, 1
+    else:
+        df_model = df.copy()
+        model_ctrl, model_treat = control_val, treat_val
+
     model = CausalModel(
-        data=df,
+        data=df_model,
         treatment=treatment,
         outcome="yield_kg_ha",
         graph=_CAUSAL_GRAPH,
@@ -555,63 +620,83 @@ def run_whatif_simulation(
         method_name="backdoor.linear_regression",
         target_units="ate",
         method_params={
-            "control_value": control_val,
-            "treatment_value": treat_val,
+            "control_value": model_ctrl,
+            "treatment_value": model_treat,
         },
     )
 
-    # Scale: estimate.value is the per-unit ATE (regression coefficient).
-    # Multiply by treatment_diff to get the total effect of the proposed change.
     treatment_diff = treat_val - control_val
+
+    # Scaling rules differ by treatment type:
+    #   irrigation_method: after binary 0/1 subsetting, estimate.value is the full
+    #     ATE for that specific pair -- use directly, no multiplication.
+    #   sowing_weeks_late: estimate.value is ALWAYS the per-unit slope regardless
+    #     of control_value/treatment_value -- multiply by treatment_diff for total.
     if treatment_diff == 0:
-        yield_delta = 0.0
-        profit_delta = 0.0
-        naive_estimate = 0.0
+        yield_delta           = 0.0
+        profit_delta          = 0.0
+        naive_estimate        = 0.0
+        causal_estimate_value = 0.0
     else:
-        yield_delta = round(float(estimate.value) * abs(treatment_diff), 2)
-        # Sign: positive diff with positive estimate = gain; apply sign of diff
-        if treatment_diff < 0:
-            yield_delta = -yield_delta
-        profit_delta = round(yield_delta * 22.0, 2)
-        
-        # Calculate naive correlation estimate (simple difference in means)
-        mean_treat = df[df[treatment] == treat_val]["yield_kg_ha"].mean()
+        raw_ate = float(estimate.value)
+        if treatment == "irrigation_method":
+            # binary contrast: raw_ate already = ATE for (flood->drip) pair
+            total_ate = raw_ate
+        else:
+            # continuous treatment: raw_ate = per-unit slope; scale by contrast size
+            total_ate = raw_ate * treatment_diff
+
+        yield_delta           = round(total_ate, 2)
+        profit_delta          = round(yield_delta * 22.0, 2)
+        causal_estimate_value = yield_delta  # store the scaled ATE, not the slope
+
+        # Naive correlation estimate: simple difference-in-means (BIASED by confounders)
+        mean_treat   = df[df[treatment] == treat_val]["yield_kg_ha"].mean()
         mean_control = df[df[treatment] == control_val]["yield_kg_ha"].mean()
-        naive_estimate = round(mean_treat - mean_control, 2)
+        naive_raw    = mean_treat - mean_control
+        naive_estimate = round(naive_raw if treatment_diff > 0 else -naive_raw, 2)
 
     # Human-readable irrigation labels
     irrigation_labels = {0: "flood", 1: "drip", 2: "sprinkler"}
     if treatment == "irrigation_method":
-        current_label = irrigation_labels.get(control_val, str(control_val))
+        current_label  = irrigation_labels.get(control_val, str(control_val))
         proposed_label = irrigation_labels.get(treat_val, str(treat_val))
         direction = "increase" if yield_delta > 0 else "decrease"
+        bias = round(naive_estimate - yield_delta, 1)
         explanation = (
             f"DoWhy backdoor adjustment (linear regression) estimates that switching "
-            f"from {current_label} irrigation to {proposed_label} irrigation will "
-            f"{direction} yield by {abs(yield_delta):.1f} kg/ha (ATE), "
-            f"translating to a profit change of Rs {profit_delta:+,.0f}/ha "
-            f"at Rs 22/kg price. Confounders controlled: sowing_week_offset, "
-            f"rainfall_mm, soil_quality."
+            f"from {current_label} to {proposed_label} irrigation will "
+            f"{direction} yield by {abs(yield_delta):.1f} kg/ha (ATE). "
+            f"The naive correlation gives {naive_estimate:+.1f} kg/ha "
+            f"({'+' if bias>=0 else ''}{bias:.1f} kg/ha confounding bias from soil quality "
+            f"and rainfall: richer farms adopt drip AND have higher yields independently). "
+            f"Profit change: Rs {profit_delta:+,.0f}/ha at Rs 22/kg. "
+            f"Confounders controlled: soil_quality, rainfall_mm, sowing_weeks_late."
         )
     else:
         direction = "increase" if yield_delta > 0 else "decrease"
+        bias = round(naive_estimate - yield_delta, 1)
+        weeks_late = treat_val - control_val
         explanation = (
-            f"DoWhy backdoor adjustment estimates that changing sowing_week_offset "
-            f"from {control_val} to {treat_val} weeks will {direction} yield by "
-            f"{abs(yield_delta):.1f} kg/ha (ATE), translating to a profit change "
-            f"of Rs {profit_delta:+,.0f}/ha. "
+            f"DoWhy backdoor adjustment estimates that sowing {weeks_late} week(s) late "
+            f"(sowing_weeks_late {control_val} -> {treat_val}) will {direction} yield by "
+            f"{abs(yield_delta):.1f} kg/ha (ATE; structural truth: {-120*weeks_late} kg/ha). "
+            f"Naive correlation: {naive_estimate:+.1f} kg/ha "
+            f"(confounding bias: {'+' if bias>=0 else ''}{bias:.1f} kg/ha). "
+            f"Profit change: Rs {profit_delta:+,.0f}/ha. "
             f"Confounders controlled: irrigation_method, rainfall_mm, soil_quality."
         )
 
     projected_delta: Dict[str, Any] = {
-        "treatment": treatment,
-        "control_value": control_val,
-        "treatment_value": treat_val,
-        "yield_delta_kg_ha": yield_delta,
-        "profit_delta_inr_ha": profit_delta,
-        "method": "backdoor.linear_regression",
-        "causal_estimate_value": float(estimate.value),
+        "treatment":                  treatment,
+        "control_value":              control_val,
+        "treatment_value":            treat_val,
+        "yield_delta_kg_ha":          yield_delta,
+        "profit_delta_inr_ha":        profit_delta,
+        "method":                     "backdoor.linear_regression",
+        "causal_estimate_value":      causal_estimate_value,
         "naive_correlation_estimate": naive_estimate,
+        "confounding_bias_kg_ha":     round(naive_estimate - yield_delta, 2),
     }
 
     return yield_delta, profit_delta, explanation, projected_delta
