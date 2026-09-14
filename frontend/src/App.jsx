@@ -20,6 +20,9 @@ import LedgerPage from './pages/finance/LedgerPage';
 import InsuranceWarehousePage from './pages/finance/InsuranceWarehousePage';
 import SchemeDiscoveryPage from './pages/gov_compliance/SchemeDiscoveryPage';
 import DocumentVaultPage from './pages/gov_compliance/DocumentVaultPage';
+import SeasonReportPage from './pages/community/SeasonReportPage';
+import GrowerScorePage from './pages/community/GrowerScorePage';
+import FPOCommunityPage from './pages/community/FPOCommunityPage';
 
 function App() {
   const location = useLocation();
@@ -59,6 +62,9 @@ function App() {
               <NavLink to="/finance/insurance-warehouse" current={location.pathname}>Insurance</NavLink>
               <NavLink to="/gov/schemes" current={location.pathname}>Gov Schemes</NavLink>
               <NavLink to="/gov/documents" current={location.pathname}>Doc Vault</NavLink>
+              <NavLink to="/community/season-report" current={location.pathname}>Season Report</NavLink>
+              <NavLink to="/community/grower-score" current={location.pathname}>Reputation</NavLink>
+              <NavLink to="/community/fpo" current={location.pathname}>FPO Hub</NavLink>
             </div>
           </div>
         </div>
@@ -88,6 +94,9 @@ function App() {
           <Route path="/finance/insurance-warehouse" element={<InsuranceWarehousePage />} />
           <Route path="/gov/schemes" element={<SchemeDiscoveryPage />} />
           <Route path="/gov/documents" element={<DocumentVaultPage />} />
+          <Route path="/community/season-report" element={<SeasonReportPage />} />
+          <Route path="/community/grower-score" element={<GrowerScorePage />} />
+          <Route path="/community/fpo" element={<FPOCommunityPage />} />
         </Routes>
       </main>
     </div>
