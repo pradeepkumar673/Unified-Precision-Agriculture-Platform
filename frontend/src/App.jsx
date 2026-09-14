@@ -1,6 +1,9 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import FarmProfilePage from './pages/farm/FarmProfilePage';
 import FieldBoundaryPage from './pages/farm/FieldBoundaryPage';
+import CropPlanningPage from './pages/planning/CropPlanningPage';
+import RotationPage from './pages/planning/RotationPage';
+import VariableRatePage from './pages/planning/VariableRatePage';
 
 function App() {
   const location = useLocation();
@@ -20,7 +23,10 @@ function App() {
             </div>
             <div className="flex space-x-1">
               <NavLink to="/farm/profile" current={location.pathname}>Farm Profile</NavLink>
-              <NavLink to="/farm/boundary" current={location.pathname}>Field Boundary</NavLink>
+              <NavLink to="/farm/boundary" current={location.pathname}>Boundary</NavLink>
+              <NavLink to="/planning/crop-plan" current={location.pathname}>Crop Plan</NavLink>
+              <NavLink to="/planning/rotation" current={location.pathname}>Rotation</NavLink>
+              <NavLink to="/planning/variable-rate" current={location.pathname}>VRA</NavLink>
             </div>
           </div>
         </div>
@@ -31,6 +37,9 @@ function App() {
           <Route path="/" element={<div className="text-center py-20 text-slate-400">Welcome to the AgriPlatform. Select a module from the nav.</div>} />
           <Route path="/farm/profile" element={<FarmProfilePage />} />
           <Route path="/farm/boundary" element={<FieldBoundaryPage />} />
+          <Route path="/planning/crop-plan" element={<CropPlanningPage />} />
+          <Route path="/planning/rotation" element={<RotationPage />} />
+          <Route path="/planning/variable-rate" element={<VariableRatePage />} />
         </Routes>
       </main>
     </div>
