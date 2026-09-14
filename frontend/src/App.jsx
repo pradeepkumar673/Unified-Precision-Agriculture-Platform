@@ -9,6 +9,9 @@ import PestRiskPage from './pages/health/PestRiskPage';
 import LivestockPage from './pages/health/LivestockPage';
 import IrrigationPage from './pages/water_soil/IrrigationPage';
 import SoilHealthPage from './pages/water_soil/SoilHealthPage';
+import SatelliteVisionPage from './pages/vision_forecast/SatelliteVisionPage';
+import PriceForecastPage from './pages/vision_forecast/PriceForecastPage';
+import YieldClimatePage from './pages/vision_forecast/YieldClimatePage';
 
 function App() {
   const location = useLocation();
@@ -37,6 +40,9 @@ function App() {
               <NavLink to="/health/livestock" current={location.pathname}>Livestock</NavLink>
               <NavLink to="/water-soil/irrigation" current={location.pathname}>Irrigation</NavLink>
               <NavLink to="/water-soil/soil-map" current={location.pathname}>Soil Map</NavLink>
+              <NavLink to="/vision/satellite" current={location.pathname}>Vision AI</NavLink>
+              <NavLink to="/vision/price-forecast" current={location.pathname}>Markets</NavLink>
+              <NavLink to="/vision/yield-climate" current={location.pathname}>Yield/Risk</NavLink>
             </div>
           </div>
         </div>
@@ -55,6 +61,9 @@ function App() {
           <Route path="/health/livestock" element={<LivestockPage />} />
           <Route path="/water-soil/irrigation" element={<IrrigationPage />} />
           <Route path="/water-soil/soil-map" element={<SoilHealthPage />} />
+          <Route path="/vision/satellite" element={<SatelliteVisionPage />} />
+          <Route path="/vision/price-forecast" element={<PriceForecastPage />} />
+          <Route path="/vision/yield-climate" element={<YieldClimatePage />} />
         </Routes>
       </main>
     </div>
