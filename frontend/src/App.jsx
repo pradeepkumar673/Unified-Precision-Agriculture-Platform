@@ -15,6 +15,9 @@ import YieldClimatePage from './pages/vision_forecast/YieldClimatePage';
 import InputsMarketplacePage from './pages/marketplace/InputsMarketplacePage';
 import MachineryLaborPage from './pages/marketplace/MachineryLaborPage';
 import BuyerExchangePage from './pages/marketplace/BuyerExchangePage';
+import CreditLoanPage from './pages/finance/CreditLoanPage';
+import LedgerPage from './pages/finance/LedgerPage';
+import InsuranceWarehousePage from './pages/finance/InsuranceWarehousePage';
 
 function App() {
   const location = useLocation();
@@ -49,6 +52,9 @@ function App() {
               <NavLink to="/marketplace/inputs" current={location.pathname}>Inputs</NavLink>
               <NavLink to="/marketplace/rentals" current={location.pathname}>Rentals</NavLink>
               <NavLink to="/marketplace/exchange" current={location.pathname}>B2B Exchange</NavLink>
+              <NavLink to="/finance/credit-loan" current={location.pathname}>Credit</NavLink>
+              <NavLink to="/finance/ledger" current={location.pathname}>Ledger</NavLink>
+              <NavLink to="/finance/insurance-warehouse" current={location.pathname}>Insurance</NavLink>
             </div>
           </div>
         </div>
@@ -73,6 +79,9 @@ function App() {
           <Route path="/marketplace/inputs" element={<InputsMarketplacePage />} />
           <Route path="/marketplace/rentals" element={<MachineryLaborPage />} />
           <Route path="/marketplace/exchange" element={<BuyerExchangePage />} />
+          <Route path="/finance/credit-loan" element={<CreditLoanPage />} />
+          <Route path="/finance/ledger" element={<LedgerPage />} />
+          <Route path="/finance/insurance-warehouse" element={<InsuranceWarehousePage />} />
         </Routes>
       </main>
     </div>
