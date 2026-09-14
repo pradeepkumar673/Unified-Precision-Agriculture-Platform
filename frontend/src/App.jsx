@@ -23,6 +23,9 @@ import DocumentVaultPage from './pages/gov_compliance/DocumentVaultPage';
 import SeasonReportPage from './pages/community/SeasonReportPage';
 import GrowerScorePage from './pages/community/GrowerScorePage';
 import FPOCommunityPage from './pages/community/FPOCommunityPage';
+import VoiceAssistantPage from './pages/advanced_ai/VoiceAssistantPage';
+import CausalSimulatorPage from './pages/advanced_ai/CausalSimulatorPage';
+import FederatedLearningPage from './pages/advanced_ai/FederatedLearningPage';
 
 function App() {
   const location = useLocation();
@@ -40,7 +43,7 @@ function App() {
                 AgriPlatform
               </span>
             </div>
-            <div className="flex space-x-1 whitespace-nowrap">
+            <div className="flex space-x-1 whitespace-nowrap pb-2 mt-2">
               <NavLink to="/farm/profile" current={location.pathname}>Farm Profile</NavLink>
               <NavLink to="/farm/boundary" current={location.pathname}>Boundary</NavLink>
               <NavLink to="/planning/crop-plan" current={location.pathname}>Crop Plan</NavLink>
@@ -65,6 +68,9 @@ function App() {
               <NavLink to="/community/season-report" current={location.pathname}>Season Report</NavLink>
               <NavLink to="/community/grower-score" current={location.pathname}>Reputation</NavLink>
               <NavLink to="/community/fpo" current={location.pathname}>FPO Hub</NavLink>
+              <NavLink to="/ai/assistant" current={location.pathname}>Voice AI</NavLink>
+              <NavLink to="/ai/causal-lab" current={location.pathname}>Causal Lab</NavLink>
+              <NavLink to="/ai/federated-learning" current={location.pathname}>Fed FL</NavLink>
             </div>
           </div>
         </div>
@@ -97,6 +103,9 @@ function App() {
           <Route path="/community/season-report" element={<SeasonReportPage />} />
           <Route path="/community/grower-score" element={<GrowerScorePage />} />
           <Route path="/community/fpo" element={<FPOCommunityPage />} />
+          <Route path="/ai/assistant" element={<VoiceAssistantPage />} />
+          <Route path="/ai/causal-lab" element={<CausalSimulatorPage />} />
+          <Route path="/ai/federated-learning" element={<FederatedLearningPage />} />
         </Routes>
       </main>
     </div>
