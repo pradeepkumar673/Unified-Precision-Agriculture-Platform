@@ -1,10 +1,20 @@
 """Business logic, integrations, and credit scoring for the finance feature-group.
 
 Covers MASTER-SPEC features #46, #47, #49, #50, #54, #28.
+  #50 Credit Scoring      -- XGBoost + SHAP  (credit_xgb.pkl)
+  #28 Anomaly Detection   -- Isolation Forest (anomaly_iforest.pkl)
 """
 import io
+import os
+import pickle
 import random
+import sys
 import uuid
+from pathlib import Path
+
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+_ML_DIR = Path(__file__).resolve().parents[2] / "ml_models"
+_BE_DIR = Path(__file__).resolve().parents[2]
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -241,28 +251,18 @@ def generate_mock_enwr(facility_id: str, booking_id: uuid.UUID) -> str:
 def evaluate_loan_application(
     db: Session, farm: Farm, amount: float
 ) -> Tuple[int, bool, List[Dict[str, Any]], Dict[str, Any]]:
-    """Evaluate farm creditworthiness and generate scoring breakdown.
+    """Evaluate farm creditworthiness using the trained XGBoost credit scorer.
 
-    TODO(ml-swap): Swap rule-based credit engine with XGBoost Classifier trained on
-    historical seasonal yield, mandi price volatility, and microfinance repayment records.
+    Returns (credit_score 300-900, approved, top_factors, loan_terms).
+    Falls back to rule-based engine if model files are unavailable.
     """
-    base_score = 600
-    top_factors: List[Dict[str, Any]] = [
-        {"factor": "base_score", "impact": 600}
-    ]
-
-    # Rule 1: +50 if farm has > 2 completed crop plans
+    # ── Gather DB signals ────────────────────────────────────────────────────
     stmt_plans = select(func.count(CropPlan.id)).where(
         CropPlan.farm_id == farm.id,
         CropPlan.status == PlanStatusEnum.harvested,
     )
     harvested_count = db.execute(stmt_plans).scalar() or 0
 
-    if harvested_count >= 2:
-        base_score += 50
-        top_factors.append({"factor": "harvest_track_record", "impact": 50})
-
-    # Rule 2: +30 if no fraud flags on user transactions
     stmt_fraud = (
         select(func.count(FraudFlag.id))
         .join(Transaction, FraudFlag.transaction_id == Transaction.id)
@@ -273,29 +273,75 @@ def evaluate_loan_application(
     )
     fraud_count = db.execute(stmt_fraud).scalar() or 0
 
-    if fraud_count == 0:
-        base_score += 30
-        top_factors.append({"factor": "no_fraud_flags", "impact": 30})
-    else:
-        base_score -= 50
-        top_factors.append({"factor": "fraud_warning_history", "impact": -50})
+    stmt_tx = select(func.count(Transaction.id)).where(
+        Transaction.user_id == farm.user_id,
+    )
+    tx_count = db.execute(stmt_tx).scalar() or 0
 
-    # Rule 3: -100 if land_size_acres < 1.0
-    if farm.land_size_acres < 1.0:
-        base_score -= 100
-        top_factors.append({"factor": "marginal_land_holding", "impact": -100})
+    try:
+        sys.path.insert(0, str(_BE_DIR))
+        from train_credit_scoring import score as credit_score_fn
 
-    final_score = max(300, min(900, base_score))
-    approved = final_score >= 650
+        # Build feature dict from available DB signals
+        # Normalize to 0-1 range matching the training feature space
+        loan_size_norm = min(1.0, amount / 500000.0)   # cap at Rs 5 lakh
+        features = {
+            "crop_plan_adherence":       min(1.0, harvested_count / 5.0),
+            "yield_score":              0.6,   # neutral — no yield history available here
+            "yield_consistency":        0.6,
+            "ledger_consistency":       min(1.0, tx_count / 20.0),
+            "repayment_history":        max(0.0, 1.0 - fraud_count * 0.5),
+            "num_loans":                min(1.0, tx_count / 50.0),
+            "loan_size_norm":           loan_size_norm,
+            "income_stability":         min(1.0, farm.land_size_acres / 10.0),
+            "district_risk_score":      0.3,
+            "land_holding_ha":          farm.land_size_acres * 0.4047,
+        }
+        result      = credit_score_fn(features)
+        final_score = int(result["credit_score"])
+        approved    = result["approved"]
+
+        top_factors: List[Dict[str, Any]] = [
+            {
+                "factor":    f["label"],
+                "impact":    int(f["shap_value"] * 100),
+                "direction": f["direction"],
+            }
+            for f in result.get("top_factors", [])[:3]
+        ]
+        model_type = "xgboost_trained"
+
+    except Exception:
+        # ── Rule-based fallback ──────────────────────────────────────────────
+        base_score = 600
+        top_factors = [{"factor": "base_score", "impact": 600, "direction": "positive"}]
+
+        if harvested_count >= 2:
+            base_score += 50
+            top_factors.append({"factor": "harvest_track_record", "impact": 50, "direction": "positive"})
+        if fraud_count == 0:
+            base_score += 30
+            top_factors.append({"factor": "no_fraud_flags", "impact": 30, "direction": "positive"})
+        else:
+            base_score -= 50
+            top_factors.append({"factor": "fraud_warning_history", "impact": -50, "direction": "negative"})
+        if farm.land_size_acres < 1.0:
+            base_score -= 100
+            top_factors.append({"factor": "marginal_land_holding", "impact": -100, "direction": "negative"})
+
+        final_score = max(300, min(900, base_score))
+        approved    = final_score >= 650
+        model_type  = "rule_based_fallback"
 
     terms = None
     if approved:
         interest_rate = round(8.5 + (900 - final_score) * 0.01, 2)
         terms = {
-            "interest_rate_pct": interest_rate,
-            "tenure_months": 12,
-            "monthly_emi": round((amount * (1 + interest_rate / 100)) / 12, 2),
+            "interest_rate_pct":  interest_rate,
+            "tenure_months":      12,
+            "monthly_emi":        round((amount * (1 + interest_rate / 100)) / 12, 2),
             "collateral_required": False,
+            "model_type":         model_type,
         }
 
     return final_score, approved, top_factors, terms
@@ -352,15 +398,15 @@ def gather_claim_evidence(
 
 
 # --------------------------------------------------------------------------- #
-# #28 Anomaly Detection (Rule-based / Isolation Forest hook)
+# #28 Anomaly Detection — Isolation Forest
 # --------------------------------------------------------------------------- #
 def detect_transaction_anomaly(
     db: Session, transaction_id: uuid.UUID
 ) -> Tuple[float, bool]:
-    """Rule-based anomaly detection on transaction amounts.
+    """Detect anomalous transactions using the trained Isolation Forest model.
 
-    TODO(ml-swap): Swap with scikit-learn IsolationForest or PyOD COPOD model
-    trained on multi-dimensional transaction velocity and geolocation vectors.
+    Builds feature vector from DB transaction context and calls the trained
+    anomaly_iforest.pkl model.  Falls back to ratio heuristic if unavailable.
     """
     tx = db.execute(
         select(Transaction).where(Transaction.id == transaction_id)
@@ -369,30 +415,59 @@ def detect_transaction_anomaly(
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    # Fetch other transactions by user
-    stmt_others = select(Transaction.amount).where(
+    # Fetch user's transaction history for context features
+    stmt_others = select(Transaction.amount, Transaction.created_at).where(
         Transaction.user_id == tx.user_id,
         Transaction.id != tx.id,
-    )
-    past_amounts = db.execute(stmt_others).scalars().all()
+    ).order_by(Transaction.created_at.desc()).limit(50)
+    past_txns = db.execute(stmt_others).all()
+    past_amounts = [float(r.amount) for r in past_txns]
 
-    if past_amounts:
-        avg_amount = sum(past_amounts) / len(past_amounts)
-        ratio = round(tx.amount / max(avg_amount, 1.0), 2)
-        if tx.amount > 3.0 * avg_amount:
-            flagged = True
-            anomaly_score = ratio
+    try:
+        sys.path.insert(0, str(_BE_DIR))
+        from train_anomaly_detection import flag as anomaly_flag
+
+        avg_amount = sum(past_amounts) / len(past_amounts) if past_amounts else float(tx.amount)
+        qty_ratio  = float(tx.amount) / max(avg_amount, 1.0)
+
+        # Compute time-since-last feature
+        if past_txns:
+            last_ts = past_txns[0].created_at
+            now_ts  = tx.created_at if tx.created_at else __import__("datetime").datetime.utcnow()
+            hours_since = max(0.01, (now_ts - last_ts).total_seconds() / 3600.0)
         else:
-            flagged = False
-            anomaly_score = ratio
-    else:
-        # Single transaction baseline
-        if tx.amount > 100000.0:
-            flagged = True
-            anomaly_score = 4.5
+            hours_since = 24.0
+
+        features = {
+            "amount_rs":               float(tx.amount),
+            "quality_grade_reported":  2,
+            "time_since_last_txn_h":   hours_since,
+            "buyer_txn_frequency":     min(50.0, len(past_amounts) / max(1, 4)),
+            "farmer_txn_frequency":    min(30.0, len(past_amounts) / max(1, 8)),
+            "price_per_kg":            float(tx.amount) / 100.0,
+            "quantity_kg":             100.0,
+            "quantity_to_avg_ratio":   qty_ratio,
+            "grade_vs_history":        0.0,
+            "hour_of_day":             (tx.created_at.hour if tx.created_at else 10),
+        }
+        result       = anomaly_flag(features, model_dir=str(_ML_DIR))
+        anomaly_score = float(result["anomaly_score"])
+        flagged       = bool(result["is_anomaly"])
+        return anomaly_score, flagged
+
+    except Exception:
+        # ── Ratio-based fallback ─────────────────────────────────────────────
+        if past_amounts:
+            avg_amount    = sum(past_amounts) / len(past_amounts)
+            anomaly_score = round(float(tx.amount) / max(avg_amount, 1.0), 2)
+            flagged       = float(tx.amount) > 3.0 * avg_amount
         else:
-            flagged = False
-            anomaly_score = 1.0
+            if float(tx.amount) > 100000.0:
+                flagged = True
+                anomaly_score = 4.5
+            else:
+                flagged = False
+                anomaly_score = 1.0
 
     # Persist fraud flag record
     flag_rec = FraudFlag(

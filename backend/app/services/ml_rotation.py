@@ -64,15 +64,18 @@ def _load_model():
         return _model
 
     try:
+        import os as _os
         from stable_baselines3 import PPO
 
-        abs_path = os.path.abspath(_MODEL_PATH)
-        if not os.path.exists(abs_path + ".zip"):
+        abs_path = _os.path.abspath(_MODEL_PATH)
+        # Accept either bare path or .zip suffix
+        if not _os.path.exists(abs_path + ".zip") and not _os.path.exists(abs_path):
             raise FileNotFoundError(
                 f"RL model not found at {abs_path}.zip. "
                 "Run backend/ml/train_rl_rotation.py first."
             )
-        _model = PPO.load(abs_path)
+        # Force CPU — avoids CUDA deserialization errors on CPU-only machines
+        _model = PPO.load(abs_path, device="cpu")
         return _model
     except Exception as exc:
         raise RuntimeError(f"Failed to load RL rotation model: {exc}") from exc
@@ -86,17 +89,18 @@ def _build_obs(
     soil_organic_carbon: float,
     last_3_crops: List[str],
 ) -> np.ndarray:
-    """Convert raw inputs into the 20-dim observation vector expected by the model."""
-    obs = np.zeros(2 + 3 * N_CROPS, dtype=np.float32)
-    obs[0] = float(np.clip(soil_nitrogen / 100.0, 0.0, 1.0))
-    obs[1] = float(np.clip(soil_organic_carbon / 100.0, 0.0, 1.0))
-
-    # Normalise last_3_crops list to exactly 3 entries (pad with -1 if shorter)
-    padded = ([-1] * 3 + [CROP_IDX.get(c.lower().strip(), -1) for c in last_3_crops])[-3:]
-    for slot, crop_idx in enumerate(padded):
-        if crop_idx >= 0:
-            obs[2 + slot * N_CROPS + crop_idx] = 1.0
-
+    """Build 5-dim observation matching CropRotationEnv:
+        [soil_nitrogen/100, soil_organic_carbon/100, crop_t-3, crop_t-2, crop_t-1]
+    Crop codes are integer indices 0-5 matching CROPS list.
+    """
+    padded = ([-1] * 3 + [CROP_IDX.get(c.lower().strip(), 0) for c in last_3_crops])[-3:]
+    obs = np.array(
+        [
+            float(np.clip(soil_nitrogen / 100.0, 0.0, 1.0)),
+            float(np.clip(soil_organic_carbon / 100.0, 0.0, 1.0)),
+        ] + [float(max(0, c)) for c in padded],
+        dtype=np.float32,
+    )
     return obs
 
 
