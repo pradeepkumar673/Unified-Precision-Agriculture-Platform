@@ -18,6 +18,8 @@ import BuyerExchangePage from './pages/marketplace/BuyerExchangePage';
 import CreditLoanPage from './pages/finance/CreditLoanPage';
 import LedgerPage from './pages/finance/LedgerPage';
 import InsuranceWarehousePage from './pages/finance/InsuranceWarehousePage';
+import SchemeDiscoveryPage from './pages/gov_compliance/SchemeDiscoveryPage';
+import DocumentVaultPage from './pages/gov_compliance/DocumentVaultPage';
 
 function App() {
   const location = useLocation();
@@ -55,6 +57,8 @@ function App() {
               <NavLink to="/finance/credit-loan" current={location.pathname}>Credit</NavLink>
               <NavLink to="/finance/ledger" current={location.pathname}>Ledger</NavLink>
               <NavLink to="/finance/insurance-warehouse" current={location.pathname}>Insurance</NavLink>
+              <NavLink to="/gov/schemes" current={location.pathname}>Gov Schemes</NavLink>
+              <NavLink to="/gov/documents" current={location.pathname}>Doc Vault</NavLink>
             </div>
           </div>
         </div>
@@ -82,6 +86,8 @@ function App() {
           <Route path="/finance/credit-loan" element={<CreditLoanPage />} />
           <Route path="/finance/ledger" element={<LedgerPage />} />
           <Route path="/finance/insurance-warehouse" element={<InsuranceWarehousePage />} />
+          <Route path="/gov/schemes" element={<SchemeDiscoveryPage />} />
+          <Route path="/gov/documents" element={<DocumentVaultPage />} />
         </Routes>
       </main>
     </div>
