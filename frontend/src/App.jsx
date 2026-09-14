@@ -12,6 +12,9 @@ import SoilHealthPage from './pages/water_soil/SoilHealthPage';
 import SatelliteVisionPage from './pages/vision_forecast/SatelliteVisionPage';
 import PriceForecastPage from './pages/vision_forecast/PriceForecastPage';
 import YieldClimatePage from './pages/vision_forecast/YieldClimatePage';
+import InputsMarketplacePage from './pages/marketplace/InputsMarketplacePage';
+import MachineryLaborPage from './pages/marketplace/MachineryLaborPage';
+import BuyerExchangePage from './pages/marketplace/BuyerExchangePage';
 
 function App() {
   const location = useLocation();
@@ -43,6 +46,9 @@ function App() {
               <NavLink to="/vision/satellite" current={location.pathname}>Vision AI</NavLink>
               <NavLink to="/vision/price-forecast" current={location.pathname}>Markets</NavLink>
               <NavLink to="/vision/yield-climate" current={location.pathname}>Yield/Risk</NavLink>
+              <NavLink to="/marketplace/inputs" current={location.pathname}>Inputs</NavLink>
+              <NavLink to="/marketplace/rentals" current={location.pathname}>Rentals</NavLink>
+              <NavLink to="/marketplace/exchange" current={location.pathname}>B2B Exchange</NavLink>
             </div>
           </div>
         </div>
@@ -64,6 +70,9 @@ function App() {
           <Route path="/vision/satellite" element={<SatelliteVisionPage />} />
           <Route path="/vision/price-forecast" element={<PriceForecastPage />} />
           <Route path="/vision/yield-climate" element={<YieldClimatePage />} />
+          <Route path="/marketplace/inputs" element={<InputsMarketplacePage />} />
+          <Route path="/marketplace/rentals" element={<MachineryLaborPage />} />
+          <Route path="/marketplace/exchange" element={<BuyerExchangePage />} />
         </Routes>
       </main>
     </div>
