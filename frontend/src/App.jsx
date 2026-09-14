@@ -4,16 +4,19 @@ import FieldBoundaryPage from './pages/farm/FieldBoundaryPage';
 import CropPlanningPage from './pages/planning/CropPlanningPage';
 import RotationPage from './pages/planning/RotationPage';
 import VariableRatePage from './pages/planning/VariableRatePage';
+import DiseaseDiagnosisPage from './pages/health/DiseaseDiagnosisPage';
+import PestRiskPage from './pages/health/PestRiskPage';
+import LivestockPage from './pages/health/LivestockPage';
 
 function App() {
   const location = useLocation();
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500/30">
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 shrink-0 pr-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20">
                 A
               </div>
@@ -21,12 +24,15 @@ function App() {
                 AgriPlatform
               </span>
             </div>
-            <div className="flex space-x-1">
+            <div className="flex space-x-1 whitespace-nowrap">
               <NavLink to="/farm/profile" current={location.pathname}>Farm Profile</NavLink>
               <NavLink to="/farm/boundary" current={location.pathname}>Boundary</NavLink>
               <NavLink to="/planning/crop-plan" current={location.pathname}>Crop Plan</NavLink>
               <NavLink to="/planning/rotation" current={location.pathname}>Rotation</NavLink>
               <NavLink to="/planning/variable-rate" current={location.pathname}>VRA</NavLink>
+              <NavLink to="/health/disease" current={location.pathname}>Diagnostics</NavLink>
+              <NavLink to="/health/pest-risk" current={location.pathname}>Surveillance</NavLink>
+              <NavLink to="/health/livestock" current={location.pathname}>Livestock</NavLink>
             </div>
           </div>
         </div>
@@ -40,6 +46,9 @@ function App() {
           <Route path="/planning/crop-plan" element={<CropPlanningPage />} />
           <Route path="/planning/rotation" element={<RotationPage />} />
           <Route path="/planning/variable-rate" element={<VariableRatePage />} />
+          <Route path="/health/disease" element={<DiseaseDiagnosisPage />} />
+          <Route path="/health/pest-risk" element={<PestRiskPage />} />
+          <Route path="/health/livestock" element={<LivestockPage />} />
         </Routes>
       </main>
     </div>
