@@ -7,6 +7,8 @@ import VariableRatePage from './pages/planning/VariableRatePage';
 import DiseaseDiagnosisPage from './pages/health/DiseaseDiagnosisPage';
 import PestRiskPage from './pages/health/PestRiskPage';
 import LivestockPage from './pages/health/LivestockPage';
+import IrrigationPage from './pages/water_soil/IrrigationPage';
+import SoilHealthPage from './pages/water_soil/SoilHealthPage';
 
 function App() {
   const location = useLocation();
@@ -33,6 +35,8 @@ function App() {
               <NavLink to="/health/disease" current={location.pathname}>Diagnostics</NavLink>
               <NavLink to="/health/pest-risk" current={location.pathname}>Surveillance</NavLink>
               <NavLink to="/health/livestock" current={location.pathname}>Livestock</NavLink>
+              <NavLink to="/water-soil/irrigation" current={location.pathname}>Irrigation</NavLink>
+              <NavLink to="/water-soil/soil-map" current={location.pathname}>Soil Map</NavLink>
             </div>
           </div>
         </div>
@@ -49,6 +53,8 @@ function App() {
           <Route path="/health/disease" element={<DiseaseDiagnosisPage />} />
           <Route path="/health/pest-risk" element={<PestRiskPage />} />
           <Route path="/health/livestock" element={<LivestockPage />} />
+          <Route path="/water-soil/irrigation" element={<IrrigationPage />} />
+          <Route path="/water-soil/soil-map" element={<SoilHealthPage />} />
         </Routes>
       </main>
     </div>
