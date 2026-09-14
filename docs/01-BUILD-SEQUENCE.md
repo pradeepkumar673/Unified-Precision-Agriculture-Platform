@@ -308,14 +308,253 @@ Here is the list of endpoints currently using rule-based/heuristic placeholders,
 For each one: import the model in the relevant services/ file, replace the placeholder logic with a real model.predict() call, keep the exact same request/response shape so the frontend doesn't break, and remove the TODO comment. After each swap, re-run the same curl command from the original step and confirm the response now comes from the real model (values should look different/more varied than the old rule-based ones).
 ```
 
-### STEP 14 — Frontend (DeepSeek, one message per group — repeat for all 10 groups)
-**PASTE THIS →** (fill in <GROUP> and its endpoint list from steps 2-8 above)
-```
-Generate React (Vite + Tailwind) pages for the "<GROUP>" feature group of the agri-platform project (MASTER-SPEC.md pasted above). Here are the exact endpoints to call:
-[paste the exact endpoint list for that group from steps 2-8 above, method + path + body + response fields]
+### STEP 14 — Frontend (React + Vite + Tailwind, 10 feature groups)
+Below are the exact, paste-ready prompts for all 10 feature groups. Run them individually or in sequence to generate the complete frontend.
 
-For each POST endpoint, build a form matching its body fields exactly, submit via axios to the real path, and render the real response (no mock data anywhere). For each GET endpoint, build a list/table/card view that fetches and renders the real data on mount. Any response with a numeric score, forecast range, or time series should use a Recharts chart, not just raw numbers. Put these under src/pages/<group>/. After the code, tell me the exact <Route> entries to add to App.jsx.
+---
+
+#### STEP 14.1 — Group 1: farm
+**PASTE THIS →**
 ```
+Generate React (Vite + Tailwind CSS + Lucide Icons) pages for the "farm" feature group of the Unified Precision Agriculture Platform (MASTER-SPEC.md).
+
+Endpoints to integrate:
+- POST /api/v1/farm/profile — body: { name: str, land_size_acres: float, soil_type: enum("clay","loam","sandy","silt","black","red"), water_source: enum("borewell","canal","rainfed","pond"), latitude: float, longitude: float, equipment_owned: list[str], annual_income_range: enum("under_1L","1L_5L","5L_10L","above_10L"), crop_history: [{season, year, crop}] } → returns created Farm object with id (201 status).
+- GET /api/v1/farm/profile/{farm_id} → returns full Farm profile details.
+- PUT /api/v1/farm/profile/{farm_id} → partial update payload → returns updated Farm.
+- POST /api/v1/farm/{farm_id}/boundary — body: { gps_points: [{lat: float, lng: float}, ...] } → returns { boundary_points, zones: [{zone_id, polygon_points, soil_score, ndvi_score}] }.
+- GET /api/v1/farm/{farm_id}/zones → returns list of current zones.
+
+UI Requirements:
+1. FarmProfilePage: Glassmorphism profile card, interactive editing form, soil/water badges, crop history timeline, and quick farm switcher.
+2. FieldBoundaryPage: Interactive SVG/Canvas polygon drawer for GPS coordinates with live Shoelace area calculation in acres, and zone color mapping based on soil_score/ndvi_score.
+3. Use Lucide icons, dark/light theme accents, toast notifications for save/update operations, and axios calls to `/api/v1/farm/*`.
+
+Place code in `src/pages/farm/FarmProfilePage.jsx` and `src/pages/farm/FieldBoundaryPage.jsx`.
+Add routes in App.jsx: `/farm/profile` and `/farm/boundary`.
+```
+
+---
+
+#### STEP 14.2 — Group 2: planning
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "planning" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- POST /api/v1/planning/crop-plan — body: { farm_id: str, season: enum("kharif","rabi","zaid"), year: int } → returns { recommended_crop, recommended_variety, sowing_date, expected_investment, reasoning, confidence, model_type }.
+- GET /api/v1/planning/crop-plan/{farm_id} → returns list of past crop plans.
+- POST /api/v1/planning/rotation-plan — body: { farm_id: str, soil_nitrogen: float, soil_organic_carbon: float, last_3_crops: list[str] } → returns { next_crop, projected_profit, projected_soil_impact, model_type }.
+- POST /api/v1/planning/variety-recommendation — body: { farm_id: str, crop: str } → returns { recommended_varieties: [{name, score}] }.
+- POST /api/v1/planning/variable-rate — body: { farm_id: str, crop: str, zones: list[object] } → returns { zone_prescriptions: [{zone_id, seed_rate_kg, fertilizer_kg, pesticide_ml}], export_format: "geojson" }.
+- GET /api/v1/planning/variable-rate/{id}/export → downloads .geojson prescription file.
+
+UI Requirements:
+1. CropPlanningPage: Form with season/year selector, ML Recommendation card with AI badge (`model_type`), confidence progress ring, investment estimate, and reasoning markdown.
+2. RotationOptimizerPage: 5-season interactive RL rotation timeline, soil nitrogen/carbon sliders, and Recharts BarChart comparing projected profit vs soil health delta.
+3. VariableRatePrescriptionPage: Zone prescription matrix table with per-zone seed/fertilizer/pesticide dosage cards and one-click GeoJSON export button.
+
+Place code in `src/pages/planning/CropPlanningPage.jsx`, `src/pages/planning/RotationPage.jsx`, and `src/pages/planning/VariableRatePage.jsx`.
+Add routes in App.jsx: `/planning/crop-plan`, `/planning/rotation`, and `/planning/variable-rate`.
+```
+
+---
+
+#### STEP 14.3 — Group 3: health
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "health" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- POST /api/v1/health/disease-detect — multipart/form-data: { image: File, crop: str, farm_id: str } → returns { predicted_disease, confidence, severity: enum("low","medium","high"), treatment_recommendation, model_type }.
+- GET /api/v1/health/disease-history/{farm_id} → returns history of disease reports with image thumbnails.
+- POST /api/v1/health/weed-detect — multipart/form-data: { image: File, farm_id: str } → returns { species, confidence, herbicide, dosage_ml_per_acre, model_type }.
+- GET /api/v1/health/pest-risk-map?district={district} → returns list of [{ village_name, district, risk_score, week_of, contributing_reports_count, model_type }].
+- GET /api/v1/health/surveillance-map?district={district} → returns disease surveillance aggregation by village.
+- POST /api/v1/health/livestock — body: { farm_id: str, animal_type: enum("cow","buffalo","goat","poultry"), tag_id: str } → returns created Livestock.
+- POST /api/v1/health/livestock/{id}/health-check — multipart/form-data: { image: File } → returns { predicted_condition, confidence, vet_booking_requested, model_type }.
+- GET /api/v1/health/livestock/{id}/schedule → returns { vaccination_schedule: list, breeding_cycle: list }.
+
+UI Requirements:
+1. DiseaseDiagnosisPage: Drag-and-drop leaf image scanner with live preview, severity meter, treatment prescription card, and history gallery.
+2. WeedClassifierPage: Weed detection camera uploader, herbicide dosage calculator per acre, and spraying safety guide.
+3. PestSurveillancePage: District risk heatmap table, Recharts RadarChart/BarChart of village risk scores, and alert trigger threshold badges.
+4. LivestockHealthPage: Tagged animal registry, milk yield time-series chart, image condition scanner, and vaccination calendar schedule.
+
+Place code in `src/pages/health/DiseaseDiagnosisPage.jsx`, `src/pages/health/PestRiskPage.jsx`, and `src/pages/health/LivestockPage.jsx`.
+Add routes in App.jsx: `/health/disease`, `/health/pest-risk`, and `/health/livestock`.
+```
+
+---
+
+#### STEP 14.4 — Group 4: water_soil
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "water_soil" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- POST /api/v1/water_soil/irrigation-recommendation — body: { farm_id: str, crop: str, growth_stage: str, current_moisture_pct: float } → returns { recommended_liters_per_day, next_irrigation_date, et0, model_type }.
+- GET /api/v1/water_soil/irrigation-history/{farm_id} → returns historical irrigation schedule log.
+- POST /api/v1/water_soil/soil-map — body: { farm_id: str, sparse_readings: [{lat: float, lng: float, n: float, p: float, k: float, ph: float}, ...] } → returns interpolated 20x20 grid { grid_data: list of 400 cells with N, P, K, pH }.
+- GET /api/v1/water_soil/soil-map/{farm_id} → returns latest soil health grid.
+
+UI Requirements:
+1. IrrigationPlannerPage: Penman-Monteith ET0 gauge, daily water requirement meter in liters, soil moisture radial chart, and 7-day irrigation schedule checklist.
+2. SoilHealthGridPage: 20x20 interpolated heatmap visualizer toggleable between Nitrogen (N), Phosphorus (P), Potassium (K), and pH levels with color gradients and nutrient deficiency alerts.
+
+Place code in `src/pages/water_soil/IrrigationPage.jsx` and `src/pages/water_soil/SoilHealthPage.jsx`.
+Add routes in App.jsx: `/water-soil/irrigation` and `/water-soil/soil-map`.
+```
+
+---
+
+#### STEP 14.5 — Group 5: vision_forecast
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "vision_forecast" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- POST /api/v1/vision_forecast/stress-check — body: { farm_id: str } → returns { ndvi_value, ndwi_value, stress_level: enum("none","mild","moderate","severe"), model_type }.
+- POST /api/v1/vision_forecast/plant-count — multipart/form-data: { video: File, farm_id: str } → returns { count, gaps_detected, growth_stage, model_type }.
+- POST /api/v1/vision_forecast/grain-quality — multipart/form-data: { image: File, farm_id: str } → returns { moisture_pct, broken_pct, foreign_matter_pct, grade: enum("A","B","C"), model_type }.
+- GET /api/v1/vision_forecast/price-forecast?crop={crop}&district={district}&weeks_ahead=4 → returns { predicted_price, low_ci, high_ci, forecast_series: list, model_type }.
+- POST /api/v1/vision_forecast/yield-forecast — body: { farm_id: str, crop: str } → returns { low_kg, median_kg, high_kg, model_type }.
+- GET /api/v1/vision_forecast/climate-risk/{farm_id} → returns { drought_risk, flood_risk, heat_risk, overall_risk, model_type }.
+
+UI Requirements:
+1. SatelliteStressPage: NDVI/NDWI dual gauge, multi-band stress indicator with warning cards, and drone video plant counting uploader.
+2. MandiPriceForecastPage: Interactive Prophet forecast line chart with confidence interval shaded band (low_ci to high_ci), crop/district selector, and expected price peak dates.
+3. YieldAndClimatePage: Quantile yield forecast range (low/median/high in quintals/kg) and climate risk radar chart covering drought, flood, and extreme heat.
+4. GrainQualityAssessmentPage: Image uploader with moisture, broken grain percentage, and instant Grade A/B/C badge.
+
+Place code in `src/pages/vision_forecast/SatelliteVisionPage.jsx`, `src/pages/vision_forecast/PriceForecastPage.jsx`, and `src/pages/vision_forecast/YieldClimatePage.jsx`.
+Add routes in App.jsx: `/vision/satellite`, `/vision/price-forecast`, and `/vision/yield-climate`.
+```
+
+---
+
+#### STEP 14.6 — Group 6: marketplace
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "marketplace" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- GET /api/v1/marketplace/products?farm_id={farm_id} → returns list of [{ id, name, category, price, vendor_id, stock, ranking_score, predicted_yield_impact_score }].
+- POST /api/v1/marketplace/order — body: { farm_id: str, product_id: str, qty: int } → creates order with delivery ETA.
+- POST /api/v1/marketplace/equipment/book — body: { listing_id: str, farm_id: str, start_date: date, end_date: date } → books machinery with Haversine/OR-Tools routed ETA.
+- POST /api/v1/marketplace/labor/book — body: { listing_id: str, farm_id: str, task_type: str, date: date } → books labor gang.
+- POST /api/v1/marketplace/buyer-requirement — body: { buyer_id: str, crop: str, qty_needed_kg: float, quality_grade: str, price_offered: float } → creates requirement.
+- POST /api/v1/marketplace/exchange-match — body: { buyer_requirement_id: str } → returns { matched_farm_ids: list, aggregated_qty_kg: float, match_score: float, status: str, model_type }.
+- GET /api/v1/marketplace/delivery-status/{order_id} → returns { id, status, delivery_eta, delayed: bool }.
+- POST /api/v1/marketplace/b2b/standing-order — body: { buyer_id: str, buyer_type: enum("retail","horeca","processor"), crop: str, recurring_qty_kg: float }.
+
+UI Requirements:
+1. InputsMarketplacePage: Product catalog sorted by ML recommendation ranking, yield impact score chips, cart drawer, and instant order placement modal.
+2. MachineryAndLaborRentalPage: Equipment map/list with daily rates, date-range picker, distance ETA badge, and labor gang booking scheduler.
+3. BuyerExchangePage: Demand aggregation portal, live Learned Buyer Matching solver with matched farmer clusters, aggregate quantity progress bar, and B2B standing contracts.
+
+Place code in `src/pages/marketplace/InputsMarketplacePage.jsx`, `src/pages/marketplace/MachineryLaborPage.jsx`, and `src/pages/marketplace/BuyerExchangePage.jsx`.
+Add routes in App.jsx: `/marketplace/inputs`, `/marketplace/rentals`, and `/marketplace/exchange`.
+```
+
+---
+
+#### STEP 14.7 — Group 7: finance
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "finance" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- POST /api/v1/finance/payment/initiate — body: { related_entity_id: str, amount: float, type: enum("marketplace","rental","scheme_dbt","exchange_sale","loan_disbursement") } → returns { razorpay_order_id, checkout_url }.
+- POST /api/v1/finance/payment/webhook → Razorpay webhook handler.
+- GET /api/v1/finance/ledger/{farm_id} → returns list of transactions with status and tags.
+- GET /api/v1/finance/ledger/{farm_id}/export → downloads ledger PDF.
+- POST /api/v1/finance/warehouse/book — body: { farm_id: str, facility_id: str, qty_kg: float } → creates storage booking.
+- POST /api/v1/finance/warehouse/{booking_id}/generate-enwr → returns { e_nwr_id, loan_eligible: true, is_mock: true }.
+- POST /api/v1/finance/loan/apply — body: { farm_id: str, amount: float } → returns { credit_score: int (300-900), approved: bool, top_factors: list, terms: object, model_type }.
+- POST /api/v1/finance/insurance/claim — body: { farm_id: str, policy_id: str, loss_event_date: date, photo_paths: list[str] } → creates insurance claim.
+- GET /api/v1/finance/insurance/claim/{claim_id} → returns claim status with attached evidence.
+- POST /api/v1/finance/fraud-check — body: { transaction_id: str } → returns { anomaly_score: float, flagged: bool, model_type }.
+
+UI Requirements:
+1. CreditAndLoanPage: 300-900 credit score semicircular gauge, instant loan application form, SHAP top positive/negative decision factor horizontal bars, and terms breakdown card.
+2. TransactionLedgerPage: Escrow transaction table with status pills (pending, escrow_held, released), Razorpay checkout launcher modal, anomaly detection flag badge, and PDF statement download button.
+3. WarehouseAndInsurancePage: e-NWR electronic receipt generator for receipt financing and crop loss insurance claim filing portal with satellite evidence preview.
+
+Place code in `src/pages/finance/CreditLoanPage.jsx`, `src/pages/finance/LedgerPage.jsx`, and `src/pages/finance/InsuranceWarehousePage.jsx`.
+Add routes in App.jsx: `/finance/credit-loan`, `/finance/ledger`, and `/finance/insurance-warehouse`.
+```
+
+---
+
+#### STEP 14.8 — Group 8: gov_compliance
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Lucide Icons) pages for the "gov_compliance" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- GET /api/v1/gov/schemes/match/{farm_id} → returns matching central & state schemes (e.g. PM-KISAN, PMFBY, KCC, PM-KUSUM) with eligibility status, deadline, and benefit amount.
+- POST /api/v1/gov/documents/upload — multipart/form-data: { file: File, doc_type: enum("aadhaar","land_record","bank_passbook","insurance"), farm_id: str } → runs OCR and returns { ocr_extracted: object, document_id: str }.
+- POST /api/v1/gov/documents/{doc_id}/autofill/{scheme_id} → returns autofilled application fields matching the scheme form.
+
+UI Requirements:
+1. SchemeDiscoveryPage: Matched government schemes grid with eligibility criteria checklist, benefit amount badge in INR, countdown to deadline, and "1-Click Apply" button.
+2. DocumentVaultPage: Drag-and-drop OCR document scanner for Aadhaar / 7/12 Land Records / Bank Passbooks, displaying extracted key-value pairs side-by-side with document preview.
+3. SchemeApplicationModal: Auto-populated scheme submission form using OCR and digital farm profile data with verification confidence checkmarks.
+
+Place code in `src/pages/gov_compliance/SchemeDiscoveryPage.jsx` and `src/pages/gov_compliance/DocumentVaultPage.jsx`.
+Add routes in App.jsx: `/gov/schemes` and `/gov/documents`.
+```
+
+---
+
+#### STEP 14.9 — Group 9: community
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts) pages for the "community" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- GET /api/v1/community/alerts/{farm_id} → returns list of unread smart alerts with severity and category.
+- GET /api/v1/community/season-report/{farm_id}?season={season}&year={year} → returns { investment, income, profit, roi_pct, suggestions: list[str] }.
+- POST /api/v1/community/support-ticket — body: { farm_id: str, issue: str } → creates Digital Sakhi support ticket.
+- POST /api/v1/community/shg/create — body: { name: str, member_farm_ids: list[str] } → creates Self-Help Group.
+- POST /api/v1/community/shg/{id}/book — body: { equipment_booking_id: str, split_amounts: object } → splits rental costs across SHG members.
+- GET /api/v1/community/grower-score/{farm_id} → returns { score: int (0-100), district_percentile: int, factors: object }.
+- POST /api/v1/community/fpo/create — body: { name: str, member_farm_ids: list[str] } → creates FPO.
+- POST /api/v1/community/fpo/{id}/pool-purchase & /pool-sale — body: { item_details: object } → adds pooled bulk order.
+
+UI Requirements:
+1. SeasonReportPage: End-of-season financial & agronomic scorecard with Recharts AreaChart of income vs investment, ROI percentage indicator, and AI improvement recommendations.
+2. GrowerScoreLeaderboardPage: Grower reputation score dial (0-100), district percentile badge, and factor breakdown (ROI, payment punctuality, green practices).
+3. FPODashboardPage: Self-Help Group & FPO collective bargaining hub, bulk input buying pool tracker, and shared machinery cost split calculator.
+4. SmartAlertsTray: Real-time notification drawer for weather warnings, pest alerts, and spray windows.
+
+Place code in `src/pages/community/SeasonReportPage.jsx`, `src/pages/community/GrowerScorePage.jsx`, and `src/pages/community/FPOCommunityPage.jsx`.
+Add routes in App.jsx: `/community/season-report`, `/community/grower-score`, and `/community/fpo`.
+```
+
+---
+
+#### STEP 14.10 — Group 10: advanced_ai
+**PASTE THIS →**
+```
+Generate React (Vite + Tailwind CSS + Recharts + Lucide Icons) pages for the "advanced_ai" feature group of the Unified Precision Agriculture Platform.
+
+Endpoints to integrate:
+- POST /api/v1/advanced_ai/voice-query — multipart/form-data: { audio: File/Blob, farm_id: str } → returns { transcribed_text: str, response_text: str }.
+- POST /api/v1/advanced_ai/multimodal-query — multipart/form-data: { image: File (optional), input_text: str (optional), farm_id: str } → returns { combined_response: str, analysis: object }.
+- POST /api/v1/advanced_ai/federated/trigger-round — empty/trigger body → runs Flower FedAvg 5-round simulation and returns { round_number: int, participating_farms: list, aggregate_accuracy: float }.
+- POST /api/v1/advanced_ai/whatif-simulate — body: { farm_id: str, current_decision: object, proposed_change: object } → returns { projected_yield_delta: float, projected_profit_delta: float, causal_estimate: float, naive_correlation_estimate: float, explanation: str }.
+
+UI Requirements:
+1. VoiceAndMultimodalAssistantPage: Live microphone audio recorder with waveform visualizer, Whisper speech-to-text transcript feed, image upload preview, and conversational assistant chat bubble interface.
+2. CausalSimulatorPage: Interactive "What-If" decision lab with sliders for irrigation change, fertilizer dosage, and sowing week offset; Recharts comparison bar chart highlighting Causal DoWhy estimate vs naive correlation; and AI plain-English causal rationale.
+3. FederatedLearningMonitorPage: Live Flower FL federated simulation dashboard, per-round accuracy progression line chart across 4 edge farm nodes, privacy preservation badge, and "Trigger Training Round" button with real-time status.
+
+Place code in `src/pages/advanced_ai/VoiceAssistantPage.jsx`, `src/pages/advanced_ai/CausalSimulatorPage.jsx`, and `src/pages/advanced_ai/FederatedLearningPage.jsx`.
+Add routes in App.jsx: `/ai/assistant`, `/ai/causal-lab`, and `/ai/federated-learning`.
+```
+
 
 ### STEP 15 — Wire frontend shell (Antigravity)
 **PASTE THIS →**
