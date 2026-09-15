@@ -1,0 +1,43 @@
+{
+  "classes": [
+    "Healthy",
+    "Apple Scab",
+    "Common Rust",
+    "Black Rot",
+    "Early Blight",
+    "Late Blight",
+    "Leaf Blight",
+    "Brown Spot",
+    "Bacterial Spot",
+    "Powdery Mildew",
+    "Leaf Rust"
+  ],
+  "treatments": {
+    "Healthy": "No treatment needed. Continue regular monitoring and balanced NPK fertilization.",
+    "Apple Scab": "Apply Mancozeb 75% WP at 2.5g/litre water; remove fallen leaves to reduce inoculum.",
+    "Common Rust": "Apply Propiconazole 25% EC at 1ml/litre; plant resistant varieties next season.",
+    "Black Rot": "Remove infected berries; spray Mancozeb 75% WP at 2.5g/litre during early season.",
+    "Early Blight": "Apply Chlorothalonil 75% WP at 2g/litre; maintain adequate plant spacing for airflow.",
+    "Late Blight": "Apply Metalaxyl + Mancozeb at 2.5g/litre immediately; destroy infected plant material.",
+    "Leaf Blight": "Apply Mancozeb 75% WP at 2.5g/litre water; remove and destroy infected leaves.",
+    "Brown Spot": "Apply Propiconazole 25% EC at 1ml/litre; ensure proper potassium fertilization.",
+    "Bacterial Spot": "Apply copper oxychloride 50% WP at 3g/litre; ensure field drainage and rotate crops.",
+    "Powdery Mildew": "Spray wettable sulphur 80% WP at 2g/litre or neem oil 3ml/litre every 7 days.",
+    "Leaf Rust": "Apply Propiconazole 25% EC at 1ml/litre; avoid overhead irrigation."
+  },
+  "features": [
+    "green_ratio",
+    "brown_ratio",
+    "yellow_ratio",
+    "dark_spot_ratio",
+    "texture_std",
+    "texture_entropy",
+    "color_uniformity",
+    "lesion_area_ratio",
+    "vein_contrast",
+    "saturation_mean",
+    "brightness_mean",
+    "redness_index"
+  ],
+  "accuracy": 0.9207
+}

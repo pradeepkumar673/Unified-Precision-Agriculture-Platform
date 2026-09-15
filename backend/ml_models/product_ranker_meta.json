@@ -1,0 +1,19 @@
+{
+  "features": [
+    "product_price_norm",
+    "product_category_code",
+    "product_stock_norm",
+    "farm_soil_code",
+    "farm_land_size_acres",
+    "soil_nitrogen_norm",
+    "soil_phosphorus_norm",
+    "soil_potassium_norm",
+    "ndvi_avg",
+    "yield_history_norm",
+    "climate_risk_score",
+    "season_match"
+  ],
+  "ndcg_at_5": 0.9536,
+  "n_queries_train": 400,
+  "n_queries_test": 100
+}

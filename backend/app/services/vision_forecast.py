@@ -247,48 +247,16 @@ def count_plants_from_video(video_path: str, altitude_m: float = 60,
 # ===========================================================================
 def analyze_grain_quality(image_path: str) -> dict:
     """
-    Classify grain quality (A/B/C) using the OpenCV heuristic model.
-    The heuristic is clearly labeled as a placeholder; it will be replaced
-    by the trained MobileNetV3 model once ~30 images/class are collected.
-    (See train_grain_quality_weed.py)
+    Classify grain quality (A/B/C) using the trained GradientBoosting model
+    (grain_quality_model.pkl).  Falls back to OpenCV heuristic if unavailable.
     """
     try:
         sys.path.insert(0, str(_BE_DIR))
-        from grain_quality_heuristic import predict_heuristic
-        result = predict_heuristic(image_path, task="grain")
-
-        grade = result["predicted_class"]
-        conf  = result["confidence"]
-
-        # Map back to original contract fields
-        img  = cv2.imread(image_path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img is not None else None
-        hsv  = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  if img is not None else None
-
-        dark_ratio = 0.05
-        std_dev    = 40.0
-        if gray is not None and hsv is not None:
-            total_px   = gray.shape[0] * gray.shape[1]
-            dark_mask  = cv2.inRange(hsv, (0, 0, 0), (180, 255, 60))
-            dark_ratio = float(np.count_nonzero(dark_mask)) / total_px
-            std_dev    = float(np.std(gray))
-
-        moisture_pct      = round(min(18.0, 10.0 + dark_ratio * 20.0), 2)
-        broken_pct        = round(min(25.0, (std_dev / 255.0) * 40.0), 2)
-        foreign_matter_pct = round(min(10.0, dark_ratio * 15.0), 2)
-
-        return {
-            "moisture_pct":        moisture_pct,
-            "broken_pct":          broken_pct,
-            "foreign_matter_pct":  foreign_matter_pct,
-            "grade":               grade,
-            "confidence":          conf,
-            "model_type":          result.get("model_type", "heuristic_placeholder"),
-            "disclaimer":          result.get("disclaimer"),
-        }
-
+        from train_weed_grain_models import predict_grain_quality
+        result = predict_grain_quality(image_path)
+        return result
     except Exception:
-        # Original OpenCV fallback
+        # OpenCV fallback
         img = cv2.imread(image_path)
         if img is None:
             raise ValueError(f"Could not read image at {image_path}")

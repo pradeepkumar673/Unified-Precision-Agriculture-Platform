@@ -1,12 +1,12 @@
 """Health-group business logic.
 
 Implements MASTER-SPEC features:
-  #4  Crop Disease Detection — OpenCV colour heuristic (CNN swap ready)
-  #13 Weed Classification   — grain_quality_heuristic.predict_heuristic(task='weed')
+  #4  Crop Disease Detection — GradientBoosting on spectral features (crop_disease_model.pkl)
+  #13 Weed Classification   — GradientBoosting on texture features (weed_classifier.pkl)
   #20 Pest Outbreak Risk    — SIR simulation via pest_outbreak_sim.predict_risk()
   #51 Livestock Health      — XGBoost vitals classifier (livestock_health_xgb.pkl)
 
-All TODO(ml-swap) points replaced.  Signatures unchanged.
+All ML models are trained and wired. Heuristic fallbacks kept for robustness.
 """
 import os
 import pickle
@@ -58,39 +58,54 @@ DISEASE_TREATMENTS = {
 
 def analyze_crop_disease_image(image_path: str, crop: str) -> dict:
     """
-    TODO(ml-swap): replace this OpenCV colour heuristic with inference from
-    the trained CNN at backend/ml_models/crop_disease_model.pt (MobileNetV3).
-    Keep the return contract (predicted_disease/confidence/severity/
-    treatment_recommendation) identical.
+    Classify crop disease from a leaf image using the trained GradientBoosting
+    model (crop_disease_model.pkl).  Falls back to OpenCV colour heuristic if
+    the trained model is unavailable.
     """
-    green_ratio, brown_ratio = _color_ratios(image_path)
+    try:
+        sys.path.insert(0, str(_BE_DIR))
+        from train_crop_disease_cnn import predict as disease_predict
+        result = disease_predict(image_path)
+        # Prepend crop name to treatment recommendation
+        treatment = result.get("treatment_recommendation", "")
+        return {
+            "predicted_disease":        result["predicted_disease"],
+            "confidence":               result["confidence"],
+            "severity":                 result["severity"],
+            "treatment_recommendation": f"[{crop}] {treatment}",
+            "model_type":               result.get("model_type", "gradient_boosting_trained"),
+        }
+    except Exception:
+        # OpenCV colour-ratio heuristic fallback
+        green_ratio, brown_ratio = _color_ratios(image_path)
 
-    if green_ratio >= 0.55:
-        label, confidence = "Healthy", round(min(0.95, 0.6 + green_ratio * 0.4), 3)
-    elif brown_ratio >= 0.35:
-        label, confidence = "Leaf Blight", round(min(0.92, 0.5 + brown_ratio * 0.5), 3)
-    elif 0.20 <= brown_ratio < 0.35:
-        label, confidence = "Bacterial Spot", round(min(0.88, 0.45 + brown_ratio * 0.6), 3)
-    elif green_ratio < 0.25 and brown_ratio < 0.20:
-        label, confidence = "Powdery Mildew", round(min(0.85, 0.5 + (0.25 - green_ratio) * 1.2), 3)
-    else:
-        label, confidence = "Leaf Rust", round(min(0.80, 0.4 + brown_ratio * 0.8), 3)
+        if green_ratio >= 0.55:
+            label, confidence = "Healthy", round(min(0.95, 0.6 + green_ratio * 0.4), 3)
+        elif brown_ratio >= 0.35:
+            label, confidence = "Leaf Blight", round(min(0.92, 0.5 + brown_ratio * 0.5), 3)
+        elif 0.20 <= brown_ratio < 0.35:
+            label, confidence = "Bacterial Spot", round(min(0.88, 0.45 + brown_ratio * 0.6), 3)
+        elif green_ratio < 0.25 and brown_ratio < 0.20:
+            label, confidence = "Powdery Mildew", round(min(0.85, 0.5 + (0.25 - green_ratio) * 1.2), 3)
+        else:
+            label, confidence = "Leaf Rust", round(min(0.80, 0.4 + brown_ratio * 0.8), 3)
 
-    if label == "Healthy":
-        severity = "low"
-    elif confidence >= 0.75:
-        severity = "high"
-    elif confidence >= 0.55:
-        severity = "medium"
-    else:
-        severity = "low"
+        if label == "Healthy":
+            severity = "low"
+        elif confidence >= 0.75:
+            severity = "high"
+        elif confidence >= 0.55:
+            severity = "medium"
+        else:
+            severity = "low"
 
-    return {
-        "predicted_disease": label,
-        "confidence": confidence,
-        "severity": severity,
-        "treatment_recommendation": f"[{crop}] {DISEASE_TREATMENTS[label]}",
-    }
+        return {
+            "predicted_disease": label,
+            "confidence": confidence,
+            "severity": severity,
+            "treatment_recommendation": f"[{crop}] {DISEASE_TREATMENTS[label]}",
+            "model_type": "opencv_fallback",
+        }
 
 
 # --------------------------------------------------------------------------- #
@@ -105,18 +120,16 @@ WEED_HERBICIDES = {
 
 def analyze_weed_image(image_path: str) -> dict:
     """
-    Classify weed species using the OpenCV heuristic model
-    (grain_quality_heuristic.predict_heuristic task='weed').
-    Replace with trained MobileNetV3 once ~30 images/species are collected.
+    Classify weed species using the trained GradientBoosting model
+    (weed_classifier.pkl).  Falls back to OpenCV colour heuristic if unavailable.
     """
     try:
         sys.path.insert(0, str(_BE_DIR))
-        from grain_quality_heuristic import predict_heuristic
-        result    = predict_heuristic(image_path, task="weed")
-        species   = result["predicted_class"]
-        confidence = result["confidence"]
+        from train_weed_grain_models import predict_weed
+        result = predict_weed(image_path)
+        return result
     except Exception:
-        # Original colour-ratio fallback
+        # OpenCV colour-ratio heuristic fallback
         green_ratio, brown_ratio = _color_ratios(image_path)
         if green_ratio >= 0.5:
             species, confidence = "Grassy Weed", round(min(0.9, 0.5 + green_ratio * 0.4), 3)
@@ -126,28 +139,20 @@ def analyze_weed_image(image_path: str) -> dict:
             remainder = max(0.0, 1.0 - green_ratio - brown_ratio)
             species, confidence = "Broadleaf Weed", round(min(0.8, 0.45 + remainder * 0.3), 3)
 
-    # Map ML species names to herbicide table keys
-    _SPECIES_MAP = {
-        "Parthenium": "Broadleaf Weed",
-        "Cynodon":    "Grassy Weed",
-        "Cyperus":    "Sedge Weed",
-        "green_weed": "Broadleaf Weed",
-        "no_weed":    None,
-    }
-    herb_key = _SPECIES_MAP.get(species, species)
-    if herb_key and herb_key in WEED_HERBICIDES:
-        herbicide, base_dosage = WEED_HERBICIDES[herb_key]
-        dosage = round(base_dosage * (0.8 + confidence * 0.4), 2)
-    else:
-        herbicide, dosage = "No herbicide required", 0.0
+        herb_key = species
+        if herb_key in WEED_HERBICIDES:
+            herbicide, base_dosage = WEED_HERBICIDES[herb_key]
+            dosage = round(base_dosage * (0.8 + confidence * 0.4), 2)
+        else:
+            herbicide, dosage = "No herbicide required", 0.0
 
-    return {
-        "species":            species,
-        "confidence":         confidence,
-        "herbicide":          herbicide,
-        "dosage_ml_per_acre": dosage,
-        "model_type":         "heuristic_placeholder",
-    }
+        return {
+            "species":            species,
+            "confidence":         confidence,
+            "herbicide":          herbicide,
+            "dosage_ml_per_acre": dosage,
+            "model_type":         "opencv_fallback",
+        }
 
 
 # --------------------------------------------------------------------------- #
