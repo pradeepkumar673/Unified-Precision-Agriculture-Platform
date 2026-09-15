@@ -61,16 +61,11 @@ export default function IrrigationPage() {
   // Radial chart data for moisture
   const moistureData = [{ name: 'Moisture', value: formData.current_moisture_pct, fill: '#3b82f6' }];
 
-  // Mock 7-day schedule for UI demo based on response
-  const scheduleDates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    return {
-      date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-      requiresWater: result ? (i === 0 || i === 3 || i === 6) : false, // Just a visual mock pattern
-      liters: result ? result.recommended_liters_per_day : 0
-    };
-  });
+  const scheduleDates = result ? [{
+    date: new Date(result.next_irrigation_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    requiresWater: true,
+    liters: result.recommended_liters_per_day,
+  }] : [];
 
   return (
     <div className="space-y-6">
@@ -247,7 +242,6 @@ export default function IrrigationPage() {
   );
 }
 
-// Just a dummy icon since lucide might not export CheckCircle by default
 function CheckCircle(props) {
   return (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

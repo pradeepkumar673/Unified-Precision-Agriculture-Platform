@@ -26,28 +26,10 @@ export default function SeasonReportPage() {
       const res = await axios.get(`${API_BASE}/api/v1/community/season-report/${farmId}?season=${season}&year=${year}`);
       setReport(res.data);
     } catch (err) {
-      // Mock data for UI
-      setTimeout(() => {
-        setReport({
-          investment: 45000,
-          income: 125000,
-          profit: 80000,
-          roi_pct: 177.7,
-          suggestions: [
-            "Increase Phosphorus application during vegetative stage to boost yield by 15%.",
-            "Consider leasing harvesting equipment instead of buying to reduce fixed costs.",
-            "Water usage was 20% higher than optimal; install drip irrigation sensors."
-          ],
-          timeline: [
-            { month: 'Jun', investment: 15000, income: 0 },
-            { month: 'Jul', investment: 12000, income: 0 },
-            { month: 'Aug', investment: 8000, income: 0 },
-            { month: 'Sep', investment: 5000, income: 20000 },
-            { month: 'Oct', investment: 5000, income: 105000 }
-          ]
-        });
-        setLoading(false);
-      }, 1000);
+      setReport(null);
+      setError(err.response?.data?.detail || 'Unable to load the season report.');
+    } finally {
+      setLoading(false);
     }
   };
 

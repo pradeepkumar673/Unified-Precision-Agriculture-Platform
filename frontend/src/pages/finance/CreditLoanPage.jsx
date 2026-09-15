@@ -31,24 +31,9 @@ export default function CreditLoanPage() {
       });
       setResult(res.data);
     } catch (err) {
-      console.error(err);
-      // Fallback for demo
-      setTimeout(() => {
-        setResult({
-          credit_score: 720,
-          approved: true,
-          model_type: 'xgboost_credit_scorer',
-          top_factors: [
-            { feature: 'Historical Yield Stability', impact: 0.25 },
-            { feature: 'Timely Previous Repayments', impact: 0.15 },
-            { feature: 'High Soil Fertility Score', impact: 0.10 },
-            { feature: 'High Debt-to-Income Ratio', impact: -0.12 },
-            { feature: 'Recent Drought Event', impact: -0.08 }
-          ],
-          terms: { interest_rate: 6.5, tenure_months: 12, emi: 4316 }
-        });
-        setLoading(false);
-      }, 1500);
+      setError(err.response?.data?.detail || 'Loan application failed.');
+    } finally {
+      setLoading(false);
     }
   };
 

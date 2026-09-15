@@ -80,23 +80,9 @@ export default function LivestockPage() {
     }
   };
 
-  // Mock milk yield data for chart if none exists on the animal
-  const yieldData = selectedAnimal?.milk_yield_log?.length > 0 
-    ? selectedAnimal.milk_yield_log 
-    : [
-        { date: '1', liters: 12 },
-        { date: '2', liters: 13 },
-        { date: '3', liters: 11 },
-        { date: '4', liters: 14 },
-        { date: '5', liters: 15 },
-        { date: '6', liters: 13 },
-        { date: '7', liters: 12 },
-      ];
+  const yieldData = selectedAnimal?.milk_yield_log || [];
 
-  const schedData = selectedAnimal?.vaccination_schedule || [
-    { date: '2023-11-01', vaccine: 'FMD', status: 'completed' },
-    { date: '2024-05-01', vaccine: 'HS & BQ', status: 'pending' }
-  ];
+  const schedData = selectedAnimal?.vaccination_schedule || [];
 
   return (
     <div className="space-y-6">

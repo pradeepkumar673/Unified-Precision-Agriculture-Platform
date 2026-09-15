@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Tractor, Calendar, MapPin, Search, Navigation2, CheckCircle, Clock, Users, Wrench
@@ -14,17 +14,15 @@ export default function MachineryLaborPage() {
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [error, setError] = useState('');
 
-  // Mock data for UI
-  const machineryList = [
-    { id: 'EQ-001', name: 'John Deere 5310 Tractor', type: 'Tractor', rate: 800, distance: 4.2, eta_mins: 45, owner: 'Ramesh Singh' },
-    { id: 'EQ-002', name: 'Mahindra Combine Harvester', type: 'Harvester', rate: 2500, distance: 12.5, eta_mins: 120, owner: 'AgriRentals Ltd' },
-    { id: 'EQ-003', name: 'Boom Sprayer (200L)', type: 'Implement', rate: 400, distance: 2.1, eta_mins: 15, owner: 'Suresh Kumar' },
-  ];
+  const [machineryList, setMachineryList] = useState([]);
+  const [laborGangs, setLaborGangs] = useState([]);
 
-  const laborGangs = [
-    { id: 'LB-001', name: 'Shiva Harvest Gang', size: 10, skills: ['Harvesting', 'Sowing'], daily_rate_per_head: 350, distance: 5.5, availability: 'Available Tomorrow' },
-    { id: 'LB-002', name: 'Kisan Weeding Group', size: 5, skills: ['Weeding', 'Spraying'], daily_rate_per_head: 300, distance: 1.2, availability: 'Available Today' },
-  ];
+  useEffect(() => {
+    const endpoint = activeTab === 'machinery' ? 'equipment' : 'labor';
+    axios.get(`${API_BASE}/api/v1/marketplace/${endpoint}`)
+      .then(res => activeTab === 'machinery' ? setMachineryList(res.data) : setLaborGangs(res.data))
+      .catch(err => setError(err.response?.data?.detail || 'Unable to load rental listings.'));
+  }, [activeTab]);
 
   const handleBook = async (item) => {
     setBookingLoading(item.id);
@@ -40,15 +38,12 @@ export default function MachineryLaborPage() {
       
       setBookingSuccess({
         id: item.id,
-        name: item.name,
-        eta: res.data?.eta_mins || item.eta_mins || 'Pending'
+        name: item.equipment_type || item.skill,
+        eta: res.data?.assigned_route_eta || 'Confirmed'
       });
       setTimeout(() => setBookingSuccess(null), 5000);
     } catch (err) {
-      console.error(err);
-      // Fallback for demo
-      setBookingSuccess({ id: item.id, name: item.name, eta: item.eta_mins || 60 });
-      setTimeout(() => setBookingSuccess(null), 5000);
+      setError(err.response?.data?.detail || 'Booking failed.');
     } finally {
       setBookingLoading(null);
     }
@@ -158,20 +153,20 @@ export default function MachineryLaborPage() {
           ))}
         </div>
 
-        {/* Mock Map View */}
+        {/* Availability overview */}
         <div className="lg:col-span-1 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl min-h-[400px] relative">
           <div className="absolute inset-0 bg-slate-900/80 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30 pointer-events-none" />
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
             <MapPin className="w-12 h-12 text-slate-600 mb-3" />
-            <h3 className="text-white font-semibold mb-1">Live Equipment Map</h3>
-            <p className="text-slate-400 text-sm">Visualizing Haversine-routed available assets within 15km radius of your farm.</p>
+            <h3 className="text-white font-semibold mb-1">Available assets</h3>
+            <p className="text-slate-400 text-sm">Listings returned by the marketplace service.</p>
             <div className="mt-8 border border-amber-500/30 bg-amber-500/10 rounded-lg p-3 w-full max-w-xs text-left backdrop-blur-md">
                <div className="flex justify-between items-center text-sm">
                  <span className="text-amber-400 font-mono">My Farm</span>
                  <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                </div>
                <div className="mt-2 text-xs text-slate-300">
-                 3 {activeTab} listings nearby
+                 {items.length} {activeTab} listings available
                </div>
             </div>
           </div>

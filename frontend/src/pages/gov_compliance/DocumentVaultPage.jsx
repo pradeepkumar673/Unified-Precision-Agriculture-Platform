@@ -19,11 +19,7 @@ export default function DocumentVaultPage() {
   const [ocrResult, setOcrResult] = useState(null);
   const [error, setError] = useState('');
 
-  // Mock list of previously uploaded documents
-  const savedDocs = [
-    { id: 'DOC-101', type: 'aadhaar', date: '2023-01-15', verified: true },
-    { id: 'DOC-102', type: 'land_record', date: '2023-06-22', verified: true },
-  ];
+  const savedDocs = [];
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
@@ -49,19 +45,9 @@ export default function DocumentVaultPage() {
       const res = await axios.post(`${API_BASE}/api/v1/gov/documents/upload`, formData);
       setOcrResult(res.data.ocr_extracted);
     } catch (err) {
-      // Mock OCR response
-      setTimeout(() => {
-        let extracted = {};
-        if (docType === 'aadhaar') {
-          extracted = { "Name": "Ramesh Kumar", "Aadhaar No": "8451 9832 1234", "DOB": "1980-05-12", "Confidence": "98.5%" };
-        } else if (docType === 'land_record') {
-          extracted = { "Owner": "Ramesh Kumar", "Survey No": "45/B", "Area": "1.8 Hectares", "Village": "Shirur", "Confidence": "92.1%" };
-        } else {
-          extracted = { "Account Name": "Ramesh Kumar", "A/C No": "3456789123", "IFSC": "SBIN0001234", "Confidence": "96.4%" };
-        }
-        setOcrResult(extracted);
-        setLoading(false);
-      }, 2000);
+      setError(err.response?.data?.detail || 'OCR failed. Verify that Tesseract is installed and the document is readable.');
+    } finally {
+      setLoading(false);
     }
   };
 

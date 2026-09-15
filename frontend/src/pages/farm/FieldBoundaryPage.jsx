@@ -266,7 +266,7 @@ export default function FieldBoundaryPage() {
               <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"/> Click on the grid to drop GPS perimeter points.</li>
               <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"/> Draw at least 3 points to form a closed polygon.</li>
               <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"/> Click "Generate Zones" to run the K-Means clustering algorithm on the backend.</li>
-              <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"/> The backend will return distinct management zones based on synthetic soil & NDVI data.</li>
+              <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"/> The backend will return management zones from the available soil and NDVI readings.</li>
             </ul>
           </div>
 

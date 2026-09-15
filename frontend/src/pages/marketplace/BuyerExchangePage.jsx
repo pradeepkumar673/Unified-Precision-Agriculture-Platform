@@ -30,29 +30,17 @@ export default function BuyerExchangePage() {
     setError('');
     
     try {
-      // 1. Create requirement
       const reqPayload = {
         buyer_id: buyerId,
         ...formData,
         qty_needed_kg: parseFloat(formData.qty_needed_kg),
         price_offered: parseFloat(formData.price_offered)
       };
-      // const reqRes = await axios.post(`${API_BASE}/api/v1/marketplace/buyer-requirement`, reqPayload);
-      
-      // 2. Mocking the match call which takes the ID
-      // const matchRes = await axios.post(`${API_BASE}/api/v1/marketplace/exchange-match`, { buyer_requirement_id: reqRes.data.id });
-      
-      // Since backend might not have this fully wired yet, using a mock response based on schema
-      setTimeout(() => {
-        setMatchResult({
-          matched_farm_ids: ['FARM-101', 'FARM-105', 'FARM-210'],
-          aggregated_qty_kg: 4850,
-          match_score: 92.5,
-          status: 'PARTIAL_FILL',
-          model_type: 'gcn_bipartite_matcher'
-        });
-        setLoading(false);
-      }, 1000);
+      const reqRes = await axios.post(`${API_BASE}/api/v1/marketplace/buyer-requirement`, reqPayload);
+      const matchRes = await axios.post(`${API_BASE}/api/v1/marketplace/exchange-match`, {
+        buyer_requirement_id: reqRes.data.id
+      });
+      setMatchResult(matchRes.data);
       
     } catch (err) {
       setError('Failed to process buyer requirement match');
@@ -61,7 +49,7 @@ export default function BuyerExchangePage() {
   };
 
   // Progress calculations
-  const percentFilled = matchResult ? Math.min(100, (matchResult.aggregated_qty_kg / formData.qty_needed_kg) * 100) : 0;
+  const percentFilled = matchResult ? Math.min(100, (matchResult.aggregated_qty_kg / Number(formData.qty_needed_kg)) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -173,7 +161,7 @@ export default function BuyerExchangePage() {
                     </div>
                   </div>
                   <div className="flex justify-between text-xs mt-2">
-                    <span className="text-indigo-400 font-medium">Match Score: {matchResult.match_score}%</span>
+                    <span className="text-indigo-400 font-medium">Match Score: {(matchResult.match_score * 100).toFixed(1)}%</span>
                     <span className={`font-bold ${matchResult.status === 'PARTIAL_FILL' ? 'text-amber-400' : 'text-emerald-400'}`}>
                       {matchResult.status}
                     </span>

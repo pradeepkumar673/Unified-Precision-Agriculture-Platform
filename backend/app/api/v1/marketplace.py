@@ -33,6 +33,8 @@ from app.schemas.marketplace import (
     EquipmentBookingRead,
     ExchangeMatchRead,
     ExchangeMatchRequest,
+    EquipmentListingRead,
+    LaborListingRead,
     LaborBookingCreate,
     LaborBookingRead,
     OrderCreate,
@@ -46,6 +48,20 @@ from app.services.marketplace import (
 )
 
 router = APIRouter(prefix="/api/v1/marketplace", tags=["marketplace"])
+
+
+@router.get("/equipment", response_model=List[EquipmentListingRead])
+def get_equipment_listings(db: Session = Depends(get_db)):
+    """Return currently available equipment listings for the rental UI."""
+    return db.execute(
+        select(EquipmentListing).where(EquipmentListing.available.is_(True))
+    ).scalars().all()
+
+
+@router.get("/labor", response_model=List[LaborListingRead])
+def get_labor_listings(db: Session = Depends(get_db)):
+    """Return labor listings; availability is checked when booking."""
+    return db.execute(select(LaborListing)).scalars().all()
 
 
 # --------------------------------------------------------------------------- #

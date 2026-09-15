@@ -17,31 +17,18 @@ export default function InputsMarketplacePage() {
   
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
+  const [error, setError] = useState('');
 
   const fetchProducts = async () => {
     if (!farmId) return;
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/api/v1/marketplace/products?farm_id=${farmId}`);
-      // Fallback if empty array returned for UI demo
-      if (res.data.length === 0) {
-        setProducts([
-          { id: 'p1', name: 'Premium Urea (46% N)', category: 'Fertilizer', price: 266, vendor_id: 'v1', stock: 50, ranking_score: 9.8, predicted_yield_impact_score: 4.5 },
-          { id: 'p2', name: 'DAP (18-46-0)', category: 'Fertilizer', price: 1350, vendor_id: 'v2', stock: 200, ranking_score: 8.5, predicted_yield_impact_score: 3.2 },
-          { id: 'p3', name: 'Hybrid Bt Cotton Seeds', category: 'Seed', price: 800, vendor_id: 'v3', stock: 15, ranking_score: 9.2, predicted_yield_impact_score: 5.0 },
-          { id: 'p4', name: 'Neem Oil Pesticide (1L)', category: 'Pesticide', price: 450, vendor_id: 'v4', stock: 100, ranking_score: 7.9, predicted_yield_impact_score: 1.5 },
-        ]);
-      } else {
-        setProducts(res.data);
-      }
+      setProducts(res.data);
+      setError('');
     } catch (err) {
-      console.error(err);
-      // Fallback for demo
-      setProducts([
-        { id: 'p1', name: 'Premium Urea (46% N)', category: 'Fertilizer', price: 266, vendor_id: 'v1', stock: 50, ranking_score: 9.8, predicted_yield_impact_score: 4.5 },
-        { id: 'p2', name: 'DAP (18-46-0)', category: 'Fertilizer', price: 1350, vendor_id: 'v2', stock: 200, ranking_score: 8.5, predicted_yield_impact_score: 3.2 },
-        { id: 'p3', name: 'Hybrid Bt Cotton Seeds', category: 'Seed', price: 800, vendor_id: 'v3', stock: 15, ranking_score: 9.2, predicted_yield_impact_score: 5.0 },
-      ]);
+      setProducts([]);
+      setError(err.response?.data?.detail || 'Unable to load marketplace products.');
     } finally {
       setLoading(false);
     }
@@ -89,11 +76,7 @@ export default function InputsMarketplacePage() {
       setCart([]);
       setIsCartOpen(false);
     } catch (err) {
-      console.error(err);
-      // Fallback fake success if backend not fully up
-      setOrderSuccess({ id: 'ORD-' + Math.floor(Math.random()*10000), delivery_eta: '2 Days' });
-      setCart([]);
-      setIsCartOpen(false);
+      setError(err.response?.data?.detail || 'Order could not be created.');
     } finally {
       setOrderProcessing(false);
     }

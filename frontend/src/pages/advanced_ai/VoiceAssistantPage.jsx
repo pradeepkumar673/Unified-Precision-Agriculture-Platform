@@ -19,6 +19,8 @@ export default function VoiceAssistantPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
+  const recorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -38,19 +40,34 @@ export default function VoiceAssistantPage() {
     setImagePreview(null);
   };
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (isRecording) {
-      setIsRecording(false);
-      handleVoiceSubmit();
+      recorderRef.current?.stop();
     } else {
-      setIsRecording(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+        recorder.ondataavailable = event => audioChunksRef.current.push(event.data);
+        recorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+          const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+          setIsRecording(false);
+          handleVoiceSubmit(audioBlob);
+        };
+        recorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+      } catch {
+        setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text: 'Microphone access was denied or is unavailable.', type: 'text' }]);
+      }
     }
   };
 
-  const handleVoiceSubmit = async () => {
+  const handleVoiceSubmit = async (audioBlob) => {
     setLoading(true);
     const formData = new FormData();
-    formData.append('audio_file', new Blob(['mock audio'], { type: 'audio/webm' }));
+    formData.append('audio_file', audioBlob, 'voice.webm');
     formData.append('farm_id', farmId);
 
     try {

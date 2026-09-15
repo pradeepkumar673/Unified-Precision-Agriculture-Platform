@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { 
-  Network, Shield, Play, CheckCircle, Database
+  Network, Shield, Play, CheckCircle, Database, RefreshCw
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -12,36 +12,27 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 export default function FederatedLearningPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentRound, setCurrentRound] = useState(0);
-  const [data, setData] = useState([
-    { round: 0, global_acc: 0.65, node1_loss: 0.8, node2_loss: 0.82 }
-  ]);
+  const [data, setData] = useState([]);
+  const [error, setError] = useState('');
   const [nodes] = useState(['Farm_A (Maharashtra)', 'Farm_B (Punjab)', 'Farm_C (MP)', 'Farm_D (Karnataka)']);
 
   const triggerRound = async () => {
     if (isSimulating) return;
     setIsSimulating(true);
     
-    // Simulate 5 rounds iteratively for UI effect
-    for (let r = 1; r <= 5; r++) {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s per round
-      
-      setCurrentRound(r);
-      setData(prev => {
-        const last = prev[prev.length - 1];
-        const newAcc = Math.min(0.95, last.global_acc + (Math.random() * 0.08));
-        return [
-          ...prev, 
-          { 
-            round: r, 
-            global_acc: newAcc, 
-            node1_loss: Math.max(0.2, last.node1_loss - 0.12),
-            node2_loss: Math.max(0.2, last.node2_loss - 0.15)
-          }
-        ];
-      });
+    try {
+      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/federated/trigger-round`);
+      setCurrentRound(res.data.rounds_completed);
+      setData(res.data.round_accuracies.map((accuracy, index) => ({
+        round: index + 1,
+        global_acc: accuracy,
+      })));
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Federated training failed.');
+    } finally {
+      setIsSimulating(false);
     }
-    
-    setIsSimulating(false);
   };
 
   return (
@@ -58,6 +49,8 @@ export default function FederatedLearningPage() {
           <Shield className="w-4 h-4" /> Zero-Trust Privacy Active
         </div>
       </div>
+
+      {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">{error}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         

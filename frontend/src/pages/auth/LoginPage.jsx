@@ -16,16 +16,8 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Simulate API call delay for UI feedback
-    setTimeout(() => {
-      if (email && password) {
-        // Success
-        login('fake-jwt-token');
-      } else {
-        setError('Please enter valid credentials.');
-        setLoading(false);
-      }
-    }, 1000);
+    setError('Authentication is not configured: the backend has no login endpoint yet.');
+    setLoading(false);
   };
 
   return (

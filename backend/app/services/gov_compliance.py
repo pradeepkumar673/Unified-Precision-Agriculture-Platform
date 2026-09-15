@@ -128,6 +128,12 @@ def seed_schemes_if_empty(db: Session) -> None:
     """Insert real government scheme data if the schemes table is empty."""
     count = db.execute(select(Scheme)).scalars().first()
     if count is not None:
+        legacy_name = db.execute(
+            select(Scheme).where(Scheme.name == "PM-KISAN Samman Nidhi")
+        ).scalars().first()
+        if legacy_name is not None:
+            legacy_name.name = "PM-KISAN"
+            db.commit()
         return  # Already seeded
 
     for s in SEED_SCHEMES:
@@ -277,6 +283,10 @@ def process_document_upload(
         import pytesseract
         from PIL import Image
         import io
+
+        _tess = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        if os.path.exists(_tess):
+            pytesseract.pytesseract.tesseract_cmd = _tess
 
         img = Image.open(io.BytesIO(file_content))
         raw_text = pytesseract.image_to_string(img)

@@ -289,9 +289,9 @@ def evaluate_loan_application(
             "crop_plan_adherence":       min(1.0, harvested_count / 5.0),
             "yield_score":              0.6,   # neutral — no yield history available here
             "yield_consistency":        0.6,
-            "ledger_consistency":       min(1.0, tx_count / 20.0),
+            "txn_ledger_consistency":   min(1.0, tx_count / 20.0),
             "repayment_history":        max(0.0, 1.0 - fraud_count * 0.5),
-            "num_loans":                min(1.0, tx_count / 50.0),
+            "n_loans_taken":            min(1.0, tx_count / 50.0),
             "loan_size_norm":           loan_size_norm,
             "income_stability":         min(1.0, farm.land_size_acres / 10.0),
             "district_risk_score":      0.3,
@@ -299,7 +299,7 @@ def evaluate_loan_application(
         }
         result      = credit_score_fn(features)
         final_score = int(result["credit_score"])
-        approved    = result["approved"]
+        approved    = final_score >= 650
 
         top_factors: List[Dict[str, Any]] = [
             {
@@ -451,8 +451,9 @@ def detect_transaction_anomaly(
             "hour_of_day":             (tx.created_at.hour if tx.created_at else 10),
         }
         result       = anomaly_flag(features, model_dir=str(_ML_DIR))
-        anomaly_score = float(result["anomaly_score"])
         flagged       = bool(result["is_anomaly"])
+        model_score   = float(result["anomaly_score"])
+        anomaly_score = max(model_score, qty_ratio) if flagged else model_score
         return anomaly_score, flagged
 
     except Exception:

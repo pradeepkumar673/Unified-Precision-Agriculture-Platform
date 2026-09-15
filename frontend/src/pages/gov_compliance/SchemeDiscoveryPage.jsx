@@ -55,18 +55,9 @@ export default function SchemeDiscoveryPage() {
     setSubmitSuccess(false);
     setAutofillLoading(true);
     try {
-      // Simulate calling the autofill endpoint using the latest uploaded doc
-      // const res = await axios.post(`${API_BASE}/api/v1/gov/documents/latest/autofill/${scheme.id}`);
-      setTimeout(() => {
-        setFormData({
-          applicant_name: 'Ramesh Kumar',
-          aadhaar_num: 'XXXX-XXXX-1234',
-          farm_area_ha: 1.8,
-          bank_account: 'XXXX5678',
-          ifsc: 'SBIN0001234'
-        });
-        setAutofillLoading(false);
-      }, 1000);
+      setFormData(null);
+      setError('Upload a document in Document Vault first, then use its document ID to autofill this scheme.');
+      setAutofillLoading(false);
     } catch (err) {
       setAutofillLoading(false);
     }
@@ -74,10 +65,8 @@ export default function SchemeDiscoveryPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitSuccess(true);
-    setTimeout(() => {
-      setSelectedScheme(null);
-    }, 3000);
+    setSubmitSuccess(false);
+    setError('Government application submission is not available because no submission endpoint exists.');
   };
 
   const getDaysLeft = (dateString) => {
@@ -213,7 +202,7 @@ export default function SchemeDiscoveryPage() {
                     <CheckCircle className="w-10 h-10 text-emerald-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Application Submitted!</h3>
-                  <p className="text-slate-400">Reference ID: GOV-{Math.floor(Math.random()*1000000)}</p>
+                  <p className="text-slate-400">Application submission is unavailable until a government submission adapter is configured.</p>
                   <p className="text-sm text-slate-500 mt-4">You will receive SMS updates on your registered mobile number.</p>
                 </div>
               ) : autofillLoading ? (

@@ -27,28 +27,25 @@ export default function InsuranceWarehousePage() {
     setLoading(true);
     setError('');
     try {
-      // 1. Create booking (mock)
       const bookRes = await axios.post(`${API_BASE}/api/v1/finance/warehouse/book`, {
         farm_id: farmId, facility_id: 'FAC-77', qty_kg: qty * 100 // quintals to kg
       });
       // 2. Generate eNWR
-      const bookingId = bookRes.data?.id || 'BKG-99';
+      const bookingId = bookRes.data.id;
       const enwrRes = await axios.post(`${API_BASE}/api/v1/finance/warehouse/${bookingId}/generate-enwr`);
       setEnwr(enwrRes.data);
     } catch (err) {
-      // Mock for UI
-      setTimeout(() => {
-        setEnwr({ e_nwr_id: `eNWR-${Math.floor(Math.random()*100000)}`, loan_eligible: true, is_mock: true });
-        setLoading(false);
-      }, 1000);
+      setError(err.response?.data?.detail || 'Unable to generate the warehouse receipt.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePhotoUpload = (e) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const newPhotos = files.map(f => URL.createObjectURL(f));
-      setPhotos(prev => [...prev, ...newPhotos].slice(0, 3)); // Max 3
+      const newPhotos = files.map(file => ({ file, url: URL.createObjectURL(file) }));
+      setPhotos(prev => [...prev, ...newPhotos].slice(0, 3));
     }
   };
 
@@ -60,21 +57,14 @@ export default function InsuranceWarehousePage() {
     setLoading(true);
     setError('');
     try {
-      // Mocking multipart for simplicity in demo
       const res = await axios.post(`${API_BASE}/api/v1/finance/insurance/claim`, {
-        farm_id: farmId, policy_id: policyId, loss_event_date: new Date().toISOString().split('T')[0], photo_paths: ['path1']
+        farm_id: farmId, policy_id: policyId, loss_event_date: new Date().toISOString().split('T')[0], photo_paths: photos.map(photo => photo.file.name)
       });
       setClaimResult(res.data);
     } catch (err) {
-      setTimeout(() => {
-        setClaimResult({
-          claim_id: `CLM-${Math.floor(Math.random()*1000)}`,
-          status: 'AI_VERIFICATION_PENDING',
-          evidence_matched: true,
-          estimated_payout: 25000
-        });
-        setLoading(false);
-      }, 1500);
+      setError(err.response?.data?.detail || 'Unable to file the insurance claim.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -195,8 +185,8 @@ export default function InsuranceWarehousePage() {
                  <div>
                    <label className="block text-sm font-medium text-slate-400 mb-2">Ground Evidence (Max 3)</label>
                    <div className="flex gap-4 mb-2">
-                     {photos.map((src, i) => (
-                       <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-600"><img src={src} className="w-full h-full object-cover"/></div>
+                     {photos.map((photo, i) => (
+                       <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-600"><img src={photo.url} className="w-full h-full object-cover"/></div>
                      ))}
                      {photos.length < 3 && (
                        <button onClick={()=>fileInputRef.current.click()} className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 hover:border-pink-500 hover:text-pink-400">
@@ -237,16 +227,16 @@ export default function InsuranceWarehousePage() {
                    
                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                      <p className="text-slate-400 text-xs mb-1">Claim Reference ID</p>
-                     <p className="text-white font-mono font-medium mb-4">{claimResult.claim_id}</p>
+                     <p className="text-white font-mono font-medium mb-4">{claimResult.id}</p>
                      
                      <div className="flex justify-between items-center pt-3 border-t border-slate-700/50">
                        <span className="text-slate-400">Estimated Auto-Payout</span>
-                       <span className="text-2xl font-bold text-pink-400">₹{claimResult.estimated_payout.toLocaleString()}</span>
+                       <span className="text-slate-400">Awaiting insurer assessment</span>
                      </div>
                    </div>
                    <div className="text-center">
                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-                       <RefreshCw className="w-3 h-3 animate-spin"/> {claimResult.status.replace(/_/g, ' ')}
+                       <RefreshCw className="w-3 h-3"/> {claimResult.status.replace(/_/g, ' ')}
                      </span>
                    </div>
                  </div>

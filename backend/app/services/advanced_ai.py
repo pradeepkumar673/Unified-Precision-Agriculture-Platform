@@ -155,7 +155,17 @@ def transcribe_and_respond(
     """
     try:
         model = _load_whisper()
-        result = model.transcribe(audio_path, fp16=False)
+        audio_input = audio_path
+        if audio_path.lower().endswith(".wav"):
+            import wave
+
+            with wave.open(audio_path, "rb") as wav_file:
+                sample_width = wav_file.getsampwidth()
+                if wav_file.getnchannels() != 1 or sample_width != 2:
+                    raise ValueError("WAV input must be mono 16-bit PCM")
+                frames = wav_file.readframes(wav_file.getnframes())
+                audio_input = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+        result = model.transcribe(audio_input, fp16=False)
         text = result.get("text", "").strip()
         lang = result.get("language", "en")
     except Exception as exc:

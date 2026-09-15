@@ -25,6 +25,17 @@ wheels/
 .installed.cfg
 *.egg
 
+# Large training datasets (keep .gitkeep only)
+backend/data/*.zip
+backend/data/*.exe
+backend/data/plantvillage/
+backend/data/weed_species/
+backend/data/yolo_plants/
+backend/data/grain_quality/
+backend/data/deepweeds/
+backend/data/_extract_datasets.py
+backend/data/_organize_training_folders.py
+
 # Database & Environment
 backend/app.db
 *.db
@@ -34,6 +45,16 @@ backend/app.db
 backend/.env
 media/
 backend/media/
+
+# Local datasets and generated training outputs
+backend/data/*
+!backend/data/.gitkeep
+*.log
+.coverage
+.pytest_cache/
+
+# Temporary test uploads
+backend/test_audio.wav
 
 # Node / Frontend
 node_modules/

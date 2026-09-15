@@ -46,9 +46,8 @@ export default function PestRiskPage() {
   }));
 
   // Format data for Bar Chart (Surveillance Counts)
-  // Ensure we have some data even if backend returns empty/unmapped format
   const barData = surveillanceData.length > 0 
-    ? surveillanceData.map(d => ({ name: d.village || d.village_name || 'Unknown', cases: d.case_count || d.count || Math.floor(Math.random()*10) }))
+    ? surveillanceData.map(d => ({ name: d.village || d.village_name || 'Unknown', cases: d.case_count ?? d.count ?? 0 }))
     : riskData.map(d => ({ name: d.village_name, cases: d.contributing_reports_count }));
 
   const highRiskVillages = riskData.filter(d => d.risk_score >= 0.7);

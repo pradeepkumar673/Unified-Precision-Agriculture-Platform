@@ -12,28 +12,15 @@ export default function VariableRatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Load fake zones for demo if none exist, or fetch from farm
   const handleFetchZones = async () => {
     if (!farmId) return;
     try {
       const res = await axios.get(`${API_BASE}/api/v1/farm/${farmId}/zones`);
-      if (res.data && res.data.length > 0) {
-        setZones(res.data);
-      } else {
-        // Mock fallback if empty
-        setZones([
-          { zone_id: 'Z-1', soil_score: 0.8, ndvi_score: 0.75 },
-          { zone_id: 'Z-2', soil_score: 0.4, ndvi_score: 0.5 },
-          { zone_id: 'Z-3', soil_score: 0.6, ndvi_score: 0.65 },
-        ]);
-      }
+      setZones(res.data);
+      setError('');
     } catch (err) {
-       // Mock fallback on error
-       setZones([
-        { zone_id: 'Z-1', soil_score: 0.8, ndvi_score: 0.75 },
-        { zone_id: 'Z-2', soil_score: 0.4, ndvi_score: 0.5 },
-        { zone_id: 'Z-3', soil_score: 0.6, ndvi_score: 0.65 },
-      ]);
+      setZones([]);
+      setError(err.response?.data?.detail || 'Unable to load farm zones.');
     }
   };
 
@@ -57,14 +44,9 @@ export default function VariableRatePage() {
   };
 
   const downloadGeoJson = async () => {
-    // In a real app, hit the GET export endpoint and trigger a blob download.
-    // For demo, we just create a blob from the JSON result directly if backend isn't ready.
     try {
-      // Simulate real download endpoint hit
-      // const res = await axios.get(`${API_BASE}/api/v1/planning/variable-rate/123/export`, { responseType: 'blob' });
-      
-      const blob = new Blob([JSON.stringify(result.zone_prescriptions, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      const res = await axios.get(`${API_BASE}/api/v1/planning/variable-rate/${result.id}/export`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');
       a.href = url;
       a.download = `VRA_Prescription_${farmId}.geojson`;
@@ -73,7 +55,7 @@ export default function VariableRatePage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.detail || 'Unable to export prescription.');
     }
   };
 

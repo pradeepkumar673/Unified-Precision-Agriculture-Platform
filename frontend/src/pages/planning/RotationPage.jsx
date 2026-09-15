@@ -46,14 +46,8 @@ export default function RotationPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Mock a 5-season projection based on the single API response for UI demonstration
-  // In a real app, the API would return the 5-season plan directly.
   const chartData = result ? [
-    { season: 'Season 1', profit: result.projected_profit, soilDelta: result.projected_soil_impact },
-    { season: 'Season 2', profit: result.projected_profit * 1.05, soilDelta: result.projected_soil_impact * 0.9 },
-    { season: 'Season 3', profit: result.projected_profit * 0.95, soilDelta: result.projected_soil_impact * 1.2 },
-    { season: 'Season 4', profit: result.projected_profit * 1.1, soilDelta: result.projected_soil_impact * 0.8 },
-    { season: 'Season 5', profit: result.projected_profit * 1.15, soilDelta: result.projected_soil_impact * 1.1 },
+    { season: 'Recommended next season', profit: result.projected_profit, soilDelta: result.projected_soil_impact },
   ] : [];
 
   return (

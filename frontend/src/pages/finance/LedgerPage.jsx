@@ -14,21 +14,17 @@ export default function LedgerPage() {
   
   const [checkoutUrl, setCheckoutUrl] = useState('');
   const [fraudLoading, setFraudLoading] = useState(null);
+  const [error, setError] = useState('');
 
   const fetchLedger = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/api/v1/finance/ledger/${farmId}`);
-      if (res.data.length === 0) throw new Error('Empty');
       setTransactions(res.data);
+      setError('');
     } catch (err) {
-      // Mock data for UI
-      setTransactions([
-        { id: 'TXN-9021', date: '2023-10-15T10:30:00Z', type: 'Credit', amount: 45000, category: 'loan_disbursement', status: 'released', flagged: false },
-        { id: 'TXN-9022', date: '2023-10-16T14:20:00Z', type: 'Debit', amount: 800, category: 'rental', status: 'escrow_held', flagged: false },
-        { id: 'TXN-9023', date: '2023-10-18T09:15:00Z', type: 'Debit', amount: 25000, category: 'marketplace', status: 'pending', flagged: false },
-        { id: 'TXN-9024', date: '2023-10-19T11:45:00Z', type: 'Credit', amount: 150000, category: 'exchange_sale', status: 'released', flagged: true, anomaly_score: 0.92 },
-      ]);
+      setTransactions([]);
+      setError(err.response?.data?.detail || 'Unable to load the ledger.');
     } finally {
       setLoading(false);
     }
@@ -50,10 +46,10 @@ export default function LedgerPage() {
       if (res.data.checkout_url) {
         window.open(res.data.checkout_url, '_blank');
       } else {
-        alert('Mock Razorpay Checkout Modal Opened!');
+        setError('Razorpay did not return a checkout URL.');
       }
     } catch (err) {
-      alert('Mock Razorpay Checkout Modal Opened!');
+      setError(err.response?.data?.detail || 'Razorpay payment initialization failed.');
     }
   };
 
@@ -65,20 +61,24 @@ export default function LedgerPage() {
         t.id === txnId ? { ...t, flagged: res.data.flagged, anomaly_score: res.data.anomaly_score } : t
       ));
     } catch (err) {
-      // Mock result
-      setTimeout(() => {
-        setTransactions(prev => prev.map(t => 
-          t.id === txnId ? { ...t, flagged: false, anomaly_score: 0.12 } : t
-        ));
-      }, 1000);
+      setError(err.response?.data?.detail || 'Fraud check failed.');
     } finally {
       setFraudLoading(null);
     }
   };
 
   const downloadPDF = async () => {
-    // In real app, trigger PDF download blob.
-    alert('Mock Ledger Statement PDF Downloaded!');
+    try {
+      const res = await axios.get(`${API_BASE}/api/v1/finance/ledger/${farmId}/export`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ledger-${farmId}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Unable to download the ledger statement.');
+    }
   };
 
   const renderStatusPill = (status) => {
@@ -119,6 +119,8 @@ export default function LedgerPage() {
           </button>
         </div>
       </div>
+
+      {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">{error}</div>}
 
       <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
