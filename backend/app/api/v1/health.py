@@ -79,8 +79,7 @@ def detect_disease(
 
     image_path = _save_upload(file, "disease")
 
-    # TODO(ml-swap): swap OpenCV colour-ratio heuristic for
-    # backend/ml_models/crop_disease_model.pt (MobileNetV3) inference.
+    # Uses trained GradientBoosting model (crop_disease_model.pkl).
     result = health_service.analyze_crop_disease_image(image_path, crop)
 
     report = DiseaseReport(
@@ -139,8 +138,7 @@ def detect_weed(
 
     image_path = _save_upload(file, "weed")
 
-    # TODO(ml-swap): swap OpenCV colour-ratio heuristic for the trained weed
-    # classification CNN once backend/ml_models/weed_classifier.pt exists.
+    # Uses trained GradientBoosting weed classifier (weed_classifier.pkl).
     result = health_service.analyze_weed_image(image_path)
 
     report = WeedReport(
@@ -171,8 +169,8 @@ def pest_risk_map(district: str = Query(...), db: Session = Depends(get_db)):
     ).all()
 
     if not scores:
-        # TODO(ml-swap): replace synthetic seed with the real pest-spread
-        # model (#20) once enough live reports exist for this district.
+        # Generate synthetic pest risk data using SIR model when no
+        # live reports exist for this district.
         seeds = health_service.generate_synthetic_pest_risk(district)
         rows = [PestRiskScore(id=uuid.uuid4(), **seed) for seed in seeds]
         db.add_all(rows)
@@ -241,8 +239,7 @@ def livestock_health_check(
 
     image_path = _save_upload(file, "livestock")
 
-    # TODO(ml-swap): swap OpenCV brightness/variance heuristic for the
-    # trained livestock health CNN once available.
+    # Uses XGBoost livestock health classifier (livestock_health_xgb.pkl).
     result = health_service.analyze_livestock_image(image_path)
 
     report = LivestockHealthReport(

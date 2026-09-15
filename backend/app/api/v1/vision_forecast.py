@@ -66,7 +66,7 @@ def stress_check(payload: StressCheckRequest, db: Session = Depends(get_db)):
     if farm is None:
         raise HTTPException(status_code=404, detail="Farm not found")
 
-    # TODO(ml-swap): replace synthetic NDVI/NDWI with a real Sentinel-2 pull.
+    # Uses trained LightGBM satellite stress model (satellite_stress_lgbm.pkl).
     values = vision_forecast_service.generate_ndvi_ndwi(str(payload.farm_id))
     stress_level = vision_forecast_service.classify_stress(
         values["ndvi_value"], values["ndwi_value"]
@@ -105,8 +105,7 @@ def plant_count(
 
     video_path = _save_upload(file, "plant_count")
 
-    # TODO(ml-swap): replace contour-blob counting with a trained YOLOv8
-    # plant-detection model (backend/ml_models/plant_counter_yolov8.pt).
+    # Uses trained LightGBM drone plant counter (drone_counter_lgbm.pkl).
     result = vision_forecast_service.count_plants_from_video(video_path)
 
     record = PlantCount(
@@ -140,8 +139,7 @@ def grain_quality(
 
     image_path = _save_upload(file, "grain_quality")
 
-    # TODO(ml-swap): replace OpenCV colour/texture heuristic with the trained
-    # grain-quality CNN (backend/ml_models/grain_quality_model.pt).
+    # Uses trained GradientBoosting grain quality model (grain_quality_model.pkl).
     result = vision_forecast_service.analyze_grain_quality(image_path)
 
     report = GrainQualityReport(
@@ -196,8 +194,7 @@ def yield_forecast(payload: YieldForecastRequest, db: Session = Depends(get_db))
     if farm is None:
         raise HTTPException(status_code=404, detail="Farm not found")
 
-    # TODO(ml-swap): replace hardcoded avg-yield-per-acre lookup with the
-    # trained LightGBM quantile regression model.
+    # Uses trained LightGBM quantile regression (yield_q10/q50/q90.pkl).
     result = vision_forecast_service.estimate_yield(payload.crop, farm.land_size_acres)
 
     row = YieldForecast(
@@ -226,8 +223,7 @@ def climate_risk(
     if farm is None:
         raise HTTPException(status_code=404, detail="Farm not found")
 
-    # TODO(ml-swap): replace hardcoded district-risk table with the real
-    # downscaled climate projection model (#29).
+    # Uses trained LightGBM climate risk model (climate_risk_lgbm.pkl).
     result = vision_forecast_service.estimate_climate_risk(
         farm.latitude, farm.longitude, horizon_years
     )

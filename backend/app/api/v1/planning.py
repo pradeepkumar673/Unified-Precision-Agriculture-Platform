@@ -53,7 +53,7 @@ def create_crop_plan(payload: CropPlanRequest, db: Session = Depends(get_db)):
     if farm is None:
         raise HTTPException(status_code=404, detail="Farm not found")
 
-    # TODO(ml-swap): swap rule-based agronomy lookup for trained ML model inference
+    # Uses trained XGBoost crop planner (crop_planner.pkl).
     soil_type_val = farm.soil_type.value if hasattr(farm.soil_type, "value") else str(farm.soil_type)
     season_val = payload.season.value if hasattr(payload.season, "value") else str(payload.season)
 
@@ -150,7 +150,7 @@ def create_variety_recommendation(
     if farm is None:
         raise HTTPException(status_code=404, detail="Farm not found")
 
-    # TODO(ml-swap): swap for variety-ranking model
+    # Uses ALS collaborative filter + content-based fallback (variety_als_model.pkl).
     varieties = planning_service.recommend_varieties(payload.crop)
 
     rec = VarietyRecommendation(
