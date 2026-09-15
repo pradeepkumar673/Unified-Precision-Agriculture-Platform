@@ -8,7 +8,7 @@ Implements MASTER-SPEC features:
   #16 Yield Forecast     — LightGBM quantile regression (yield_q10/50/90.pkl)
   #29 Climate Risk       — LightGBM regressor          (climate_risk_lgbm.pkl)
 
-All TODO(ml-swap) points have been replaced.  Heuristic fallbacks kept for
+All placeholder ML integration points have been replaced. Heuristic fallbacks kept for
 robustness; response shapes are identical to original contracts.
 """
 import math

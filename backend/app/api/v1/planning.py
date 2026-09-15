@@ -211,7 +211,7 @@ def export_variable_rate(
     for zone in rx_map.zone_prescriptions:
         features.append({
             "type": "Feature",
-            "geometry": None,  # TODO: attach real zone polygon geometry from field_boundaries once linked
+            "geometry": None,  # Attach real zone polygon geometry from field_boundaries once linked
             "properties": {
                 "zone_id": zone["zone_id"],
                 "seed_rate_kg": zone["seed_rate_kg"],

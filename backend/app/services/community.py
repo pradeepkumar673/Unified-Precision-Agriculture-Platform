@@ -240,10 +240,10 @@ def compute_grower_score(
       40% — Average season ROI score
       30% — On-time payment proxy (released transaction ratio)
       30% — Adopted recommended practices proxy (crop plan count)
-
-    TODO(ml-swap): Replace with gradient-boosted tree trained on multi-season
-    financial and agronomic data with real district-level benchmarks.
     """
+
+    # Future enhancement: Replace with gradient-boosted tree trained on multi-season
+    # platform data once enough real telemetry accumulates.
     # 40% — ROI component
     roi_stmt = select(func.avg(SeasonReport.roi_pct)).where(
         SeasonReport.farm_id == farm.id

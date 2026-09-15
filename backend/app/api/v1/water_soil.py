@@ -47,6 +47,8 @@ def irrigation_recommendation(
         growth_stage=payload.growth_stage,
         current_moisture_pct=payload.current_moisture_pct,
         land_size_acres=farm.land_size_acres,
+        lat=farm.latitude,
+        lng=farm.longitude,
     )
 
     schedule = IrrigationSchedule(
