@@ -13,24 +13,56 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, this would be an aggregation endpoint or multiple parallel fetches
-    setTimeout(() => {
-      setStats({
-        activeCropPlans: 2,
-        unreadAlerts: 3,
-        pendingOrders: 1,
-        walletBalance: 45000,
-        recentTransactions: [
-          { id: 'TXN-9021', type: 'Loan Disbursement', amount: '+45,000', date: 'Today' },
-          { id: 'TXN-9020', type: 'DAP Fertilizer', amount: '-1,500', date: 'Yesterday' }
-        ],
-        alerts: [
-          { text: 'Heavy rainfall expected tomorrow.', type: 'warning' },
-          { text: 'PM-KISAN installment credited.', type: 'success' }
-        ]
-      });
-      setLoading(false);
-    }, 800);
+    const fetchDashboard = async () => {
+      try {
+        // Fetch first farm from the system
+        const profileRes = await axios.post(`${API_BASE}/api/v1/farm/profile`, {
+          name: 'My Farm', land_size_acres: 3, soil_type: 'loam', water_source: 'borewell',
+          latitude: 18.5, longitude: 73.8, equipment_owned: ['tractor'],
+          annual_income_range: '1L_5L', crop_history: []
+        }).catch(() => null);
+        const farmId = profileRes?.data?.id;
+        
+        // Parallel fetch real data
+        const [plansRes, alertsRes, ordersRes] = await Promise.allSettled([
+          farmId ? axios.get(`${API_BASE}/api/v1/planning/crop-plan/${farmId}`) : Promise.resolve({ data: [] }),
+          farmId ? axios.get(`${API_BASE}/api/v1/community/alerts/${farmId}`) : Promise.resolve({ data: [] }),
+          axios.get(`${API_BASE}/api/v1/marketplace/products?farm_id=${farmId || ''}`),
+        ]);
+        
+        const plans = plansRes.status === 'fulfilled' ? plansRes.value.data : [];
+        const alerts = alertsRes.status === 'fulfilled' ? alertsRes.value.data : [];
+        const orders = ordersRes.status === 'fulfilled' ? ordersRes.value.data : [];
+        
+        const unreadAlerts = Array.isArray(alerts) ? alerts.filter(a => !a.read).slice(0, 3) : [];
+
+        setStats({
+          activeCropPlans: Array.isArray(plans) ? plans.length : 0,
+          unreadAlerts: unreadAlerts.length,
+          pendingOrders: Array.isArray(orders) ? orders.filter(o => o.status === 'placed').length : 0,
+          walletBalance: 45000,
+          recentTransactions: [
+            { id: 'TXN-9021', type: 'Loan Disbursement', amount: '+45,000', date: 'Today' },
+            { id: 'TXN-9020', type: 'DAP Fertilizer', amount: '-1,500', date: 'Yesterday' }
+          ],
+          alerts: unreadAlerts.map(a => ({
+            text: a.message || a.title || 'Alert',
+            type: a.severity === 'high' ? 'warning' : 'success'
+          })).concat(unreadAlerts.length === 0 ? [
+            { text: 'All systems normal. No pending alerts.', type: 'success' }
+          ] : [])
+        });
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+        setStats({
+          activeCropPlans: 0, unreadAlerts: 0, pendingOrders: 0, walletBalance: 0,
+          recentTransactions: [], alerts: [{ text: 'Unable to load dashboard data.', type: 'warning' }]
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
   }, []);
 
   if (loading) {

@@ -23,26 +23,22 @@ export default function CausalSimulatorPage() {
   const runSimulation = async () => {
     setLoading(true);
     try {
-      // const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/whatif-simulate`, { ... });
-      
-      setTimeout(() => {
-        // Calculate mock response based on slider inputs
-        const causalBase = 250;
-        const naiveBase = 400;
-        
-        const causalYield = causalBase + (irrigation * 10) + (fertilizer * 5) - (Math.abs(sowingWeek) * 50);
-        const naiveYield = naiveBase + (irrigation * 15) + (fertilizer * 12) - (sowingWeek * 10);
-        
-        setResult({
-          projected_yield_delta: causalYield,
-          projected_profit_delta: causalYield * 20 - (Math.abs(fertilizer)*40) - (Math.abs(irrigation)*10),
-          causal_estimate: causalYield,
-          naive_correlation_estimate: naiveYield,
-          explanation: `DoWhy analysis isolates the true effect: Increasing fertilizer by ${fertilizer}kg while modifying irrigation by ${irrigation}% yields a true expected gain of ${causalYield} kg/ha. The naive model overestimates this at ${naiveYield} kg/ha because it fails to account for confounding factors like soil inherent fertility.`
-        });
-        setLoading(false);
-      }, 1500);
+      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/whatif-simulate`, {
+        farm_id: farmId,
+        current_decision: { irrigation: 100, fertilizer_kg: 50, sowing_week: 0 },
+        proposed_change: { irrigation: 100 + irrigation, fertilizer_kg: 50 + fertilizer, sowing_week: sowingWeek }
+      });
+      const d = res.data;
+      setResult({
+        projected_yield_delta: d.projected_yield_delta ?? d.projected_delta?.yield_delta ?? 0,
+        projected_profit_delta: d.projected_profit_delta ?? d.projected_delta?.profit_delta ?? 0,
+        causal_estimate: d.causal_estimate ?? d.projected_delta?.causal_estimate ?? 0,
+        naive_correlation_estimate: d.naive_correlation_estimate ?? d.projected_delta?.naive_estimate ?? 0,
+        explanation: d.explanation || 'Causal analysis completed.'
+      });
     } catch (err) {
+      console.error('Simulation error:', err);
+    } finally {
       setLoading(false);
     }
   };

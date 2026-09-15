@@ -66,7 +66,7 @@ export default function LivestockPage() {
     setAnalyzing(true);
     
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
 
     try {
       const res = await axios.post(`${API_BASE}/api/v1/health/livestock/${selectedAnimal.id}/health-check`, formData, {

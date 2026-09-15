@@ -167,10 +167,8 @@ def price_forecast(
     weeks_ahead: int = Query(4, ge=1, le=52),
     db: Session = Depends(get_db),
 ):
-    # TODO(ml-swap): replace synthetic history + linear-trend/MA model with
-    # the trained Prophet model (backend/ml_models/price_forecast_<crop>.pkl).
-    history = vision_forecast_service.generate_synthetic_price_history(crop, district)
-    result = vision_forecast_service.forecast_price(history, weeks_ahead)
+    # Use the trained Prophet model (or linear-trend fallback)
+    result = vision_forecast_service.forecast_price(crop, district, weeks_ahead)
 
     row = PriceForecast(
         id=uuid.uuid4(),

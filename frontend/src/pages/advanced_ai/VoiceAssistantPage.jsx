@@ -49,22 +49,21 @@ export default function VoiceAssistantPage() {
 
   const handleVoiceSubmit = async () => {
     setLoading(true);
-    // Mocking voice recording payload
     const formData = new FormData();
-    formData.append('audio', new Blob(['mock audio'], { type: 'audio/webm' }));
+    formData.append('audio_file', new Blob(['mock audio'], { type: 'audio/webm' }));
     formData.append('farm_id', farmId);
 
     try {
-      // const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/voice-query`, formData);
-      setTimeout(() => {
-        setMessages(prev => [
-          ...prev, 
-          { id: Date.now(), sender: 'user', text: '"What fertilizer should I use for yellowing wheat leaves?"', type: 'voice' },
-          { id: Date.now()+1, sender: 'bot', text: 'Based on your voice query, yellowing leaves in wheat often indicate a Nitrogen deficiency. Given your last soil test showed low N levels, I recommend applying 25kg/acre of Urea.', type: 'text' }
-        ]);
-        setLoading(false);
-      }, 2000);
+      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/voice-query`, formData);
+      const d = res.data;
+      setMessages(prev => [
+        ...prev, 
+        { id: Date.now(), sender: 'user', text: `"${d.transcribed_text || 'Voice query sent'}"`, type: 'voice' },
+        { id: Date.now()+1, sender: 'bot', text: d.response_text || 'I processed your voice query. Please try again with clearer audio.', type: 'text' }
+      ]);
     } catch (err) {
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text: 'Voice processing failed. Please try again.', type: 'text' }]);
+    } finally {
       setLoading(false);
     }
   };
@@ -86,28 +85,26 @@ export default function VoiceAssistantPage() {
     setLoading(true);
 
     const formData = new FormData();
-    if (imageFile) formData.append('image', imageFile);
+    if (imageFile) formData.append('image_file', imageFile);
     formData.append('input_text', inputText);
     formData.append('farm_id', farmId);
 
     try {
-      // const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/multimodal-query`, formData);
-      setTimeout(() => {
-        setMessages(prev => [
-          ...prev, 
-          { 
-            id: Date.now()+1, 
-            sender: 'bot', 
-            text: imageFile 
-              ? 'I analyzed the image you uploaded. It appears to show early signs of Leaf Rust. I recommend a preventative fungicide spray like Propiconazole.' 
-              : 'I have checked your farm profile. Your current crop plan looks optimal for the upcoming weather.', 
-            type: 'text' 
-          }
-        ]);
-        removeImage();
-        setLoading(false);
-      }, 1500);
+      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/multimodal-query`, formData);
+      const d = res.data;
+      setMessages(prev => [
+        ...prev, 
+        { 
+          id: Date.now()+1, 
+          sender: 'bot', 
+          text: d.combined_response || 'I processed your query. Please provide more context for a better response.', 
+          type: 'text' 
+        }
+      ]);
+      removeImage();
     } catch (err) {
+      setMessages(prev => [...prev, { id: Date.now()+1, sender: 'bot', text: 'Query processing failed. Please try again.', type: 'text' }]);
+      removeImage();
       setLoading(false);
     }
   };

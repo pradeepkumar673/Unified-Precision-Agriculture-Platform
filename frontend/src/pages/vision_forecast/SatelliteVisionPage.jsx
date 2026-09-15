@@ -66,11 +66,11 @@ export default function SatelliteVisionPage() {
     
     try {
       if (activeTab === 'drone') {
-        formData.append('video', file);
+        formData.append('file', file);
         const res = await axios.post(`${API_BASE}/api/v1/vision_forecast/plant-count`, formData);
         setDroneResult(res.data);
       } else if (activeTab === 'grain') {
-        formData.append('image', file);
+        formData.append('file', file);
         const res = await axios.post(`${API_BASE}/api/v1/vision_forecast/grain-quality`, formData);
         setGrainResult(res.data);
       }

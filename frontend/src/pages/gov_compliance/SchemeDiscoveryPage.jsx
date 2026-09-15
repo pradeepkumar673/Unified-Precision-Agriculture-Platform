@@ -25,15 +25,22 @@ export default function SchemeDiscoveryPage() {
     setError('');
     try {
       const res = await axios.get(`${API_BASE}/api/v1/gov/schemes/match/${farmId}`);
-      if (res.data.length === 0) throw new Error('Empty');
-      setSchemes(res.data);
+      const data = res.data;
+      const schemeList = data.eligible_schemes || data || [];
+      setSchemes(schemeList.map((s, i) => ({
+        id: s.id || `SCH-${i}`,
+        name: s.name,
+        provider: s.level === 'central' ? 'Central Govt' : 'State Govt',
+        benefit_amount: s.benefit_amount,
+        type: s.level === 'central' ? 'Central Scheme' : 'State Scheme',
+        deadline: s.deadline || '2024-12-31',
+        eligible: s.eligible !== false,
+        criteria: Array.isArray(s.criteria) ? s.criteria : Object.entries(s.criteria || {}).map(([k,v]) => `${k}: ${v}`),
+        match_score: s.match_score || 85
+      })));
     } catch (err) {
-      // Mock data for UI
-      setSchemes([
-        { id: 'SCH-PMK', name: 'PM-KISAN Samman Nidhi', provider: 'Central Govt', benefit_amount: 6000, type: 'Direct Benefit Transfer', deadline: '2023-11-30', eligible: true, criteria: ['Landholding < 2 Ha', 'Aadhaar Linked Bank'], match_score: 95 },
-        { id: 'SCH-PMFBY', name: 'Pradhan Mantri Fasal Bima Yojana', provider: 'Central/State Govt', benefit_amount: null, type: 'Crop Insurance', deadline: '2023-12-15', eligible: true, criteria: ['Kharif/Rabi Crop Sown', 'Not Defaulted on KCC'], match_score: 88 },
-        { id: 'SCH-KUSUM', name: 'PM-KUSUM Solar Pump', provider: 'State Nodal Agency', benefit_amount: 150000, type: 'Subsidy (60%)', deadline: '2023-10-31', eligible: false, criteria: ['Off-grid farm', 'Water source verified'], match_score: 45 },
-      ]);
+      console.error('Scheme fetch error:', err);
+      setError('Could not load schemes. Please check your Farm ID.');
     } finally {
       setLoading(false);
     }

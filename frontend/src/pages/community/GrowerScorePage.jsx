@@ -23,33 +23,33 @@ export default function GrowerScorePage() {
     setLoading(true);
     try {
       // 1. Fetch Grower Score
-      // const scoreRes = await axios.get(`${API_BASE}/api/v1/community/grower-score/${farmId}`);
+      const scoreRes = await axios.get(`${API_BASE}/api/v1/community/grower-score/${farmId}`);
+      const raw = scoreRes.data;
+      setScoreData({
+        score: raw.score,
+        district_percentile: raw.district_percentile,
+        factors: raw.factors ? Object.entries(raw.factors).map(([name, value]) => ({ name, value })) : [
+          { name: 'Consistently High ROI', value: raw.score },
+          { name: 'Punctual Repayments', value: Math.min(raw.score + 5, 100) },
+          { name: 'Eco/Green Practices', value: Math.max(raw.score - 10, 40) },
+          { name: 'Community SHG Activity', value: Math.max(raw.score - 20, 30) },
+        ]
+      });
       
       // 2. Fetch Alerts
-      // const alertRes = await axios.get(`${API_BASE}/api/v1/community/alerts/${farmId}`);
-
-      // Mock
-      setTimeout(() => {
-        setScoreData({
-          score: 84,
-          district_percentile: 92,
-          factors: [
-            { name: 'Consistently High ROI', value: 95 },
-            { name: 'Punctual Repayments', value: 88 },
-            { name: 'Eco/Green Practices', value: 72 },
-            { name: 'Community SHG Activity', value: 65 },
-          ]
-        });
-        
-        setAlerts([
-          { id: 1, type: 'weather', severity: 'high', title: 'Heavy Rainfall Expected', desc: '75mm rain expected in next 48 hrs. Delay urea spraying.' },
-          { id: 2, type: 'pest', severity: 'medium', title: 'Fall Armyworm Risk', desc: 'Reported in 3 neighboring farms. Preventative spray recommended.' }
-        ]);
-        
-        setLoading(false);
-      }, 1000);
-
+      const alertRes = await axios.get(`${API_BASE}/api/v1/community/alerts/${farmId}`);
+      const alertData = Array.isArray(alertRes.data) ? alertRes.data : [];
+      setAlerts(alertData.slice(0, 5).map(a => ({
+        id: a.id,
+        type: a.type || 'weather',
+        severity: a.severity || 'medium',
+        title: a.title || a.message?.substring(0, 40) || 'Alert',
+        desc: a.description || a.message || ''
+      })));
+      
+      setLoading(false);
     } catch (err) {
+      console.error('Failed to load grower data:', err);
       setLoading(false);
     }
   };

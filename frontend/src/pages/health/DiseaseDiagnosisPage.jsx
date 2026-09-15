@@ -72,7 +72,7 @@ export default function DiseaseDiagnosisPage() {
     setError('');
     
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
     formData.append('farm_id', farmId);
     if (activeTab === 'disease') formData.append('crop', crop);
 
