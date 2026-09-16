@@ -72,7 +72,7 @@ def get_products(
     farm_id: Optional[UUID] = Query(None, description="Optional Farm UUID to tailor rankings"),
     db: Session = Depends(get_db),
 ):
-    """Return all products ranked by placeholder scoring model."""
+    """Return all products ranked by trained ML scoring model (e.g. LightGBM)."""
     farm = None
     if farm_id:
         farm = db.execute(select(Farm).where(Farm.id == farm_id)).scalars().first()

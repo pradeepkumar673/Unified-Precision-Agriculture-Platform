@@ -34,6 +34,8 @@ import FPOCommunityPage from './pages/community/FPOCommunityPage';
 import VoiceAssistantPage from './pages/advanced_ai/VoiceAssistantPage';
 import CausalSimulatorPage from './pages/advanced_ai/CausalSimulatorPage';
 import FederatedLearningPage from './pages/advanced_ai/FederatedLearningPage';
+import FacilityDashboardPage from './pages/cea_iot/FacilityDashboardPage';
+import TraceabilityPage from './pages/cea_iot/TraceabilityPage';
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -105,6 +107,9 @@ function App() {
           <Route path="ai/assistant" element={<VoiceAssistantPage />} />
           <Route path="ai/causal-lab" element={<CausalSimulatorPage />} />
           <Route path="ai/federated-learning" element={<FederatedLearningPage />} />
+          
+          <Route path="iot/dashboard" element={<FacilityDashboardPage />} />
+          <Route path="iot/traceability" element={<TraceabilityPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -15,42 +15,41 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        // Fetch first farm from the system
-        const profileRes = await axios.post(`${API_BASE}/api/v1/farm/profile`, {
-          name: 'My Farm', land_size_acres: 3, soil_type: 'loam', water_source: 'borewell',
-          latitude: 18.5, longitude: 73.8, equipment_owned: ['tractor'],
-          annual_income_range: '1L_5L', crop_history: []
-        }).catch(() => null);
-        const farmId = profileRes?.data?.id;
+        const farmId = localStorage.getItem('farmId');
+        if (!farmId) throw new Error('No farm selected');
         
         // Parallel fetch real data
-        const [plansRes, alertsRes, ordersRes] = await Promise.allSettled([
-          farmId ? axios.get(`${API_BASE}/api/v1/planning/crop-plan/${farmId}`) : Promise.resolve({ data: [] }),
-          farmId ? axios.get(`${API_BASE}/api/v1/community/alerts/${farmId}`) : Promise.resolve({ data: [] }),
-          axios.get(`${API_BASE}/api/v1/marketplace/products?farm_id=${farmId || ''}`),
+        const [plansRes, alertsRes, ledgerRes, productsRes] = await Promise.allSettled([
+          axios.get(`${API_BASE}/api/v1/planning/crop-plan/${farmId}`),
+          axios.get(`${API_BASE}/api/v1/community/alerts/${farmId}`),
+          axios.get(`${API_BASE}/api/v1/finance/ledger/${farmId}`),
+          axios.get(`${API_BASE}/api/v1/marketplace/products?farm_id=${farmId}`),
         ]);
         
         const plans = plansRes.status === 'fulfilled' ? plansRes.value.data : [];
         const alerts = alertsRes.status === 'fulfilled' ? alertsRes.value.data : [];
-        const orders = ordersRes.status === 'fulfilled' ? ordersRes.value.data : [];
+        const ledger = ledgerRes.status === 'fulfilled' ? ledgerRes.value.data : [];
+        const products = productsRes.status === 'fulfilled' ? productsRes.value.data : [];
+        const released = ledger.filter(t => t.status === 'released');
+        const walletBalance = released.reduce((sum, t) => sum + Number(t.amount || 0), 0);
         
         const unreadAlerts = Array.isArray(alerts) ? alerts.filter(a => !a.read).slice(0, 3) : [];
 
         setStats({
           activeCropPlans: Array.isArray(plans) ? plans.length : 0,
           unreadAlerts: unreadAlerts.length,
-          pendingOrders: Array.isArray(orders) ? orders.filter(o => o.status === 'placed').length : 0,
-          walletBalance: 45000,
-          recentTransactions: [
-            { id: 'TXN-9021', type: 'Loan Disbursement', amount: '+45,000', date: 'Today' },
-            { id: 'TXN-9020', type: 'DAP Fertilizer', amount: '-1,500', date: 'Yesterday' }
-          ],
+          pendingOrders: ledger.filter(t => t.status === 'pending' || t.status === 'escrow_held').length,
+          walletBalance,
+          recentTransactions: ledger.slice(0, 4).map(t => ({
+            id: t.id,
+            type: t.tag || t.type,
+            amount: `${t.status === 'released' ? '+' : '-'}${Number(t.amount || 0).toLocaleString()}`,
+            date: new Date(t.created_at).toLocaleDateString(),
+          })),
           alerts: unreadAlerts.map(a => ({
             text: a.message || a.title || 'Alert',
             type: a.severity === 'high' ? 'warning' : 'success'
-          })).concat(unreadAlerts.length === 0 ? [
-            { text: 'All systems normal. No pending alerts.', type: 'success' }
-          ] : [])
+          })).concat(unreadAlerts.length === 0 ? [{ text: `No unread alerts. ${products.length} marketplace products available.`, type: 'success' }] : [])
         });
       } catch (err) {
         console.error('Dashboard fetch error:', err);

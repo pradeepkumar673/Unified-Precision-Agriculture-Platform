@@ -1,10 +1,13 @@
 """Real FAO-56 Penman-Monteith ET0 calculation + GPR soil interpolation for
 the water_soil feature-group.
 
-Uses live weather data from Open-Meteo for ET0 calculation.
+Uses live weather data from Open-Meteo for ET0 calculation, then a trained
+sklearn correction layer (irrigation_correction.pkl) for daily liters.
 """
 import math
+import sys
 from datetime import date, timedelta
+from pathlib import Path
 from typing import List
 
 import requests
@@ -140,21 +143,46 @@ def recommend_irrigation(
 ) -> dict:
     live_weather = fetch_live_weather(lat, lng)
     et0 = compute_et0_penman_monteith(date.today().timetuple().tm_yday, live_weather)
-
-    kc = GROWTH_STAGE_KC.get(growth_stage.strip().lower().replace(" ", "-"), DEFAULT_KC)
-    etc_mm = et0 * kc
-
-    multiplier, interval_days = _moisture_rule(current_moisture_pct)
-    adjusted_mm = etc_mm * multiplier
-
+    _, interval_days = _moisture_rule(current_moisture_pct)
     area_m2 = land_size_acres * _M2_PER_ACRE
-    liters_per_day = round(adjusted_mm * area_m2, 2)  # 1mm over 1m^2 == 1 litre
+    stage_key = growth_stage.strip().lower().replace(" ", "-")
+    stage_code = {"initial": 0, "development": 1, "mid-season": 2, "late-season": 3}.get(stage_key, 2)
 
-    return {
-        "recommended_liters_per_day": liters_per_day,
-        "next_irrigation_date": date.today() + timedelta(days=interval_days),
-        "et0": et0,
-    }
+    try:
+        _be = str(Path(__file__).resolve().parents[2])
+        if _be not in sys.path:
+            sys.path.insert(0, _be)
+        from train_irrigation import predict as irrigation_predict
+
+        ml = irrigation_predict(
+            temp_max_c=live_weather["t_max_c"],
+            temp_min_c=live_weather["t_min_c"],
+            humidity_pct=live_weather["rh_mean_pct"],
+            wind_speed_ms=live_weather["wind_speed_u2_ms"],
+            solar_rad_MJm2=live_weather["solar_radiation_mjm2day"],
+            elevation_m=live_weather["elevation_m"],
+            latitude_deg=live_weather["latitude_deg"],
+            day_of_year=date.today().timetuple().tm_yday,
+            soil_moisture_pct=current_moisture_pct,
+            crop_stage=stage_code,
+            field_size_m2=area_m2,
+        )
+        return {
+            "recommended_liters_per_day": float(ml["adjusted_liters_day"]),
+            "next_irrigation_date": date.today() + timedelta(days=interval_days),
+            "et0": float(ml["ET0_mm_day"]),
+            "model_type": "et0_plus_sklearn_correction",
+        }
+    except Exception:
+        kc = GROWTH_STAGE_KC.get(stage_key, DEFAULT_KC)
+        multiplier, _ = _moisture_rule(current_moisture_pct)
+        liters_per_day = round(et0 * kc * multiplier * area_m2, 2)
+        return {
+            "recommended_liters_per_day": liters_per_day,
+            "next_irrigation_date": date.today() + timedelta(days=interval_days),
+            "et0": et0,
+            "model_type": "et0_lookup_fallback",
+        }
 
 
 # --------------------------------------------------------------------------- #

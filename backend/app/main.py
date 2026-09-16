@@ -12,6 +12,8 @@ from app.api.v1.finance import router as finance_router
 from app.api.v1.gov_compliance import router as gov_compliance_router
 from app.api.v1.community import router as community_router
 from app.api.v1.advanced_ai import router as advanced_ai_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.cea_iot import router as cea_iot_router
 from app.core.db import Base, engine
 
 app = FastAPI(
@@ -32,6 +34,7 @@ app.add_middleware(
 # Dev convenience so uvicorn boots straight into a working DB.
 Base.metadata.create_all(bind=engine)
 
+app.include_router(auth_router)
 app.include_router(farm_router)
 app.include_router(planning_router)
 app.include_router(health_router)
@@ -42,6 +45,7 @@ app.include_router(finance_router)
 app.include_router(gov_compliance_router)
 app.include_router(community_router)
 app.include_router(advanced_ai_router)
+app.include_router(cea_iot_router)
 
 
 @app.get("/health")

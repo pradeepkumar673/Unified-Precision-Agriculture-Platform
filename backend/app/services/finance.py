@@ -69,6 +69,12 @@ def initiate_razorpay_order(
     db.commit()
     db.refresh(tx)
 
+    if not settings.RAZORPAY_KEY_ID or settings.RAZORPAY_KEY_ID == "rzp_test_mock":
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "Razorpay keys not configured", "is_mock": True},
+        )
+
     try:
         client = razorpay.Client(
             auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -281,20 +287,30 @@ def evaluate_loan_application(
     try:
         sys.path.insert(0, str(_BE_DIR))
         from train_credit_scoring import score as credit_score_fn
+        from app.services.vision_forecast import estimate_climate_risk, estimate_yield
 
-        # Build feature dict from available DB signals
-        # Normalize to 0-1 range matching the training feature space
-        loan_size_norm = min(1.0, amount / 500000.0)   # cap at Rs 5 lakh
+        # Get real climate risk
+        climate_res = estimate_climate_risk(farm.latitude, farm.longitude, horizon_years=1)
+        # We can map overall_risk to district_risk_score (0-1)
+        district_risk_score = climate_res.get("overall_risk", 0.3)
+        
+        # Get real yield prediction to derive yield_score
+        # We assume a default crop "rice" if no plan is found
+        yield_res = estimate_yield("rice", farm.land_size_acres)
+        # Yield score can be approximated by comparing median to a baseline (e.g., 2000kg/acre)
+        yield_score = min(1.0, max(0.0, yield_res["median_kg"] / (farm.land_size_acres * 2500)))
+
+        loan_size_norm = min(1.0, amount / 500000.0)
         features = {
-            "crop_plan_adherence":       min(1.0, harvested_count / 5.0),
-            "yield_score":              0.6,   # neutral — no yield history available here
-            "yield_consistency":        0.6,
+            "crop_plan_adherence":      min(1.0, harvested_count / 5.0),
+            "yield_score":              yield_score,
+            "yield_consistency":        0.6,  # Still hard to compute without historical array
             "txn_ledger_consistency":   min(1.0, tx_count / 20.0),
             "repayment_history":        max(0.0, 1.0 - fraud_count * 0.5),
-            "n_loans_taken":            min(1.0, tx_count / 50.0),
+            "n_loans_taken":            min(15, tx_count // 5),
             "loan_size_norm":           loan_size_norm,
             "income_stability":         min(1.0, farm.land_size_acres / 10.0),
-            "district_risk_score":      0.3,
+            "district_risk_score":      district_risk_score,
             "land_holding_ha":          farm.land_size_acres * 0.4047,
         }
         result      = credit_score_fn(features)

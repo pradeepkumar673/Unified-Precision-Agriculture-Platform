@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, date
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 from app.core.db import Base, engine, SessionLocal
+from app.core.security import hash_password
 from app.models import (
     User, UserRole, Farm, SoilType, WaterSource, AnnualIncomeRange, FieldBoundary,
     CropPlan, SeasonEnum, PlanStatusEnum, RotationPlan, VarietyRecommendation, PrescriptionMap,
@@ -33,9 +34,40 @@ def seed():
     db = SessionLocal()
 
     try:
-        existing = db.query(User).first()
-        if existing:
-            print("Database already seeded. Skipping.")
+        demo = db.query(User).filter(User.email == "demo@agri.test").first()
+        if demo is None:
+            demo = db.query(User).filter(User.email == "ramesh@example.com").first()
+            if demo is None:
+                demo = db.query(User).filter(User.role == UserRole.farmer).order_by(User.created_at).first()
+            if demo is not None:
+                demo.email = "demo@agri.test"
+        if demo:
+            demo.hashed_password = hash_password("demo1234")
+            demo.full_name = "Demo Farmer"
+            demo.role = UserRole.farmer
+            farm = db.query(Farm).filter(Farm.user_id == demo.id).first()
+            if farm is None:
+                farm = Farm(
+                    user_id=demo.id,
+                    name="Demo Farm",
+                    land_size_acres=4.5,
+                    soil_type=SoilType.black,
+                    water_source=WaterSource.borewell,
+                    latitude=18.52,
+                    longitude=73.85,
+                    equipment_owned=["tractor", "sprayer"],
+                    annual_income_range=AnnualIncomeRange.fiveL_10L,
+                    crop_history=[
+                        {"season": "kharif", "year": 2025, "crop": "soybean"},
+                        {"season": "rabi", "year": 2025, "crop": "wheat"},
+                    ],
+                )
+                db.add(farm)
+            db.commit()
+            print(f"[OK] Demo login repaired: demo@agri.test / demo1234")
+            print(f"[OK] Demo farm UUID: {farm.id}")
+            for user in db.query(User).order_by(User.created_at).all():
+                print(f"[USER] {user.email} / {'demo1234' if user.email == 'demo@agri.test' else 'farmer1234' if user.role == UserRole.farmer else 'buyer1234'}")
             return
 
         print("[SEED] Seeding database...")
@@ -43,14 +75,14 @@ def seed():
         # -- Users: 5 farmers + 3 buyers --
         farmers = []
         farmer_data = [
-            ("Ramesh Kumar", "ramesh@example.com"),
+            ("Demo Farmer", "demo@agri.test"),
             ("Suresh Patil", "suresh@example.com"),
             ("Anita Devi", "anita@example.com"),
             ("Manoj Singh", "manoj@example.com"),
             ("Lakshmi Naik", "lakshmi@example.com"),
         ]
         for name, email in farmer_data:
-            u = User(id=uuid.uuid4(), email=email, hashed_password="hashed_demo", full_name=name, role=UserRole.farmer)
+            u = User(id=uuid.uuid4(), email=email, hashed_password=hash_password("demo1234" if email == "demo@agri.test" else "farmer1234"), full_name=name, role=UserRole.farmer)
             db.add(u)
             farmers.append(u)
 
@@ -61,7 +93,7 @@ def seed():
             ("BigBasket Procurement", "bigbasket@example.com"),
         ]
         for name, email in buyer_data:
-            u = User(id=uuid.uuid4(), email=email, hashed_password="hashed_demo", full_name=name, role=UserRole.buyer)
+            u = User(id=uuid.uuid4(), email=email, hashed_password=hash_password("buyer1234"), full_name=name, role=UserRole.buyer)
             db.add(u)
             buyers.append(u)
 
@@ -576,6 +608,12 @@ def seed():
         # Commit
         db.commit()
         print("[OK] Seeded: 5 farmers, 3 buyers, 5 farms")
+        for user, farm in zip(farmers, farms):
+            print(f"[FARM] {user.email}: {farm.id}")
+        for user in farmers:
+            print(f"[USER] {user.email} / {'demo1234' if user.email == 'demo@agri.test' else 'farmer1234'}")
+        for user in buyers:
+            print(f"[USER] {user.email} / buyer1234")
         print("[OK] All feature group data populated.")
 
     except Exception as e:

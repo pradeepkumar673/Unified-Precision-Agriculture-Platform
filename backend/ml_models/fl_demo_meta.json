@@ -25,166 +25,166 @@
     "Tomato___Mosaic_virus",
     "Tomato___healthy"
   ],
-  "centralised_accuracy": 0.425,
-  "federated_final_accuracy": 0.4875,
-  "federation_time_s": 0.69,
+  "centralised_accuracy": 0.415,
+  "federated_final_accuracy": 0.4825,
+  "federation_time_s": 1.46,
   "round_log": [
     {
       "round": 1,
-      "accuracy": 0.22,
-      "loss": 2.8117,
-      "elapsed_s": 0.14,
+      "accuracy": 0.195,
+      "loss": 2.814,
+      "elapsed_s": 0.31,
       "per_client": [
         {
           "client_id": 0,
-          "accuracy": 0.33,
-          "loss": 2.7773,
+          "accuracy": 0.25,
+          "loss": 2.8023,
           "n_val": 100
         },
         {
           "client_id": 1,
-          "accuracy": 0.16,
-          "loss": 2.8265,
+          "accuracy": 0.21,
+          "loss": 2.8164,
           "n_val": 100
         },
         {
           "client_id": 2,
-          "accuracy": 0.2,
-          "loss": 2.8174,
+          "accuracy": 0.17,
+          "loss": 2.8144,
           "n_val": 100
         },
         {
           "client_id": 3,
-          "accuracy": 0.19,
-          "loss": 2.8257,
+          "accuracy": 0.15,
+          "loss": 2.8228,
           "n_val": 100
         }
       ]
     },
     {
       "round": 2,
-      "accuracy": 0.38,
-      "loss": 2.457,
-      "elapsed_s": 0.14,
+      "accuracy": 0.3475,
+      "loss": 2.4369,
+      "elapsed_s": 0.28,
       "per_client": [
         {
           "client_id": 0,
-          "accuracy": 0.51,
-          "loss": 2.3634,
+          "accuracy": 0.42,
+          "loss": 2.3865,
           "n_val": 100
         },
         {
           "client_id": 1,
-          "accuracy": 0.35,
-          "loss": 2.4688,
+          "accuracy": 0.37,
+          "loss": 2.4433,
           "n_val": 100
         },
         {
           "client_id": 2,
-          "accuracy": 0.34,
-          "loss": 2.4949,
+          "accuracy": 0.28,
+          "loss": 2.4609,
           "n_val": 100
         },
         {
           "client_id": 3,
           "accuracy": 0.32,
-          "loss": 2.501,
+          "loss": 2.4568,
           "n_val": 100
         }
       ]
     },
     {
       "round": 3,
-      "accuracy": 0.45,
-      "loss": 1.9599,
-      "elapsed_s": 0.14,
+      "accuracy": 0.43,
+      "loss": 1.9823,
+      "elapsed_s": 0.31,
       "per_client": [
         {
           "client_id": 0,
-          "accuracy": 0.57,
-          "loss": 1.8009,
+          "accuracy": 0.5,
+          "loss": 1.8386,
           "n_val": 100
         },
         {
           "client_id": 1,
-          "accuracy": 0.42,
-          "loss": 1.9498,
+          "accuracy": 0.41,
+          "loss": 1.9823,
           "n_val": 100
         },
         {
           "client_id": 2,
-          "accuracy": 0.41,
-          "loss": 2.0506,
+          "accuracy": 0.37,
+          "loss": 2.0957,
           "n_val": 100
         },
         {
           "client_id": 3,
-          "accuracy": 0.4,
-          "loss": 2.0383,
+          "accuracy": 0.44,
+          "loss": 2.0124,
           "n_val": 100
         }
       ]
     },
     {
       "round": 4,
-      "accuracy": 0.4675,
-      "loss": 1.7342,
-      "elapsed_s": 0.13,
+      "accuracy": 0.46,
+      "loss": 1.7935,
+      "elapsed_s": 0.28,
       "per_client": [
         {
           "client_id": 0,
-          "accuracy": 0.59,
-          "loss": 1.5399,
+          "accuracy": 0.53,
+          "loss": 1.6129,
           "n_val": 100
         },
         {
           "client_id": 1,
-          "accuracy": 0.44,
-          "loss": 1.6853,
+          "accuracy": 0.46,
+          "loss": 1.7954,
           "n_val": 100
         },
         {
           "client_id": 2,
-          "accuracy": 0.42,
-          "loss": 1.8947,
+          "accuracy": 0.4,
+          "loss": 1.9434,
           "n_val": 100
         },
         {
           "client_id": 3,
-          "accuracy": 0.42,
-          "loss": 1.8167,
+          "accuracy": 0.45,
+          "loss": 1.8224,
           "n_val": 100
         }
       ]
     },
     {
       "round": 5,
-      "accuracy": 0.4875,
-      "loss": 1.6736,
-      "elapsed_s": 0.14,
+      "accuracy": 0.4825,
+      "loss": 1.7424,
+      "elapsed_s": 0.28,
       "per_client": [
         {
           "client_id": 0,
-          "accuracy": 0.61,
-          "loss": 1.4565,
+          "accuracy": 0.54,
+          "loss": 1.5324,
           "n_val": 100
         },
         {
           "client_id": 1,
           "accuracy": 0.49,
-          "loss": 1.5856,
+          "loss": 1.7308,
           "n_val": 100
         },
         {
           "client_id": 2,
-          "accuracy": 0.41,
-          "loss": 1.9115,
+          "accuracy": 0.42,
+          "loss": 1.9104,
           "n_val": 100
         },
         {
           "client_id": 3,
-          "accuracy": 0.44,
-          "loss": 1.7406,
+          "accuracy": 0.48,
+          "loss": 1.7959,
           "n_val": 100
         }
       ]

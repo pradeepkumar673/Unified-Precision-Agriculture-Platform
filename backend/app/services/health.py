@@ -125,9 +125,23 @@ def analyze_weed_image(image_path: str) -> dict:
     """
     try:
         sys.path.insert(0, str(_BE_DIR))
-        from train_weed_grain_models import predict_weed
-        result = predict_weed(image_path)
-        return result
+        from train_grain_quality_weed import predict
+        result = predict(image_path, task='weed')
+        
+        herb_key = result["predicted_class"]
+        if herb_key in WEED_HERBICIDES:
+            herbicide, base_dosage = WEED_HERBICIDES[herb_key]
+            dosage = round(base_dosage * (0.8 + result["confidence"] * 0.4), 2)
+        else:
+            herbicide, dosage = "No herbicide required", 0.0
+
+        return {
+            "species": result["predicted_class"],
+            "confidence": result["confidence"],
+            "herbicide": herbicide,
+            "dosage_ml_per_acre": dosage,
+            "model_type": "mobilenetv3_weed"
+        }
     except Exception:
         # OpenCV colour-ratio heuristic fallback
         green_ratio, brown_ratio = _color_ratios(image_path)

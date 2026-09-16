@@ -15,8 +15,30 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    setError('Authentication is not configured: the backend has no login endpoint yet.');
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    try {
+      const path = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/signup';
+      const body = isLogin
+        ? { email, password }
+        : { email, password, full_name: email.split('@')[0], role: 'farmer' };
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.detail || 'Authentication failed');
+        setLoading(false);
+        return;
+      }
+      if (data.farms?.[0]?.id) {
+        localStorage.setItem('farmId', data.farms[0].id);
+      }
+      login(data.access_token);
+    } catch {
+      setError('Cannot reach the API. Start the backend on port 8000.');
+    }
     setLoading(false);
   };
 
@@ -35,6 +57,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">AgriPlatform</h1>
           <p className="text-slate-400 text-sm mt-1">Unified Precision Agriculture</p>
+          <p className="text-slate-500 text-xs mt-2">Demo: demo@agri.test / demo1234</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
