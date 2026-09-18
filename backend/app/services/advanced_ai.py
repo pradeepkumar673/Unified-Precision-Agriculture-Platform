@@ -142,7 +142,10 @@ def _load_whisper():
     global _whisper_model
     if _whisper_model is None:
         import whisper
-        _whisper_model = whisper.load_model(WHISPER_MODEL_SIZE)
+        # Desktop deployments commonly run without a CUDA device.  Explicitly
+        # selecting CPU also makes a checkpoint saved on a GPU host load through
+        # Whisper's map-location path instead of failing at deserialization.
+        _whisper_model = whisper.load_model(WHISPER_MODEL_SIZE, device="cpu")
     return _whisper_model
 
 

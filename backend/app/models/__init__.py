@@ -87,6 +87,12 @@ from app.models.advanced_ai import (  # noqa: F401
     MultimodalQuery,
     VoiceQuery,
 )
+from app.models.cea_iot import (  # noqa: F401
+    ActuatorCommand,
+    CEASetpoint,
+    SensorReading,
+    TraceabilityBatch,
+)
 
 __all__ = [
     "AnnualIncomeRange",
@@ -158,4 +164,8 @@ __all__ = [
     "FLTrainingRun",
     "MultimodalQuery",
     "VoiceQuery",
+    "ActuatorCommand",
+    "CEASetpoint",
+    "SensorReading",
+    "TraceabilityBatch",
 ]

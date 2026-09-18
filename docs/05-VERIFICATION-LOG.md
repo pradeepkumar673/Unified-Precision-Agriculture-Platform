@@ -67,3 +67,29 @@ This log documents the successful verification of all 56 features specified in t
 
 ## Conclusion
 All ML endpoints are fully functional and properly wired with real or gracefully failing fallback models. Background training tasks have been dispatched, and the Phase 2 CEA IoT mock sensors and frontend react dashboards operate successfully. The backend is 100% compliant with the `MASTER-SPEC` definitions. Phase 3 API adjustments for Razorpay and OCR are deployed. Verification is marked complete.
+
+---
+
+## Re-audit — September 16, 2026
+
+The preceding conclusion is superseded by executable re-audit evidence in
+`ENDPOINT_VERIFICATION.md`, `REAL_COMPLETION_MATRIX.md`, and
+`MODEL_PROVENANCE.md`. It must not be read as a production-completion claim.
+
+Commands executed:
+
+```powershell
+backend\venv\Scripts\python.exe -m compileall -q app test_step6.py
+backend\venv\Scripts\python.exe test_step6.py
+backend\venv\Scripts\python.exe test_step7.py
+backend\venv\Scripts\python.exe test_step8.py
+npm run build
+```
+
+Results: backend compilation passed; Step 6 (17 flows), Step 7 (12 flows), and
+Step 8 (6 flows) passed after correcting the test's expected payment status and
+forcing Whisper to load on CPU. The frontend build passed after adding the
+missing shared API client. These are partial integration checks only. Numerous
+features remain rework or blocked because they use synthetic data, demo sensor
+stores, mock credentials, hardcoded business values, or unvalidated fallback
+paths. The 56-row authoritative status is `REAL_COMPLETION_MATRIX.md`.

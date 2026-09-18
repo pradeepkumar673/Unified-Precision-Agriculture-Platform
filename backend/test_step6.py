@@ -280,10 +280,12 @@ def test_all_step6_endpoints():
         print("Payment initiate response:", pay_init)
         assert "razorpay_order_id" in pay_init
     else:
-        # Expected 502 with clear message when using mock credentials offline
-        print("Payment initiate returned clean 502 as expected for mock keys:", resp.json())
-        assert resp.status_code == 502
-        assert "Could not reach Razorpay" in resp.json()["detail"]
+        # Missing Razorpay credentials are a service-configuration failure, not
+        # a bad gateway. The API deliberately uses 503 until real test
+        # credentials are supplied through the environment.
+        print("Payment initiate returned clean 503 as expected for mock keys:", resp.json())
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["error"] == "Razorpay keys not configured"
 
     print("\n--- 10. POST /api/v1/finance/payment/webhook ---")
     # Seed a transaction to test webhook
