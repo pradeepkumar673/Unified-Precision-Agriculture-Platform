@@ -41,17 +41,14 @@ export default function CropPlanningPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-          AI Crop Planning
-        </h1>
-        <p className="text-slate-400 mt-1">Get ML-driven crop recommendations based on soil & season</p>
+        <h1 className="text-3xl font-bold text-white">Crop Planning</h1>
+        <p className="mt-1 text-slate-300">Get recommendations based on soil, season, and farm conditions.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form Card */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl h-fit">
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <Sprout className="w-5 h-5 text-emerald-400" /> Plan Parameters
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="h-fit rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+          <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold text-white">
+            <Sprout className="h-5 w-5 text-emerald-400" /> Plan Parameters
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,12 +90,12 @@ export default function CropPlanningPage() {
               />
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
-              className="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-semibold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 font-medium text-emerald-300 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Bot className="w-5 h-5" />}
+              {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Bot className="h-5 w-5" />}
               Generate Plan
             </button>
           </form>
@@ -118,8 +115,8 @@ export default function CropPlanningPage() {
               <p className="text-lg">Submit parameters to generate AI recommendation</p>
             </div>
           ) : (
-            <div className="bg-slate-800/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(16,185,129,0.1)] relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+              <div className="absolute right-0 top-0 p-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
                   <Bot className="w-3 h-3" />
                   {result.model_type || 'xgboost_planner'}

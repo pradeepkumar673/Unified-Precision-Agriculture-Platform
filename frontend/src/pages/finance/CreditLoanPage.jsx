@@ -53,19 +53,17 @@ export default function CreditLoanPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-500">
-            AI Credit Scoring & Micro-Loans
-          </h1>
-          <p className="text-slate-400 mt-1">Instant loan approval based on farm health and alternative data</p>
+          <h1 className="text-3xl font-bold text-white">Credit Scoring & Micro-Loans</h1>
+          <p className="mt-1 text-slate-300">Loan assessment based on farm health and financial signals.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Application Form */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl h-fit">
+        <div className="h-fit rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
           <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
             <Landmark className="w-5 h-5 text-emerald-400" /> Loan Application
           </h2>
@@ -90,9 +88,10 @@ export default function CreditLoanPage() {
               </div>
             </div>
 
-            <button 
-              type="submit" disabled={loading}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-semibold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 font-medium text-emerald-300 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Activity className="w-5 h-5" />}
               Assess Credit Risk
@@ -117,7 +116,7 @@ export default function CreditLoanPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Gauge */}
-                <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl relative flex flex-col items-center">
+                <div className="relative flex flex-col items-center rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                   <div className="absolute top-0 left-0 p-4">
                     <span className="text-[10px] font-mono text-slate-500 border border-slate-700 rounded px-1.5 py-0.5 bg-slate-900">
                       {result.model_type}
@@ -142,9 +141,7 @@ export default function CreditLoanPage() {
                     </div>
                   </div>
                   
-                  <div className={`mt-2 px-4 py-2 rounded-lg flex items-center gap-2 border w-full justify-center
-                    ${result.approved ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}
-                  `}>
+                  <div className={`mt-2 flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 ${result.approved ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-red-500/30 bg-red-500/10 text-red-400'}`}>
                     {result.approved ? <CheckCircle className="w-5 h-5"/> : <AlertTriangle className="w-5 h-5"/>}
                     <span className="font-bold text-lg">{result.approved ? 'Loan Approved' : 'Application Rejected'}</span>
                   </div>
@@ -152,7 +149,7 @@ export default function CreditLoanPage() {
 
                 {/* Terms Breakdown */}
                 {result.approved && (
-                  <div className="bg-slate-800/40 backdrop-blur-xl border border-teal-500/30 rounded-2xl p-6 shadow-[0_0_20px_rgba(20,184,166,0.1)]">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                     <h3 className="text-teal-400 font-semibold mb-4 flex items-center gap-2">
                       <FileText className="w-5 h-5" /> Terms Sheet
                     </h3>
@@ -183,7 +180,7 @@ export default function CreditLoanPage() {
               </div>
 
               {/* SHAP Explainer Chart */}
-              <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <h3 className="text-slate-300 font-semibold mb-1">Decision Explainer (SHAP Values)</h3>
                 <p className="text-slate-500 text-xs mb-4">Top factors positively/negatively driving your credit score</p>
                 <div className="h-64 w-full">

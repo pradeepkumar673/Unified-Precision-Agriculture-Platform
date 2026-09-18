@@ -49,19 +49,17 @@ export default function CausalSimulatorPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-500">
-            Causal Inference Lab
-          </h1>
-          <p className="text-slate-400 mt-1">"What-If" simulator powered by DoWhy structural causal modeling</p>
+          <h1 className="text-3xl font-bold text-white">Causal Inference Lab</h1>
+          <p className="mt-1 text-slate-300">Counterfactual analysis for irrigation, fertilizer, and sowing decisions.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Controls */}
-        <div className="lg:col-span-5 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)] lg:col-span-5">
           <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <FlaskConical className="w-5 h-5 text-purple-400" /> Experiment Variables
           </h2>
@@ -109,9 +107,10 @@ export default function CausalSimulatorPage() {
               <div className="flex justify-between text-xs text-slate-500 mt-1"><span>4W Early</span><span>Standard</span><span>4W Late</span></div>
             </div>
 
-            <button 
-              onClick={runSimulation} disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 transition-all flex justify-center items-center gap-2"
+            <button
+              onClick={runSimulation}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Run Counterfactual Simulation'}
             </button>
@@ -119,7 +118,7 @@ export default function CausalSimulatorPage() {
         </div>
 
         {/* Results */}
-        <div className="lg:col-span-7 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl flex flex-col">
+        <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)] lg:col-span-7">
            {!result && !loading ? (
              <div className="flex-1 flex flex-col items-center justify-center text-slate-500 bg-slate-900/30 rounded-xl border-2 border-dashed border-slate-700">
                <FlaskConical className="w-16 h-16 mb-4 opacity-50" />
@@ -171,8 +170,8 @@ export default function CausalSimulatorPage() {
                  </div>
                </div>
 
-               <div className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-xl flex items-start gap-3">
-                 <Info className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+               <div className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+                 <Info className="mt-0.5 h-5 w-5 shrink-0 text-slate-300" />
                  <p className="text-slate-300 text-sm leading-relaxed">
                    {result.explanation}
                  </p>

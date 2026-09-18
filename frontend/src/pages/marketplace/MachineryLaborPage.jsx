@@ -51,32 +51,30 @@ export default function MachineryLaborPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">
-            Machinery & Labor Rentals
-          </h1>
-          <p className="text-slate-400 mt-1">On-demand tractor booking and labor gang scheduling</p>
+          <h1 className="text-3xl font-bold text-white">Machinery & Labor Rentals</h1>
+          <p className="mt-1 text-slate-300">On-demand tractor booking and labor scheduling.</p>
         </div>
-        
-        <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 w-max">
-          <button 
+
+        <div className="flex w-max rounded-lg border border-slate-700 bg-slate-900 p-1">
+          <button
             onClick={() => setActiveTab('machinery')}
-            className={`px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${activeTab === 'machinery' ? 'bg-amber-500/20 text-amber-400 shadow-[inset_0_-2px_0_rgba(245,158,11,1)]' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === 'machinery' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
-            <Tractor className="w-4 h-4" /> Machinery
+            <Tractor className="h-4 w-4" /> Machinery
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('labor')}
-            className={`px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${activeTab === 'labor' ? 'bg-amber-500/20 text-amber-400 shadow-[inset_0_-2px_0_rgba(245,158,11,1)]' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === 'labor' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}
           >
-            <Users className="w-4 h-4" /> Labor Gangs
+            <Users className="h-4 w-4" /> Labor Gangs
           </button>
         </div>
       </div>
 
       {/* Control Bar */}
-      <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-xl">
+      <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
         <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
           <span className="text-slate-500 mr-2">Farm ID:</span>
           <input value={farmId} onChange={e=>setFarmId(e.target.value)} className="bg-transparent border-none outline-none w-24 font-mono" />
@@ -141,10 +139,10 @@ export default function MachineryLaborPage() {
                   <span className="text-2xl font-bold text-white">₹{item.rate || item.daily_rate_per_head}</span>
                   <span className="text-slate-400 text-xs ml-1">{activeTab === 'machinery' ? '/ day' : '/ head'}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => handleBook(item)}
                   disabled={bookingLoading === item.id}
-                  className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center disabled:opacity-50"
+                  className="flex items-center justify-center rounded-xl border border-slate-600 bg-slate-800 px-6 py-2 font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {bookingLoading === item.id ? <Clock className="w-4 h-4 animate-spin" /> : 'Book Now'}
                 </button>

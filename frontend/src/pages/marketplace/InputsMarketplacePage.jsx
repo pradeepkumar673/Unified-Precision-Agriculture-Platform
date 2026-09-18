@@ -85,12 +85,10 @@ export default function InputsMarketplacePage() {
   return (
     <div className="space-y-6 relative min-h-screen">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-700/50 pb-4">
+      <div className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-green-500">
-            Agri-Inputs Marketplace
-          </h1>
-          <p className="text-slate-400 mt-1">ML recommended seeds, fertilizers, and pesticides tailored for your farm</p>
+          <h1 className="text-3xl font-bold text-white">Agri-Inputs Marketplace</h1>
+          <p className="mt-1 text-slate-300">Recommended seeds, fertilizers, and crop inputs tailored to your farm.</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="bg-slate-800/50 p-1.5 rounded-lg border border-slate-700/50 flex items-center">
@@ -100,9 +98,9 @@ export default function InputsMarketplacePage() {
               className="bg-transparent border-none text-sm text-white focus:outline-none w-24 font-mono"
             />
           </div>
-          <button 
+          <button
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/30 transition-colors"
+            className="relative rounded-lg border border-slate-700 bg-slate-900 p-2 text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
           >
             <ShoppingCart className="w-6 h-6" />
             {cart.length > 0 && (
@@ -177,9 +175,9 @@ export default function InputsMarketplacePage() {
                 <IndianRupee className="w-4 h-4 mr-0.5 text-slate-400" />
                 {product.price}
               </div>
-              <button 
+              <button
                 onClick={() => addToCart(product)}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-lg shadow-emerald-500/20"
+                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/15"
               >
                 Add to Cart
               </button>
@@ -232,10 +230,10 @@ export default function InputsMarketplacePage() {
                 <span className="text-slate-400 font-medium">Subtotal</span>
                 <span className="text-xl font-bold text-white">₹{cartTotal.toLocaleString()}</span>
               </div>
-              <button 
+              <button
                 onClick={handleCheckout}
                 disabled={cart.length === 0 || orderProcessing}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 font-medium text-emerald-300 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {orderProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Checkout via API'}
               </button>

@@ -71,35 +71,32 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-500">
-          Welcome back, Farmer
-        </h1>
-        <p className="text-slate-400 mt-1">Here is the status of your farming operations today.</p>
+        <h1 className="text-3xl font-bold text-white">Welcome back, Farmer</h1>
+        <p className="mt-1 text-slate-300">Here is the status of your farming operations today.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Stat Cards */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 p-4 bg-emerald-500/10 rounded-full group-hover:scale-110 transition-transform"><Map className="w-8 h-8 text-emerald-400 opacity-50"/></div>
-          <p className="text-slate-400 text-sm font-medium mb-1">Active Crop Plans</p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+          <div className="absolute -right-4 -top-4 rounded-full bg-emerald-500/10 p-4"><Map className="h-8 w-8 text-emerald-400 opacity-70"/></div>
+          <p className="mb-1 text-sm font-medium text-slate-400">Active Crop Plans</p>
           <p className="text-3xl font-bold text-white">{stats.activeCropPlans}</p>
         </div>
         
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 p-4 bg-amber-500/10 rounded-full group-hover:scale-110 transition-transform"><Bell className="w-8 h-8 text-amber-400 opacity-50"/></div>
-          <p className="text-slate-400 text-sm font-medium mb-1">Unread Alerts</p>
+        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+          <div className="absolute -right-4 -top-4 rounded-full bg-amber-500/10 p-4"><Bell className="h-8 w-8 text-amber-400 opacity-70"/></div>
+          <p className="mb-1 text-sm font-medium text-slate-400">Unread Alerts</p>
           <p className="text-3xl font-bold text-white">{stats.unreadAlerts}</p>
         </div>
 
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 p-4 bg-blue-500/10 rounded-full group-hover:scale-110 transition-transform"><ShoppingCart className="w-8 h-8 text-blue-400 opacity-50"/></div>
-          <p className="text-slate-400 text-sm font-medium mb-1">Pending Orders</p>
+        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+          <div className="absolute -right-4 -top-4 rounded-full bg-blue-500/10 p-4"><ShoppingCart className="h-8 w-8 text-blue-400 opacity-70"/></div>
+          <p className="mb-1 text-sm font-medium text-slate-400">Pending Orders</p>
           <p className="text-3xl font-bold text-white">{stats.pendingOrders}</p>
         </div>
 
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 p-4 bg-teal-500/10 rounded-full group-hover:scale-110 transition-transform"><IndianRupee className="w-8 h-8 text-teal-400 opacity-50"/></div>
-          <p className="text-slate-400 text-sm font-medium mb-1">Escrow / Wallet</p>
+        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+          <div className="absolute -right-4 -top-4 rounded-full bg-teal-500/10 p-4"><IndianRupee className="h-8 w-8 text-teal-400 opacity-70"/></div>
+          <p className="mb-1 text-sm font-medium text-slate-400">Escrow / Wallet</p>
           <p className="text-3xl font-bold text-white">₹{stats.walletBalance.toLocaleString()}</p>
         </div>
       </div>
@@ -107,10 +104,10 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Quick Actions */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-lg font-bold text-white mb-4">Quick Actions</h2>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+          <h2 className="mb-4 text-lg font-bold text-white">Quick Actions</h2>
           <div className="space-y-3">
-            <Link to="/vision/satellite" className="flex items-center justify-between p-4 bg-slate-900 border border-slate-700 rounded-xl hover:border-emerald-500/50 transition-colors group">
+            <Link to="/vision/satellite" className="group flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-slate-700">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg"><CloudRain className="w-5 h-5"/></div>
                 <div>
@@ -147,8 +144,8 @@ export default function DashboardPage() {
 
         {/* Notifications & Ledger */}
         <div className="space-y-6">
-          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-             <h2 className="text-lg font-bold text-white mb-4">Recent Alerts</h2>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+             <h2 className="mb-4 text-lg font-bold text-white">Recent Alerts</h2>
              <div className="space-y-3">
                {stats.alerts.map((a, i) => (
                  <div key={i} className={`p-3 rounded-lg border flex gap-3 text-sm ${
@@ -161,8 +158,8 @@ export default function DashboardPage() {
              </div>
           </div>
           
-          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-             <h2 className="text-lg font-bold text-white mb-4 flex justify-between items-center">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+             <h2 className="mb-4 flex items-center justify-between text-lg font-bold text-white">
                <span>Recent Ledger Activity</span>
                <Link to="/finance/ledger" className="text-xs text-teal-400 hover:underline">View All</Link>
              </h2>

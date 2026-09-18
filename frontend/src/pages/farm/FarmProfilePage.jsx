@@ -93,10 +93,9 @@ export default function FarmProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-24 right-8 z-50 px-4 py-3 rounded-lg shadow-xl backdrop-blur-md border border-white/10 flex items-center space-x-2 transition-all ${
-          toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+        <div className={`fixed right-8 top-24 z-50 flex items-center space-x-2 rounded-lg border border-slate-700 bg-slate-900/90 px-4 py-3 shadow-[0_20px_60px_rgba(2,6,23,0.7)] ${
+          toast.type === 'success' ? 'text-emerald-400' : 'text-red-400'
         }`}>
           {toast.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <span className="font-medium">{toast.msg}</span>
@@ -104,12 +103,10 @@ export default function FarmProfilePage() {
       )}
 
       {/* Top Bar: Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-            Digital Farm Profile
-          </h1>
-          <p className="text-slate-400 mt-1">Manage farm demographics and soil characteristics</p>
+          <h1 className="text-3xl font-bold text-white">Digital Farm Profile</h1>
+          <p className="mt-1 text-slate-300">Manage farm demographics and soil characteristics.</p>
         </div>
         <div className="flex items-center space-x-2 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700/50">
           <input
@@ -151,10 +148,8 @@ export default function FarmProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Main Card (Glassmorphism) */}
-          <div className="lg:col-span-2 relative group rounded-2xl overflow-hidden bg-slate-800/40 backdrop-blur-xl border border-white/5 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 pointer-events-none" />
-            
-            <div className="p-6 relative z-10">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 shadow-[0_10px_30px_rgba(2,6,23,0.35)] lg:col-span-2">
+            <div className="relative z-10 p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-white flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../App';
 import { Sprout, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,6 +38,7 @@ export default function LoginPage() {
         localStorage.setItem('farmId', data.farms[0].id);
       }
       login(data.access_token);
+      navigate('/');
     } catch {
       setError('Cannot reach the API. Start the backend on port 8000.');
     }
@@ -43,21 +46,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 selection:bg-emerald-500/30 relative overflow-hidden">
-      
-      {/* Background Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-      
-      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-2xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10">
-        
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-4">
-            <Sprout className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 selection:bg-emerald-500/20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_30%)]" />
+
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-[0_20px_60px_rgba(2,6,23,0.7)]">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+            <Sprout className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">AgriPlatform</h1>
-          <p className="text-slate-400 text-sm mt-1">Unified Precision Agriculture</p>
-          <p className="text-slate-500 text-xs mt-2">Demo: demo@agri.test / demo1234</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">AgriPlatform</h1>
+          <p className="mt-1 text-sm text-slate-400">Unified Precision Agriculture</p>
+          <p className="mt-2 text-xs text-slate-500">Demo: demo@agri.test / demo1234</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -90,12 +89,16 @@ export default function LoginPage() {
 
           {error && <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</div>}
 
-          <button 
-            type="submit" disabled={loading}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex justify-center items-center gap-2 disabled:opacity-50 group"
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 font-medium text-emerald-300 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin"/> : (
-              <>{isLogin ? 'Sign In' : 'Create Account'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+              <>
+                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                <ArrowRight className="h-4 w-4" />
+              </>
             )}
           </button>
         </form>
