@@ -109,53 +109,51 @@ export default function MainLayout() {
   const { logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 flex overflow-hidden">
-      
-      {/* Mobile Sidebar Overlay */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/20 flex overflow-hidden">
       {!sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden"
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(true)}
         />
       )}
 
-      {/* Sidebar */}
-      <aside 
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-800 bg-slate-900/95 transition-transform duration-200 lg:static ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20">
-              A
+        <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-300">
+              AP
             </div>
-            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">
-              AgriPlatform
-            </span>
+            <div>
+              <p className="text-base font-semibold tracking-tight text-white">AgriPlatform</p>
+            </div>
           </div>
-          <button className="lg:hidden text-slate-400" onClick={() => setSidebarOpen(false)}>
-            <X className="w-6 h-6" />
+          <button className="text-slate-400 lg:hidden" onClick={() => setSidebarOpen(false)}>
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto p-4">
           {NAVIGATION.map((nav, idx) => (
             <div key={idx}>
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                {nav.icon} {nav.group}
+              <h3 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {nav.icon}
+                <span>{nav.group}</span>
               </h3>
-              <div className="space-y-1 pl-7 border-l border-slate-800 ml-2.5">
-                {nav.links.map(link => {
+              <div className="ml-2 space-y-1 border-l border-slate-800 pl-3">
+                {nav.links.map((link) => {
                   const isActive = location.pathname === link.path;
                   return (
                     <Link
                       key={link.path}
                       to={link.path}
-                      className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
-                        isActive 
-                          ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? 'bg-slate-800 text-white ring-1 ring-slate-700'
+                          : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'
                       }`}
                     >
                       {link.name}
@@ -167,44 +165,52 @@ export default function MainLayout() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-slate-800 shrink-0">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold">
+        <div className="border-t border-slate-800 p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 font-semibold text-slate-200">
               U
             </div>
             <div>
               <p className="text-sm font-medium text-white">Farmer User</p>
-              <p className="text-xs text-slate-500">Premium Account</p>
+              <p className="text-xs text-slate-500">Operations account</p>
             </div>
           </div>
-          <button 
+          <div className="flex gap-2">
+            <Link to="/privacy-policy" className="flex-1 rounded-lg border border-slate-700 px-3 py-2 text-center text-xs text-slate-300 hover:border-slate-500 hover:text-white">
+              Privacy
+            </Link>
+            <Link to="/terms" className="flex-1 rounded-lg border border-slate-700 px-3 py-2 text-center text-xs text-slate-300 hover:border-slate-500 hover:text-white">
+              Terms
+            </Link>
+          </div>
+          <button
             onClick={logout}
-            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition-colors border border-slate-700"
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-slate-700"
           >
-            Sign Out
+            Sign out
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Mobile Header */}
-        <header className="lg:hidden h-16 border-b border-slate-800 bg-slate-900 flex items-center px-4 shrink-0">
-          <button className="text-slate-400 mr-4" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-6 h-6" />
+      <main className="flex min-h-screen flex-1 flex-col overflow-hidden">
+        <header className="flex h-16 items-center border-b border-slate-800 bg-slate-900/80 px-4 lg:hidden">
+          <button className="mr-4 text-slate-400" onClick={() => setSidebarOpen(true)}>
+            <Menu className="h-5 w-5" />
           </button>
-          <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">
-            AgriPlatform
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs font-semibold text-emerald-300">
+              AP
+            </div>
+            <span className="text-sm font-semibold tracking-tight text-white">AgriPlatform</span>
+          </div>
         </header>
 
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 relative">
-          <div className="max-w-7xl mx-auto">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>
         </div>
       </main>
-
     </div>
   );
 }

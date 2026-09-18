@@ -316,15 +316,15 @@ export default function SatelliteVisionPage() {
                   
                   <div className="space-y-3">
                     <div className="bg-slate-900/50 border border-slate-700 p-3 rounded-lg flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">Moisture Content</span>
+                      <span className="text-slate-400 text-sm">Moisture Content (Est.)</span>
                       <span className={`font-mono font-bold ${grainResult.moisture_pct > 14 ? 'text-red-400' : 'text-emerald-400'}`}>{grainResult.moisture_pct}%</span>
                     </div>
                     <div className="bg-slate-900/50 border border-slate-700 p-3 rounded-lg flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">Broken Grains</span>
+                      <span className="text-slate-400 text-sm">Broken Grains (Est.)</span>
                       <span className="font-mono font-bold text-orange-400">{grainResult.broken_pct}%</span>
                     </div>
                     <div className="bg-slate-900/50 border border-slate-700 p-3 rounded-lg flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">Foreign Matter</span>
+                      <span className="text-slate-400 text-sm">Foreign Matter (Est.)</span>
                       <span className="font-mono font-bold text-yellow-400">{grainResult.foreign_matter_pct}%</span>
                     </div>
                   </div>

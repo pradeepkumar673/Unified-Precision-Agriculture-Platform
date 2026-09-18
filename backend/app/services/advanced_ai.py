@@ -123,8 +123,29 @@ AGRI_RESPONSE_MAP: Dict[str, str] = {
 }
 
 
+_llm_pipeline = None
+
+def _load_llm():
+    global _llm_pipeline
+    if _llm_pipeline is None:
+        try:
+            from transformers import pipeline
+            _llm_pipeline = pipeline("text2text-generation", model="google/flan-t5-small", device=-1)
+        except Exception:
+            _llm_pipeline = "fallback"
+    return _llm_pipeline
+
 def _keyword_response(text: str) -> str:
-    """Return the first matching agri response for keywords found in text."""
+    """Return an LLM generated agri response, falling back to keywords if needed."""
+    try:
+        llm = _load_llm()
+        if llm != "fallback":
+            prompt = f"Answer this agricultural query: {text}"
+            res = llm(prompt, max_length=60)
+            return res[0]['generated_text']
+    except Exception:
+        pass
+
     text_lower = text.lower()
     for keyword, response in AGRI_RESPONSE_MAP.items():
         if keyword != "default" and keyword in text_lower:
@@ -142,10 +163,25 @@ def _load_whisper():
     global _whisper_model
     if _whisper_model is None:
         import whisper
-        # Desktop deployments commonly run without a CUDA device.  Explicitly
-        # selecting CPU also makes a checkpoint saved on a GPU host load through
-        # Whisper's map-location path instead of failing at deserialization.
-        _whisper_model = whisper.load_model(WHISPER_MODEL_SIZE, device="cpu")
+        import torch
+        try:
+            import imageio_ffmpeg
+            ffmpeg_dir = os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
+            if ffmpeg_dir not in os.environ.get("PATH", ""):
+                os.environ["PATH"] += os.pathsep + ffmpeg_dir
+        except ImportError:
+            pass
+
+        _original_load = torch.load
+        def _safe_load(*args, **kwargs):
+            kwargs["map_location"] = "cpu"
+            return _original_load(*args, **kwargs)
+            
+        torch.load = _safe_load
+        try:
+            _whisper_model = whisper.load_model(WHISPER_MODEL_SIZE, device="cpu")
+        finally:
+            torch.load = _original_load
     return _whisper_model
 
 

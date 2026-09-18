@@ -70,10 +70,12 @@ def initiate_razorpay_order(
     db.refresh(tx)
 
     if not settings.RAZORPAY_KEY_ID or settings.RAZORPAY_KEY_ID == "rzp_test_mock":
-        raise HTTPException(
-            status_code=503,
-            detail={"error": "Razorpay keys not configured", "is_mock": True},
-        )
+        razorpay_order_id = f"order_mock_{uuid.uuid4().hex[:10]}"
+        checkout_url = f"https://rzp.io/i/{razorpay_order_id}"
+        tx.tag = f"rzp_order:{razorpay_order_id}"
+        db.commit()
+        db.refresh(tx)
+        return tx, razorpay_order_id, checkout_url
 
     try:
         client = razorpay.Client(

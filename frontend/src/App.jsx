@@ -5,6 +5,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
+import TermsPage from './pages/legal/TermsPage';
 
 // Feature Groups
 import FarmProfilePage from './pages/farm/FarmProfilePage';
@@ -66,6 +68,8 @@ function App() {
     <AuthContext.Provider value={{ token, login, logout }}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         
         {/* Main Application Shell */}
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
