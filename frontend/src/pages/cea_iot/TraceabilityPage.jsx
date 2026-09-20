@@ -106,3 +106,4 @@ const TraceabilityPage = () => {
 };
 
 export default TraceabilityPage;
+

@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function RotationPage() {
   const [formData, setFormData] = useState({
-    farm_id: '',
+    farm_id: localStorage.getItem('farmId') || '',
     soil_nitrogen: 40,
     soil_organic_carbon: 1.5,
     last_3_crops: 'wheat, cotton, wheat'
@@ -198,3 +198,5 @@ export default function RotationPage() {
     </div>
   );
 }
+
+

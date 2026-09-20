@@ -8,7 +8,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function SchemeDiscoveryPage() {
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -270,3 +270,4 @@ export default function SchemeDiscoveryPage() {
     </div>
   );
 }
+

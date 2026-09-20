@@ -11,7 +11,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function GrowerScorePage() {
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [scoreData, setScoreData] = useState(null);
   const [loading, setLoading] = useState(false);
   
@@ -202,3 +202,4 @@ export default function GrowerScorePage() {
     </div>
   );
 }
+

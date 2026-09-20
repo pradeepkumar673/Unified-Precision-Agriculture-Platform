@@ -12,27 +12,46 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 export default function FederatedLearningPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentRound, setCurrentRound] = useState(0);
+  const [finalAccuracy, setFinalAccuracy] = useState(null);
   const [data, setData] = useState([]);
+  const [participatingFarms, setParticipatingFarms] = useState([]);
   const [error, setError] = useState('');
   const [nodes] = useState(['Farm_A (Maharashtra)', 'Farm_B (Punjab)', 'Farm_C (MP)', 'Farm_D (Karnataka)']);
 
   const triggerRound = async () => {
     if (isSimulating) return;
     setIsSimulating(true);
+    setError('');
     
     try {
-      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/federated/trigger-round`);
-      setCurrentRound(res.data.rounds_completed);
-      setData(res.data.round_accuracies.map((accuracy, index) => ({
+      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/federated/trigger-round`, {}, {
+        timeout: 120000  // FL takes ~30-60s — give it 2 minutes
+      });
+      const d = res.data;
+      // API returns: aggregate_accuracy, round_accuracies (list), rounds_completed, participating_farm_count
+      const roundAccuracies = d.round_accuracies || [];
+      setCurrentRound(d.rounds_completed || roundAccuracies.length);
+      setFinalAccuracy(d.aggregate_accuracy ?? (roundAccuracies[roundAccuracies.length - 1] ?? null));
+      // Build fake farm names from participating_farm_count
+      const count = d.participating_farm_count || 4;
+      setParticipatingFarms(Array.from({ length: count }, (_, i) => `Farm_${String.fromCharCode(65+i)} (Simulated)`));
+      setData(roundAccuracies.map((accuracy, index) => ({
         round: index + 1,
-        global_acc: accuracy,
+        global_acc: typeof accuracy === 'number' ? accuracy : 0,
       })));
-      setError('');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Federated training failed.');
+      setError(err.response?.data?.detail || err.message || 'Federated training failed.');
     } finally {
       setIsSimulating(false);
     }
+  };
+
+  const reset = () => {
+    setCurrentRound(0);
+    setFinalAccuracy(null);
+    setData([]);
+    setParticipatingFarms([]);
+    setError('');
   };
 
   return (
@@ -61,11 +80,11 @@ export default function FederatedLearningPage() {
               <Network className="w-5 h-5 text-blue-400" /> Edge Nodes
             </h2>
             <div className="space-y-3">
-              {nodes.map((node, i) => (
+              {(participatingFarms.length > 0 ? participatingFarms : nodes).map((node, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-slate-900 rounded-lg border border-slate-700">
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-300">{node}</span>
+                    <span className="text-sm text-slate-300 truncate max-w-[140px]" title={node}>{node}</span>
                   </div>
                   {isSimulating ? (
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
@@ -80,28 +99,43 @@ export default function FederatedLearningPage() {
           </div>
           
           <button 
-            onClick={triggerRound} disabled={isSimulating || currentRound >= 5}
+            onClick={triggerRound} disabled={isSimulating}
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-lg transition-all flex justify-center items-center gap-2 disabled:opacity-50"
           >
             {isSimulating ? (
-              <><RefreshCw className="w-5 h-5 animate-spin" /> Training Round {currentRound}/5</>
+              <><RefreshCw className="w-5 h-5 animate-spin" /> Running {currentRound > 0 ? `Round ${currentRound}/5` : 'FedAvg...'}</>
             ) : currentRound >= 5 ? (
-              <><CheckCircle className="w-5 h-5" /> Global Model Synced</>
+              <><CheckCircle className="w-5 h-5" /> Re-run FedAvg</>
             ) : (
               <><Play className="w-5 h-5" /> Trigger FedAvg Epochs</>
             )}
           </button>
+          {currentRound > 0 && !isSimulating && (
+            <button
+              onClick={reset}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-medium rounded-xl transition-colors"
+            >
+              Reset
+            </button>
+          )}
         </div>
 
         {/* Chart Panel */}
         <div className="lg:col-span-3 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl flex flex-col">
            <div className="flex justify-between items-center mb-6">
              <h3 className="text-lg font-semibold text-white">Global Model Accuracy Progression</h3>
-             {currentRound > 0 && (
-               <div className="bg-slate-900 px-3 py-1 rounded text-sm text-slate-400 border border-slate-700">
-                 Current Acc: <span className="text-emerald-400 font-bold font-mono">{(data[data.length-1].global_acc * 100).toFixed(1)}%</span>
-               </div>
-             )}
+             <div className="flex items-center gap-3">
+               {isSimulating && (
+                 <span className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full animate-pulse">
+                   Training across {(participatingFarms.length || 4)} farms...
+                 </span>
+               )}
+               {finalAccuracy !== null && (
+                 <div className="bg-slate-900 px-3 py-1 rounded text-sm text-slate-400 border border-slate-700">
+                   Final Accuracy: <span className="text-emerald-400 font-bold font-mono">{(finalAccuracy * 100).toFixed(1)}%</span>
+                 </div>
+               )}
+             </div>
            </div>
 
            <div className="flex-1 min-h-[300px] w-full">
@@ -128,3 +162,4 @@ export default function FederatedLearningPage() {
     </div>
   );
 }
+

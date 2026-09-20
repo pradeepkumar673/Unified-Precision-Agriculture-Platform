@@ -8,7 +8,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function InputsMarketplacePage() {
-  const [farmId, setFarmId] = useState('FARM-001'); // Default for demo
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || ''); // Default for demo
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -244,3 +244,4 @@ export default function InputsMarketplacePage() {
     </div>
   );
 }
+

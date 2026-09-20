@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function DiseaseDiagnosisPage() {
   const [activeTab, setActiveTab] = useState('disease'); // 'disease' or 'weed'
-  const [farmId, setFarmId] = useState('');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [crop, setCrop] = useState('');
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -306,3 +306,5 @@ export default function DiseaseDiagnosisPage() {
     </div>
   );
 }
+
+

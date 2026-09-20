@@ -9,7 +9,7 @@ import { CloudLightning, TrendingUp, ThermometerSun, Waves, RefreshCw } from 'lu
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function YieldClimatePage() {
-  const [farmId, setFarmId] = useState('');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [crop, setCrop] = useState('wheat');
   const [loading, setLoading] = useState(false);
   
@@ -37,10 +37,10 @@ export default function YieldClimatePage() {
   };
 
   const radarData = climateResult ? [
-    { metric: 'Drought', value: Math.round(climateResult.drought_risk * 100) },
-    { metric: 'Flood', value: Math.round(climateResult.flood_risk * 100) },
-    { metric: 'Heatwave', value: Math.round(climateResult.heat_risk * 100) },
-    { metric: 'Overall', value: Math.round(climateResult.overall_risk * 100) },
+    { metric: 'Drought', value: Math.round((climateResult.drought_risk || 0) * 100) },
+    { metric: 'Flood', value: Math.round((climateResult.flood_risk || 0) * 100) },
+    { metric: 'Heatwave', value: Math.round((climateResult.heat_risk || 0) * 100) },
+    { metric: 'Overall', value: Math.round(((climateResult.drought_risk + climateResult.flood_risk + climateResult.heat_risk) / 3) * 100) },
   ] : [];
 
   const yieldData = yieldResult ? [
@@ -162,3 +162,4 @@ export default function YieldClimatePage() {
     </div>
   );
 }
+

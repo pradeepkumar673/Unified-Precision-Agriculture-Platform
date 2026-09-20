@@ -11,12 +11,17 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [noFarm, setNoFarm] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         const farmId = localStorage.getItem('farmId');
-        if (!farmId) throw new Error('No farm selected');
+        if (!farmId) {
+          setNoFarm(true);
+          setLoading(false);
+          return;
+        }
         
         // Parallel fetch real data
         const [plansRes, alertsRes, ledgerRes, productsRes] = await Promise.allSettled([
@@ -41,21 +46,21 @@ export default function DashboardPage() {
           pendingOrders: ledger.filter(t => t.status === 'pending' || t.status === 'escrow_held').length,
           walletBalance,
           recentTransactions: ledger.slice(0, 4).map(t => ({
-            id: t.id,
-            type: t.tag || t.type,
-            amount: `${t.status === 'released' ? '+' : '-'}${Number(t.amount || 0).toLocaleString()}`,
-            date: new Date(t.created_at).toLocaleDateString(),
+            id: String(t.id).slice(0, 8) + '…',
+            type: (t.tag || t.type || 'transaction').replace(/_/g, ' '),
+            amount: `${t.status === 'released' ? '+' : '-'}₹${Number(t.amount || 0).toLocaleString()}`,
+            date: t.created_at ? new Date(t.created_at).toLocaleDateString() : '—',
           })),
           alerts: unreadAlerts.map(a => ({
             text: a.message || a.title || 'Alert',
             type: a.severity === 'high' ? 'warning' : 'success'
-          })).concat(unreadAlerts.length === 0 ? [{ text: `No unread alerts. ${products.length} marketplace products available.`, type: 'success' }] : [])
+          })).concat(unreadAlerts.length === 0 ? [{ text: `All clear — ${products.length} marketplace products available.`, type: 'success' }] : [])
         });
       } catch (err) {
         console.error('Dashboard fetch error:', err);
         setStats({
           activeCropPlans: 0, unreadAlerts: 0, pendingOrders: 0, walletBalance: 0,
-          recentTransactions: [], alerts: [{ text: 'Unable to load dashboard data.', type: 'warning' }]
+          recentTransactions: [], alerts: [{ text: 'Unable to load dashboard data. Check backend connection.', type: 'warning' }]
         });
       } finally {
         setLoading(false);
@@ -66,6 +71,25 @@ export default function DashboardPage() {
 
   if (loading) {
     return <div className="py-20 flex justify-center text-slate-500">Loading Dashboard...</div>;
+  }
+
+  if (noFarm) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
+          <Sprout className="w-10 h-10 text-emerald-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Welcome to AgriPlatform</h2>
+        <p className="text-slate-400 mb-6 max-w-md">
+          You don't have a farm profile set up yet. Create one to unlock all 56 features including AI crop planning, IoT dashboards, market access, and more.
+        </p>
+        <a href="/farm/profile"
+          className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-colors"
+        >
+          Create Farm Profile →
+        </a>
+      </div>
+    );
   }
 
   return (
@@ -183,3 +207,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

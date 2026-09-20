@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function CropPlanningPage() {
   const [formData, setFormData] = useState({
-    farm_id: '',
+    farm_id: localStorage.getItem('farmId') || '',
     season: 'kharif',
     year: new Date().getFullYear()
   });
@@ -181,3 +181,5 @@ export default function CropPlanningPage() {
     </div>
   );
 }
+
+

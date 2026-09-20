@@ -11,7 +11,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function SeasonReportPage() {
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [season, setSeason] = useState('kharif');
   const [year, setYear] = useState('2023');
   
@@ -164,3 +164,4 @@ export default function SeasonReportPage() {
     </div>
   );
 }
+

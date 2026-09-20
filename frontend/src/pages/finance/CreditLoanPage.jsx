@@ -45,11 +45,11 @@ export default function CreditLoanPage() {
     fill: result.credit_score > 700 ? '#10b981' : result.credit_score > 550 ? '#f59e0b' : '#ef4444' 
   }] : [];
 
-  // Format SHAP factors for Recharts
+  // Format SHAP factors for Recharts — API returns { factor, impact } per LoanFactor schema
   const factorData = result?.top_factors?.map(f => ({
-    name: f.feature,
-    impact: f.impact,
-    fill: f.impact > 0 ? '#10b981' : '#ef4444'
+    name: f.factor || f.feature || 'Factor',
+    impact: Number(f.impact || 0),
+    fill: Number(f.impact || 0) > 0 ? '#10b981' : '#ef4444'
   })) || [];
 
   return (
@@ -211,3 +211,4 @@ export default function CreditLoanPage() {
     </div>
   );
 }
+

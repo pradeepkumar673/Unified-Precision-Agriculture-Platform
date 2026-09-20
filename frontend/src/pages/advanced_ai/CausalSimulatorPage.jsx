@@ -10,7 +10,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function CausalSimulatorPage() {
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   
   // Sliders
   const [irrigation, setIrrigation] = useState(0); // % change
@@ -183,3 +183,4 @@ export default function CausalSimulatorPage() {
     </div>
   );
 }
+

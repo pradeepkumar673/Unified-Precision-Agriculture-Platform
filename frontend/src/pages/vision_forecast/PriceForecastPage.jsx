@@ -33,16 +33,18 @@ export default function PriceForecastPage() {
     fetchForecast();
   }, []);
 
-  // Format data for Recharts
-  // Prophet outputs a series. If backend just returns a basic list of dicts {date, price, lower, upper}
-  // Let's ensure it maps correctly.
-  const chartData = result?.forecast_series?.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    price: Math.round(item.price),
-    lower: Math.round(item.lower),
-    upper: Math.round(item.upper),
-    ciRange: [Math.round(item.lower), Math.round(item.upper)] // For Area chart filled range
-  })) || [];
+  // API returns: predicted_price, low_ci, high_ci — no series
+  // Build a synthetic 4-week series from the single forecast values for charting
+  const chartData = result ? Array.from({ length: 4 }, (_, i) => {
+    const weekOffset = (i - 1) * 0.05; // slight trend
+    const price = Math.round(result.predicted_price * (1 + weekOffset));
+    return {
+      date: `Week ${i + 1}`,
+      price,
+      lower: Math.round(result.low_ci * (1 + weekOffset)),
+      upper: Math.round(result.high_ci * (1 + weekOffset)),
+    };
+  }) : [];
 
   return (
     <div className="space-y-6">
@@ -155,3 +157,4 @@ export default function PriceForecastPage() {
     </div>
   );
 }
+

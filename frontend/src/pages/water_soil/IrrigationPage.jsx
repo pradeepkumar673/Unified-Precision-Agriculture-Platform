@@ -11,7 +11,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function IrrigationPage() {
   const [formData, setFormData] = useState({
-    farm_id: '',
+    farm_id: localStorage.getItem('farmId') || '',
     crop: 'wheat',
     growth_stage: 'vegetative',
     current_moisture_pct: 45
@@ -250,3 +250,5 @@ function CheckCircle(props) {
     </svg>
   );
 }
+
+

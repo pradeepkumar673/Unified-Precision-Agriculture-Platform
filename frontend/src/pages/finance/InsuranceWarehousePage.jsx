@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function InsuranceWarehousePage() {
   const [activeTab, setActiveTab] = useState('warehouse'); // warehouse, insurance
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -248,3 +248,4 @@ export default function InsuranceWarehousePage() {
     </div>
   );
 }
+

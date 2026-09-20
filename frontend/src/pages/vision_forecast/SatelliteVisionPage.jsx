@@ -12,7 +12,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function SatelliteVisionPage() {
   const [activeTab, setActiveTab] = useState('satellite'); // satellite, drone, grain
-  const [farmId, setFarmId] = useState('');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -20,6 +20,7 @@ export default function SatelliteVisionPage() {
   const [stressResult, setStressResult] = useState(null);
   const [droneResult, setDroneResult] = useState(null);
   const [grainResult, setGrainResult] = useState(null);
+  const [weedResult, setWeedResult] = useState(null);
 
   const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -338,3 +339,4 @@ export default function SatelliteVisionPage() {
     </div>
   );
 }
+

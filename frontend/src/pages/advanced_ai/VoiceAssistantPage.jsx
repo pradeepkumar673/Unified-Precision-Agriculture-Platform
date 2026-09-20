@@ -8,7 +8,8 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function VoiceAssistantPage() {
-  const [farmId] = useState('FARM-001');
+  const [farmId] = useState(localStorage.getItem('farmId') || 'FARM-001');
+  const [whisperHint, setWhisperHint] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, sender: 'bot', text: 'Hello! I am your AI Agri-Assistant. Ask me anything via voice or text, and feel free to upload a photo for analysis.', type: 'text' }
   ]);
@@ -66,12 +67,13 @@ export default function VoiceAssistantPage() {
 
   const handleVoiceSubmit = async (audioBlob) => {
     setLoading(true);
+    setWhisperHint(true);
     const formData = new FormData();
     formData.append('audio_file', audioBlob, 'voice.webm');
     formData.append('farm_id', farmId);
 
     try {
-      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/voice-query`, formData);
+      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/voice-query`, formData, { timeout: 60000 });
       const d = res.data;
       setMessages(prev => [
         ...prev, 
@@ -82,6 +84,7 @@ export default function VoiceAssistantPage() {
       setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text: 'Voice processing failed. Please try again.', type: 'text' }]);
     } finally {
       setLoading(false);
+      setWhisperHint(false);
     }
   };
 
@@ -169,10 +172,15 @@ export default function VoiceAssistantPage() {
               <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
                 <Loader2 className="w-5 h-5 text-teal-400 animate-spin" />
               </div>
-              <div className="bg-slate-700 rounded-2xl rounded-tl-none p-4 flex gap-1">
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
+              <div className="bg-slate-700 rounded-2xl rounded-tl-none p-4 flex flex-col gap-2">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
+                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
+                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
+                </div>
+                {whisperHint && (
+                  <p className="text-xs text-slate-400">Transcribing with Whisper AI... (first call may take 10-20s to load model)</p>
+                )}
               </div>
             </div>
           )}
@@ -227,3 +235,4 @@ export default function VoiceAssistantPage() {
     </div>
   );
 }
+
