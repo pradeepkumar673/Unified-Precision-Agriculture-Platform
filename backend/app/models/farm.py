@@ -44,11 +44,13 @@ class User(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=True, default=None)  # for SMS alerts
     role: Mapped[UserRole] = mapped_column(
         SAEnum(UserRole, name="user_role"),
         default=UserRole.farmer,
         nullable=False,
     )
+    is_active: Mapped[bool] = mapped_column(default=True, nullable=False)  # for account suspension
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
