@@ -1,238 +1,320 @@
 import { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  Mic, MicOff, Image as ImageIcon, Send, X, 
-  Bot, User, Activity, Loader2, Play
-} from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { useNavigate } from 'react-router-dom';
+import { submitVoiceQuery } from '../../api/advancedAiApi';
 
 export default function VoiceAssistantPage() {
-  const [farmId] = useState(localStorage.getItem('farmId') || 'FARM-001');
-  const [whisperHint, setWhisperHint] = useState(false);
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'bot', text: 'Hello! I am your AI Agri-Assistant. Ask me anything via voice or text, and feel free to upload a photo for analysis.', type: 'text' }
-  ]);
-  const [inputText, setInputText] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const navigate = useNavigate();
   
   const [isRecording, setIsRecording] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const chatEndRef = useRef(null);
-  const recorderRef = useRef(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [transcription, setTranscription] = useState('...');
+  const [responseHtml, setResponseHtml] = useState(null);
+  
+  const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const audioPlaybackRef = useRef(null);
 
-  // Auto-scroll chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Playback state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+        
+        await handleSubmission(audioBlob);
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setTranscription('Listening...');
+    } catch (err) {
+      console.error('Error accessing microphone', err);
+      alert('Could not access microphone.');
     }
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
-  const toggleRecording = async () => {
+  const toggleRecording = () => {
     if (isRecording) {
-      recorderRef.current?.stop();
+      stopRecording();
     } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
-        audioChunksRef.current = [];
-        recorder.ondataavailable = event => audioChunksRef.current.push(event.data);
-        recorder.onstop = () => {
-          stream.getTracks().forEach(track => track.stop());
-          const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-          setIsRecording(false);
-          handleVoiceSubmit(audioBlob);
-        };
-        recorderRef.current = recorder;
-        recorder.start();
-        setIsRecording(true);
-      } catch {
-        setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text: 'Microphone access was denied or is unavailable.', type: 'text' }]);
+      startRecording();
+    }
+  };
+
+  const handleSubmission = async (audioBlob) => {
+    setIsProcessing(true);
+    setTranscription('Processing...');
+    
+    try {
+      // In a real app we'd convert Blob to File
+      const audioFile = new File([audioBlob], 'voice_query.wav', { type: 'audio/wav' });
+      const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+      
+      const response = await submitVoiceQuery(farmId, audioFile);
+      
+      setTranscription(`"${response.transcribed_text}"`);
+      
+      // Parse the response to simulate the UI
+      // In a real scenario, the backend might return structured JSON. Here we just show the text.
+      setResponseHtml(
+        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+          <div className="flex items-center justify-between pb-space-xs mb-space-xs">
+            <div className="flex items-center gap-space-sm">
+              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm">
+                <span className="material-symbols-outlined text-[20px]">psychology</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h2 className="font-label-lg text-on-surface font-semibold text-[15px]">KhetSaathi Agronomist AI</h2>
+                  <span className="material-symbols-outlined text-[16px] text-primary-container" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                </div>
+                <p className="font-label-sm text-on-surface-variant text-[11px]">Just now</p>
+              </div>
+            </div>
+            <div className="px-2 py-0.5 rounded bg-surface-container font-label-sm text-on-surface-variant text-[11px]">
+              AI Answer
+            </div>
+          </div>
+          <p className="font-body-md text-on-surface text-[15px] leading-relaxed">
+            {response.response_text}
+          </p>
+          <div className="mt-space-md pt-space-xs flex flex-col gap-2">
+            <div className="flex items-center justify-between text-on-surface-variant">
+              <div className="flex items-center gap-1.5">
+                <span className={`material-symbols-outlined text-[18px] text-primary ${isPlaying ? 'animate-pulse' : ''}`}>volume_up</span>
+                <span className="font-label-sm text-on-surface text-[12px] font-medium">{isPlaying ? 'Playing audio' : 'Audio ready'}</span>
+              </div>
+              <button 
+                onClick={togglePlayback}
+                className="flex items-center gap-1 text-primary hover:text-primary-container transition-colors py-1 px-2 rounded hover:bg-surface-container" 
+              >
+                <span className="material-symbols-outlined text-[16px]">{isPlaying ? 'pause' : 'play_arrow'}</span>
+                <span className="font-label-sm text-[12px]">{isPlaying ? 'Pause' : 'Play Voice'}</span>
+              </button>
+            </div>
+            <div className="w-full bg-surface-container rounded-full h-2 overflow-hidden flex items-center">
+              <div className="bg-primary h-full rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+            </div>
+          </div>
+        </div>
+      );
+      
+    } catch (err) {
+      console.error(err);
+      setTranscription('Error processing voice query.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const togglePlayback = () => {
+    if (!audioPlaybackRef.current && audioUrl) {
+      audioPlaybackRef.current = new Audio(audioUrl);
+      audioPlaybackRef.current.ontimeupdate = () => {
+        setProgress((audioPlaybackRef.current.currentTime / audioPlaybackRef.current.duration) * 100);
+      };
+      audioPlaybackRef.current.onended = () => {
+        setIsPlaying(false);
+        setProgress(0);
+      };
+    }
+    
+    if (audioPlaybackRef.current) {
+      if (isPlaying) {
+        audioPlaybackRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioPlaybackRef.current.play();
+        setIsPlaying(true);
       }
     }
   };
 
-  const handleVoiceSubmit = async (audioBlob) => {
-    setLoading(true);
-    setWhisperHint(true);
-    const formData = new FormData();
-    formData.append('audio_file', audioBlob, 'voice.webm');
-    formData.append('farm_id', farmId);
-
-    try {
-      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/voice-query`, formData, { timeout: 60000 });
-      const d = res.data;
-      setMessages(prev => [
-        ...prev, 
-        { id: Date.now(), sender: 'user', text: `"${d.transcribed_text || 'Voice query sent'}"`, type: 'voice' },
-        { id: Date.now()+1, sender: 'bot', text: d.response_text || 'I processed your voice query. Please try again with clearer audio.', type: 'text' }
-      ]);
-    } catch (err) {
-      setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', text: 'Voice processing failed. Please try again.', type: 'text' }]);
-    } finally {
-      setLoading(false);
-      setWhisperHint(false);
-    }
-  };
-
-  const handleTextSubmit = async (e) => {
-    e.preventDefault();
-    if (!inputText.trim() && !imageFile) return;
-
-    const newMsg = { 
-      id: Date.now(), 
-      sender: 'user', 
-      text: inputText, 
-      type: 'text',
-      image: imagePreview 
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop();
+      }
+      if (audioPlaybackRef.current) {
+        audioPlaybackRef.current.pause();
+      }
     };
-    
-    setMessages(prev => [...prev, newMsg]);
-    setInputText('');
-    setLoading(true);
+  }, [isRecording]);
 
-    const formData = new FormData();
-    if (imageFile) formData.append('image_file', imageFile);
-    formData.append('input_text', inputText);
-    formData.append('farm_id', farmId);
-
-    try {
-      const res = await axios.post(`${API_BASE}/api/v1/advanced_ai/multimodal-query`, formData);
-      const d = res.data;
-      setMessages(prev => [
-        ...prev, 
-        { 
-          id: Date.now()+1, 
-          sender: 'bot', 
-          text: d.combined_response || 'I processed your query. Please provide more context for a better response.', 
-          type: 'text' 
-        }
-      ]);
-      removeImage();
-    } catch (err) {
-      setMessages(prev => [...prev, { id: Date.now()+1, sender: 'bot', text: 'Query processing failed. Please try again.', type: 'text' }]);
-      removeImage();
-      setLoading(false);
-    }
+  const handleQueryClick = (text) => {
+    setTranscription(`"${text} ..."`);
+    setIsProcessing(true);
+    // Simulate backend response for canned query since we don't have audio
+    setTimeout(() => {
+      setIsProcessing(false);
+      setResponseHtml(
+        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm mt-4">
+          <p className="font-body-md text-on-surface">You asked: {text}. This is a simulated response for keyboard/canned input.</p>
+        </div>
+      );
+    }, 1500);
   };
 
   return (
-    <div className="space-y-4 h-[calc(100vh-8rem)] flex flex-col">
-      <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-500">
-          Multimodal AI Assistant
-        </h1>
-        <p className="text-slate-400 mt-1">LLM-powered voice and vision queries (Whisper + Llama3/GPT-4V)</p>
-      </div>
+    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
+      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
+        <div className="flex items-center justify-between h-14 px-margin">
+          <div className="flex items-center gap-space-sm">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
+              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+            </button>
+            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Agronomist Voice</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center justify-center gap-1 w-auto px-3 h-9 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm" type="button">
+              <span className="material-symbols-outlined text-[18px] text-primary">volume_up</span>
+              <span className="font-label-sm text-on-surface">Auto-play</span>
+            </button>
+            <div className="px-3 py-1 bg-surface-container rounded-full shadow-sm">
+              <span className="font-label-sm text-primary font-bold">EN</span>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="flex-1 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl flex flex-col overflow-hidden">
+      <main className="flex flex-col w-full pt-[64px] flex-1 pb-4">
         
-        {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {messages.map(msg => (
-            <div key={msg.id} className={`flex gap-4 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg
-                ${msg.sender === 'user' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-emerald-400 to-teal-500'}
-              `}>
-                {msg.sender === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-6 h-6 text-white" />}
+        <div className="px-gutter my-space-xs">
+          <div className="w-full bg-surface-container-low p-space-sm rounded-xl flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-space-sm min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+                <span className="material-symbols-outlined text-[24px]">potted_plant</span>
               </div>
-              
-              <div className={`max-w-[75%] rounded-2xl p-4 shadow-md
-                ${msg.sender === 'user' 
-                  ? 'bg-blue-600 text-white rounded-tr-none' 
-                  : 'bg-slate-700 text-slate-200 rounded-tl-none border border-slate-600'}
-              `}>
-                {msg.type === 'voice' && (
-                  <div className="flex items-center gap-2 mb-2 text-blue-200 bg-blue-700/50 w-max px-3 py-1 rounded-full text-xs">
-                    <Play className="w-3 h-3"/> Voice Transcript
-                  </div>
-                )}
-                {msg.image && (
-                  <img src={msg.image} className="w-48 h-48 object-cover rounded-xl mb-3 border-2 border-white/20" alt="Upload"/>
-                )}
-                <p className="leading-relaxed">{msg.text}</p>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-                <Loader2 className="w-5 h-5 text-teal-400 animate-spin" />
-              </div>
-              <div className="bg-slate-700 rounded-2xl rounded-tl-none p-4 flex flex-col gap-2">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
-                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-label-sm text-primary uppercase tracking-wider">Active Field Context</span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+                  <span className="font-label-sm text-on-surface-variant">Sensor Online</span>
                 </div>
-                {whisperHint && (
-                  <p className="text-xs text-slate-400">Transcribing with Whisper AI... (first call may take 10-20s to load model)</p>
-                )}
+                <p className="font-headline-sm text-on-surface truncate text-[16px] leading-tight mt-0.5">Plot 1 • Sharbati Wheat (Day 42 • Tillering)</p>
               </div>
             </div>
-          )}
-          <div ref={chatEndRef} />
+            <button aria-label="Change active plot" className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant shrink-0">
+              <span className="material-symbols-outlined text-[20px]">swap_horiz</span>
+            </button>
+          </div>
         </div>
 
-        {/* Input Area */}
-        <div className="p-4 bg-slate-900 border-t border-slate-700">
-          
-          {imagePreview && (
-            <div className="mb-3 relative inline-block">
-              <img src={imagePreview} className="h-20 rounded-lg border border-slate-600" alt="Preview"/>
-              <button onClick={removeImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600">
-                <X className="w-3 h-3"/>
-              </button>
+        <div className="px-gutter mt-space-sm">
+          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm relative overflow-hidden min-h-[100px]">
+            <div className="flex items-center justify-between mb-2">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed">
+                <span className="material-symbols-outlined text-[14px]">graphic_eq</span>
+                <span className="font-label-sm text-[11px]">{isRecording ? 'Listening live...' : (isProcessing ? 'Processing AI...' : 'Ready')}</span>
+              </div>
+              <span className="font-label-sm text-on-surface-variant">Field Audio</span>
             </div>
-          )}
-
-          <form onSubmit={handleTextSubmit} className="flex items-end gap-3">
-            <button 
-              type="button" onClick={toggleRecording}
-              className={`p-4 rounded-full flex items-center justify-center transition-all shadow-lg shrink-0
-                ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'}
-              `}
-            >
-              {isRecording ? <Activity className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-            </button>
-            
-            <div className="flex-1 relative bg-slate-800 border border-slate-700 rounded-2xl flex items-center shadow-inner focus-within:border-cyan-500/50 focus-within:ring-1 focus-within:ring-cyan-500/50">
-              <label className="p-3 text-slate-400 hover:text-cyan-400 cursor-pointer transition-colors">
-                <ImageIcon className="w-6 h-6"/>
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-              </label>
-              <input 
-                value={inputText} onChange={e=>setInputText(e.target.value)}
-                placeholder="Ask about crops, upload a diseased leaf, or tap mic..."
-                className="flex-1 bg-transparent border-none py-4 outline-none text-white placeholder:text-slate-500"
-              />
-            </div>
-            
-            <button 
-              type="submit" disabled={(!inputText.trim() && !imageFile) || loading}
-              className="p-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg hover:opacity-90 disabled:opacity-50 disabled:grayscale transition-all shrink-0"
-            >
-              <Send className="w-6 h-6" />
-            </button>
-          </form>
-          
-          {isRecording && <p className="text-red-400 text-xs text-center mt-2 animate-pulse">Listening... Click mic again to send.</p>}
+            <p className="font-body-lg text-on-surface font-medium leading-snug">
+              {transcription}
+            </p>
+          </div>
         </div>
-      </div>
+
+        <div className="px-gutter my-space-md flex flex-col items-center justify-center relative">
+          <div className="relative flex items-center justify-center w-48 h-48 my-1">
+            {isRecording && (
+              <>
+                <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-60 pointer-events-none"></div>
+                <div className="absolute -inset-3 rounded-full bg-primary/15 animate-pulse pointer-events-none"></div>
+              </>
+            )}
+            <button 
+              onClick={toggleRecording}
+              aria-label={isRecording ? "Stop Listening" : "Start Listening"} 
+              className={`relative z-10 w-28 h-28 rounded-full shadow-lg flex flex-col items-center justify-center active:scale-95 transition-all duration-200 ${isRecording ? 'bg-primary-container hover:bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface border-2 border-outline'}`}
+            >
+              <div className="w-12 h-12 rounded-full bg-surface-tint/30 flex items-center justify-center mb-1">
+                <span className={`material-symbols-outlined text-[32px] ${isRecording ? 'text-primary-fixed' : 'text-on-surface'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {isRecording ? 'mic' : 'mic_none'}
+                </span>
+              </div>
+              <span className={`font-label-sm text-[11px] font-semibold ${isRecording ? 'text-primary-fixed' : 'text-on-surface'}`}>
+                {isRecording ? 'Tap to Pause' : 'Tap to Speak'}
+              </span>
+            </button>
+          </div>
+          
+          <div aria-hidden="true" className={`flex items-end justify-center gap-1 h-8 w-56 mt-2 transition-opacity duration-300 ${isRecording ? 'opacity-100' : 'opacity-30'}`}>
+            <div className="w-1.5 bg-primary rounded-full animate-bounce h-3" style={{ animationDuration: '450ms', animationDelay: '50ms' }}></div>
+            <div className="w-1.5 bg-primary-container rounded-full animate-bounce h-5" style={{ animationDuration: '520ms', animationDelay: '150ms' }}></div>
+            <div className="w-1.5 bg-primary rounded-full animate-bounce h-7" style={{ animationDuration: '380ms', animationDelay: '300ms' }}></div>
+            <div className="w-1.5 bg-surface-tint rounded-full animate-bounce h-8" style={{ animationDuration: '600ms', animationDelay: '80ms' }}></div>
+            <div className="w-1.5 bg-primary rounded-full animate-bounce h-6" style={{ animationDuration: '490ms', animationDelay: '220ms' }}></div>
+            <div className="w-1.5 bg-primary-container rounded-full animate-bounce h-7" style={{ animationDuration: '410ms', animationDelay: '100ms' }}></div>
+            <div className="w-1.5 bg-primary rounded-full animate-bounce h-4" style={{ animationDuration: '560ms', animationDelay: '190ms' }}></div>
+            <div className="w-1.5 bg-surface-tint rounded-full animate-bounce h-6" style={{ animationDuration: '430ms', animationDelay: '260ms' }}></div>
+            <div className="w-1.5 bg-primary rounded-full animate-bounce h-3" style={{ animationDuration: '480ms', animationDelay: '70ms' }}></div>
+          </div>
+        </div>
+
+        <div className="px-gutter mb-space-sm min-h-[150px]">
+          {responseHtml}
+        </div>
+
+        <div className="px-gutter mb-space-md">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="material-symbols-outlined text-[16px] text-on-surface-variant">tips_and_updates</span>
+            <h3 className="font-label-sm uppercase tracking-wider text-on-surface-variant text-[11px]">Recommended Voice Questions</h3>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            <button onClick={() => handleQueryClick('Check mandi wheat price')} className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-sm font-label-md flex items-center gap-2 active:bg-surface-container-high transition-colors">
+              <span className="material-symbols-outlined text-[18px] text-primary">currency_rupee</span>
+              <span>Check mandi wheat price</span>
+            </button>
+            <button onClick={() => handleQueryClick('Next spray schedule')} className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-sm font-label-md flex items-center gap-2 active:bg-surface-container-high transition-colors">
+              <span className="material-symbols-outlined text-[18px] text-primary">calendar_clock</span>
+              <span>Next spray schedule</span>
+            </button>
+            <button onClick={() => handleQueryClick('Report yellow leaf rust')} className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-sm font-label-md flex items-center gap-2 active:bg-surface-container-high transition-colors">
+              <span className="material-symbols-outlined text-[18px] text-error">coronavirus</span>
+              <span>Report yellow leaf rust</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="px-gutter pb-space-lg">
+          <div className="grid grid-cols-2 gap-3">
+            <button aria-label="Switch to typing mode" className="min-h-[48px] bg-surface-container-lowest hover:bg-surface-container text-on-surface rounded-xl flex items-center justify-center gap-2 shadow-sm font-label-md transition-colors">
+              <span className="material-symbols-outlined text-[20px] text-on-surface-variant">keyboard</span>
+              <span>Keyboard input</span>
+            </button>
+            <button onClick={() => navigate(-1)} aria-label="End conversation" className="min-h-[48px] bg-error-container hover:opacity-90 text-on-error-container rounded-xl flex items-center justify-center gap-2 shadow-sm font-label-md transition-colors">
+              <span className="material-symbols-outlined text-[20px]">call_end</span>
+              <span>End voice session</span>
+            </button>
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 }
-
