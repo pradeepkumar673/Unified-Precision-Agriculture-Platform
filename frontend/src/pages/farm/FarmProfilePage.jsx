@@ -43,6 +43,8 @@ export default function FarmProfilePage() {
       setFarmData(res.data);
       setFormData(res.data);
       setFarmId(idToLoad);
+      // Persist farm ID so dashboard and all other pages work automatically
+      localStorage.setItem('farmId', res.data.id);
       showToast('Profile loaded');
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load profile');
@@ -70,12 +72,15 @@ export default function FarmProfilePage() {
         // Update
         const res = await axios.put(`${API_BASE}/api/v1/farm/profile/${farmData.id}`, payload);
         setFarmData(res.data);
+        localStorage.setItem('farmId', res.data.id);
         showToast('Profile updated successfully');
       } else {
         // Create
         const res = await axios.post(`${API_BASE}/api/v1/farm/profile`, payload);
         setFarmData(res.data);
         setFarmId(res.data.id);
+        // Persist so all pages can use it without manual input
+        localStorage.setItem('farmId', res.data.id);
         showToast('Profile created successfully');
       }
       setIsEditing(false);

@@ -8,7 +8,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function LedgerPage() {
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -24,7 +24,8 @@ export default function LedgerPage() {
       setError('');
     } catch (err) {
       setTransactions([]);
-      setError(err.response?.data?.detail || 'Unable to load the ledger.');
+      const detail = err.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : JSON.stringify(detail || err.message || 'Unable to load the ledger.'));
     } finally {
       setLoading(false);
     }
@@ -36,17 +37,25 @@ export default function LedgerPage() {
 
   const initiatePayment = async (txn) => {
     try {
-      // In reality, you'd pass related_entity_id. For demo, we just trigger checkout.
       const res = await axios.post(`${API_BASE}/api/v1/finance/payment/initiate`, {
-        related_entity_id: txn.id,
+        related_entity_id: farmId || txn.id,
         amount: txn.amount,
-        type: txn.category
+        type: txn.type || 'marketplace'
       });
-      // Assuming Razorpay link is returned
       if (res.data.checkout_url) {
-        window.open(res.data.checkout_url, '_blank');
+        // In test/mock mode, open the URL and show order ID
+        const orderId = res.data.razorpay_order_id;
+        const isMock = orderId?.includes('mock');
+        if (isMock) {
+          setError('');
+          alert(`[TEST MODE] Mock order created: ${orderId}\nIn production this opens Razorpay checkout.\nTransaction ID: ${res.data.transaction_id}`);
+          // Refresh ledger to show new transaction
+          fetchLedger();
+        } else {
+          window.open(res.data.checkout_url, '_blank');
+        }
       } else {
-        setError('Razorpay did not return a checkout URL.');
+        setError('Payment gateway did not return a checkout URL.');
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Razorpay payment initialization failed.');
@@ -120,7 +129,7 @@ export default function LedgerPage() {
         </div>
       </div>
 
-      {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">{error}</div>}
+      {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">{typeof error === 'object' ? JSON.stringify(error) : error}</div>}
 
       <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -141,12 +150,12 @@ export default function LedgerPage() {
                 <tr><td colSpan="7" className="p-8 text-center text-slate-500">Loading ledger...</td></tr>
               ) : transactions.map((txn) => (
                 <tr key={txn.id} className="hover:bg-slate-800/50 transition-colors">
-                  <td className="p-4 font-mono text-sm text-white">{txn.id}</td>
-                  <td className="p-4 text-sm text-slate-400">{new Date(txn.date).toLocaleDateString()}</td>
-                  <td className="p-4 text-sm text-slate-300 capitalize">{txn.category.replace('_', ' ')}</td>
+                  <td className="p-4 font-mono text-xs text-white">{String(txn.id).slice(0,8)}…</td>
+                  <td className="p-4 text-sm text-slate-400">{txn.created_at ? new Date(txn.created_at).toLocaleDateString() : '—'}</td>
+                  <td className="p-4 text-sm text-slate-300 capitalize">{(txn.type || '').replace(/_/g, ' ')}</td>
                   <td className="p-4 font-bold text-white flex items-center gap-1 mt-1">
-                    {txn.type === 'Credit' ? <ArrowDownLeft className="w-4 h-4 text-emerald-400"/> : <ArrowUpRight className="w-4 h-4 text-red-400"/>}
-                    ₹{txn.amount.toLocaleString()}
+                    {txn.status === 'released' ? <ArrowDownLeft className="w-4 h-4 text-emerald-400"/> : <ArrowUpRight className="w-4 h-4 text-red-400"/>}
+                    ₹{Number(txn.amount || 0).toLocaleString()}
                   </td>
                   <td className="p-4">{renderStatusPill(txn.status)}</td>
                   <td className="p-4">
@@ -168,7 +177,7 @@ export default function LedgerPage() {
                     )}
                   </td>
                   <td className="p-4 text-right">
-                    {txn.status === 'pending' && txn.type === 'Debit' && (
+                    {txn.status === 'pending' && (
                       <button 
                         onClick={() => initiatePayment(txn)}
                         className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-md shadow-lg shadow-blue-500/20 transition-colors"

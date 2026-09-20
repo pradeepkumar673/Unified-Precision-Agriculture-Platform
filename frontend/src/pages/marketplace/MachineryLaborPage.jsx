@@ -164,7 +164,7 @@ export default function MachineryLaborPage() {
                  <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                </div>
                <div className="mt-2 text-xs text-slate-300">
-                 {items.length} {activeTab} listings available
+                 {(activeTab === 'machinery' ? machineryList : laborGangs).length} {activeTab} listings available
                </div>
             </div>
           </div>

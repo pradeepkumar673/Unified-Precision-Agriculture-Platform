@@ -106,7 +106,7 @@ export default function VariableRatePage() {
 
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
-          {error}
+          {typeof error === 'object' ? JSON.stringify(error) : error}
         </div>
       )}
 

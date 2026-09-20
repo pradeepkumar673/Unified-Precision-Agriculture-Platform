@@ -249,6 +249,9 @@ def train_model(
     from torch.optim import Adam
     from torch.optim.lr_scheduler import CosineAnnealingLR
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"  Device: {device}")
+
     cfg     = TASK_CONFIGS[task]
     classes = cfg["classes"]
 
@@ -260,6 +263,7 @@ def train_model(
     n_cls   = len(classes)
 
     def _train_phase(model, loader, val_loader, n_epochs, lr, phase_name):
+        model = model.to(device)
         criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
         optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
         scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs, eta_min=lr * 0.01)
@@ -271,6 +275,7 @@ def train_model(
             model.train()
             ep_loss, ep_correct, ep_total = 0.0, 0, 0
             for X, y in loader:
+                X, y = X.to(device), y.to(device)
                 optimizer.zero_grad()
                 logits = model(X)
                 loss   = criterion(logits, y)
@@ -286,6 +291,7 @@ def train_model(
             val_correct, val_total = 0, 0
             with torch.no_grad():
                 for X, y in val_loader:
+                    X, y = X.to(device), y.to(device)
                     preds = model(X).argmax(1)
                     val_correct += (preds == y).sum().item()
                     val_total   += len(y)

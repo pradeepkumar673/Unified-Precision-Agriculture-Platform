@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { 
   Sprout, Map, TestTube, CloudRain, Cpu, BarChart3, 
-  ShoppingCart, Landmark, FileCheck, Users, Menu, X, Home
+  ShoppingCart, Landmark, FileCheck, Users, Menu, X, Home, Wifi
 } from 'lucide-react';
 import { useAuth } from '../App'; // We will define this context in App.jsx
 
@@ -99,6 +99,14 @@ const NAVIGATION = [
       { name: "Voice AI", path: "/ai/assistant" },
       { name: "Causal Lab", path: "/ai/causal-lab" },
       { name: "Fed FL", path: "/ai/federated-learning" }
+    ]
+  },
+  {
+    group: "CEA / IoT",
+    icon: <Wifi className="w-5 h-5" />,
+    links: [
+      { name: "Facility Dashboard", path: "/iot/dashboard" },
+      { name: "Traceability", path: "/iot/traceability" }
     ]
   }
 ];

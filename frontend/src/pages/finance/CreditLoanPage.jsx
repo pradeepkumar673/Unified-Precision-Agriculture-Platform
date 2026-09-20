@@ -12,7 +12,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function CreditLoanPage() {
-  const [farmId, setFarmId] = useState('FARM-001');
+  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
   const [amount, setAmount] = useState(50000);
   
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,8 @@ export default function CreditLoanPage() {
       });
       setResult(res.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Loan application failed.');
+      const detail = err.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : JSON.stringify(detail || err.message || 'Loan application failed.'));
     } finally {
       setLoading(false);
     }
@@ -157,11 +158,11 @@ export default function CreditLoanPage() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center border-b border-slate-700/50 pb-2">
                         <span className="text-slate-400">Principal</span>
-                        <span className="text-white font-bold text-lg">₹{amount.toLocaleString()}</span>
+                        <span className="text-white font-bold text-lg">₹{Number(amount || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center border-b border-slate-700/50 pb-2">
                         <span className="text-slate-400">Interest Rate (p.a.)</span>
-                        <span className="text-emerald-400 font-bold">{result.terms.interest_rate}%</span>
+                        <span className="text-emerald-400 font-bold">{result.terms.interest_rate || result.terms.interest_rate_pct}%</span>
                       </div>
                       <div className="flex justify-between items-center border-b border-slate-700/50 pb-2">
                         <span className="text-slate-400">Tenure</span>
@@ -169,7 +170,7 @@ export default function CreditLoanPage() {
                       </div>
                       <div className="flex justify-between items-center pt-2">
                         <span className="text-slate-300 font-semibold">Monthly EMI</span>
-                        <span className="text-teal-400 font-bold text-2xl">₹{result.terms.emi.toLocaleString()}</span>
+                        <span className="text-teal-400 font-bold text-2xl">₹{Number(result.terms?.emi || result.terms?.monthly_emi || 0).toLocaleString()}</span>
                       </div>
                       <button className="w-full mt-4 py-2 bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 font-medium rounded-lg transition-colors border border-teal-500/30">
                         Accept & Disburse

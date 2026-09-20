@@ -19,6 +19,8 @@ from typing import Tuple
 import cv2
 import numpy as np
 
+from app.core.errors import ModelUnavailable
+
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 _ML_DIR = Path(__file__).resolve().parents[2] / "ml_models"
 _BE_DIR = Path(__file__).resolve().parents[2]
@@ -57,55 +59,24 @@ DISEASE_TREATMENTS = {
 
 
 def analyze_crop_disease_image(image_path: str, crop: str) -> dict:
-    """
-    Classify crop disease from a leaf image using the trained GradientBoosting
-    model (crop_disease_model.pkl).  Falls back to OpenCV colour heuristic if
-    the trained model is unavailable.
-    """
+    """Classify a leaf image with the PlantVillage MobileNetV3 checkpoint."""
+    model_path = _ML_DIR / "crop_disease_model.pt"
+    if not model_path.exists():
+        raise ModelUnavailable("crop_disease_model.pt is missing; train PlantVillage CNN first")
     try:
         sys.path.insert(0, str(_BE_DIR))
         from train_crop_disease_cnn import predict as disease_predict
         result = disease_predict(image_path)
-        # Prepend crop name to treatment recommendation
-        treatment = result.get("treatment_recommendation", "")
-        return {
-            "predicted_disease":        result["predicted_disease"],
-            "confidence":               result["confidence"],
-            "severity":                 result["severity"],
-            "treatment_recommendation": f"[{crop}] {treatment}",
-            "model_type":               result.get("model_type", "gradient_boosting_trained"),
-        }
-    except Exception:
-        # OpenCV colour-ratio heuristic fallback
-        green_ratio, brown_ratio = _color_ratios(image_path)
-
-        if green_ratio >= 0.55:
-            label, confidence = "Healthy", round(min(0.95, 0.6 + green_ratio * 0.4), 3)
-        elif brown_ratio >= 0.35:
-            label, confidence = "Leaf Blight", round(min(0.92, 0.5 + brown_ratio * 0.5), 3)
-        elif 0.20 <= brown_ratio < 0.35:
-            label, confidence = "Bacterial Spot", round(min(0.88, 0.45 + brown_ratio * 0.6), 3)
-        elif green_ratio < 0.25 and brown_ratio < 0.20:
-            label, confidence = "Powdery Mildew", round(min(0.85, 0.5 + (0.25 - green_ratio) * 1.2), 3)
-        else:
-            label, confidence = "Leaf Rust", round(min(0.80, 0.4 + brown_ratio * 0.8), 3)
-
-        if label == "Healthy":
-            severity = "low"
-        elif confidence >= 0.75:
-            severity = "high"
-        elif confidence >= 0.55:
-            severity = "medium"
-        else:
-            severity = "low"
-
-        return {
-            "predicted_disease": label,
-            "confidence": confidence,
-            "severity": severity,
-            "treatment_recommendation": f"[{crop}] {DISEASE_TREATMENTS[label]}",
-            "model_type": "opencv_fallback",
-        }
+    except Exception as exc:
+        raise ModelUnavailable(f"Crop disease model failed to load or run: {exc}") from exc
+    treatment = result.get("treatment_recommendation", "")
+    return {
+        "predicted_disease":        result["predicted_disease"],
+        "confidence":               result["confidence"],
+        "severity":                 result["severity"],
+        "treatment_recommendation": f"[{crop}] {treatment}",
+        "model_type":               result.get("model_type", "mobilenetv3_plantvillage"),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -115,6 +86,15 @@ WEED_HERBICIDES = {
     "Broadleaf Weed": ("2,4-D Amine 58% SL", 800.0),
     "Grassy Weed": ("Quizalofop-ethyl 5% EC", 400.0),
     "Sedge Weed": ("Halosulfuron-methyl 75% WG", 36.0),
+    "Parthenium": ("Metsulfuron-methyl 20% WP", 8.0),
+    "Lantana": ("Glyphosate 41% SL", 1000.0),
+    "Siam weed": ("2,4-D Amine 58% SL", 800.0),
+    "Chinee apple": ("Triclopyr 44.1% EC", 400.0),
+    "Prickly acacia": ("Picloram + 2,4-D", 600.0),
+    "Rubber vine": ("Metsulfuron-methyl 20% WP", 10.0),
+    "Parkinsonia": ("Triclopyr 44.1% EC", 500.0),
+    "Snake weed": ("2,4-D Amine 58% SL", 800.0),
+    "Negative": ("No herbicide required", 0.0),
 }
 
 

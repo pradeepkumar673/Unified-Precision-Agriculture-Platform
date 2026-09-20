@@ -171,10 +171,10 @@ export default function BuyerExchangePage() {
                 {/* Clustered Farms */}
                 <div className="mt-8">
                   <h3 className="text-slate-400 text-sm font-medium mb-3 flex items-center gap-2">
-                    <Users className="w-4 h-4" /> Contributing Farm Clusters ({matchResult.matched_farm_ids.length})
+                    <Users className="w-4 h-4" /> Contributing Farm Clusters ({(matchResult.matched_farm_ids || matchResult.farm_ids || []).length})
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {matchResult.matched_farm_ids.map(id => (
+                    {(matchResult.matched_farm_ids || matchResult.farm_ids || []).map(id => (
                       <div key={id} className="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
                         <span className="text-sm font-mono text-slate-300">{id}</span>
