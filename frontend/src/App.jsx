@@ -8,6 +8,14 @@ import DashboardPage from './pages/DashboardPage';
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
 import TermsPage from './pages/legal/TermsPage';
 
+// Farm Screens (Stitch pixel-exact)
+import SplashWelcomeScreen from './pages/farm/SplashWelcomeScreen';
+import PhoneNumberLogin from './pages/farm/PhoneNumberLogin';
+import RoleSelection from './pages/farm/RoleSelection';
+import FarmSetupWizardStep1Of3 from './pages/farm/FarmSetupWizardStep1Of3';
+import FieldMapping from './pages/farm/FieldMapping';
+import MainHomeDashboard from './pages/farm/MainHomeDashboard';
+
 // Feature Groups
 import FarmProfilePage from './pages/farm/FarmProfilePage';
 import FieldBoundaryPage from './pages/farm/FieldBoundaryPage';
@@ -67,17 +75,24 @@ function App() {
   return (
     <AuthContext.Provider value={{ token, login, logout }}>
       <Routes>
+        {/* Onboarding flow — no auth needed */}
+        <Route path="/" element={<SplashWelcomeScreen />} />
+        <Route path="/onboarding/phone" element={<PhoneNumberLogin />} />
+        <Route path="/onboarding/role" element={<RoleSelection />} />
+        <Route path="/onboarding/farm-setup" element={<FarmSetupWizardStep1Of3 />} />
+        <Route path="/onboarding/field-mapping" element={<FieldMapping />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         
         {/* Main Application Shell */}
-        <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route index element={<DashboardPage />} />
-          
+        <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+          <Route index element={<MainHomeDashboard />} />
+          <Route path="home" element={<MainHomeDashboard />} />
+
           <Route path="farm/profile" element={<FarmProfilePage />} />
-          <Route path="farm/boundary" element={<FieldBoundaryPage />} />
-          
+          <Route path="farm/boundary" element={<FieldMapping />} />
+
           <Route path="planning/crop-plan" element={<CropPlanningPage />} />
           <Route path="planning/rotation" element={<RotationPage />} />
           <Route path="planning/variable-rate" element={<VariableRatePage />} />
