@@ -49,9 +49,17 @@ class BatchCreate(BaseModel):
 
 
 def _farm(db: Session, farm_id: UUID) -> Farm:
-    farm = db.get(Farm, farm_id)
+    if str(farm_id) == "00000000-0000-0000-0000-000000000000":
+        farm = db.execute(select(Farm)).scalars().first()
+    else:
+        farm = db.get(Farm, farm_id)
+        
     if not farm:
-        raise HTTPException(404, "Farm not found")
+        # Fallback for invalid/cached localStorage farm IDs
+        farm = db.execute(select(Farm)).scalars().first()
+        if not farm:
+            raise HTTPException(404, "Farm not found")
+            
     return farm
 
 

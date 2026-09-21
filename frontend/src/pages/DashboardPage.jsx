@@ -3,12 +3,15 @@ import {
   Sprout, Bell, ShoppingCart, IndianRupee, CloudRain, 
   Map, TrendingUp, Calendar, ArrowRight
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [noFarm, setNoFarm] = useState(false);
@@ -70,7 +73,7 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="py-20 flex justify-center text-slate-500">Loading Dashboard...</div>;
+    return <div className="py-20 flex justify-center text-slate-500">{t('dashboard.loading', 'Loading Dashboard...')}</div>;
   }
 
   if (noFarm) {
@@ -79,14 +82,14 @@ export default function DashboardPage() {
         <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
           <Sprout className="w-10 h-10 text-emerald-400" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Welcome to AgriPlatform</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">{t('dashboard.welcome_agriplatform', 'Welcome to AgriPlatform')}</h2>
         <p className="text-slate-400 mb-6 max-w-md">
-          You don't have a farm profile set up yet. Create one to unlock all 56 features including AI crop planning, IoT dashboards, market access, and more.
+          {t('dashboard.no_farm_desc', "You don't have a farm profile set up yet. Create one to unlock all 56 features including AI crop planning, IoT dashboards, market access, and more.")}
         </p>
         <a href="/farm/profile"
           className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-colors"
         >
-          Create Farm Profile →
+          {t('dashboard.create_farm_profile', 'Create Farm Profile →')}
         </a>
       </div>
     );
@@ -95,20 +98,20 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white">Welcome back, Farmer</h1>
-        <p className="mt-1 text-slate-300">Here is the status of your farming operations today.</p>
+        <h1 className="text-3xl font-bold text-white">{t('dashboard.welcome_back', 'Welcome back, Farmer')}</h1>
+        <p className="mt-1 text-slate-300">{t('dashboard.status_today', 'Here is the status of your farming operations today.')}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
           <div className="absolute -right-4 -top-4 rounded-full bg-emerald-500/10 p-4"><Map className="h-8 w-8 text-emerald-400 opacity-70"/></div>
-          <p className="mb-1 text-sm font-medium text-slate-400">Active Crop Plans</p>
+          <p className="mb-1 text-sm font-medium text-slate-400">{t('dashboard.active_crop_plans', 'Active Crop Plans')}</p>
           <p className="text-3xl font-bold text-white">{stats.activeCropPlans}</p>
         </div>
         
         <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
           <div className="absolute -right-4 -top-4 rounded-full bg-amber-500/10 p-4"><Bell className="h-8 w-8 text-amber-400 opacity-70"/></div>
-          <p className="mb-1 text-sm font-medium text-slate-400">Unread Alerts</p>
+          <p className="mb-1 text-sm font-medium text-slate-400">{t('dashboard.unread_alerts', 'Unread Alerts')}</p>
           <p className="text-3xl font-bold text-white">{stats.unreadAlerts}</p>
         </div>
 

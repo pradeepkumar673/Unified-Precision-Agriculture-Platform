@@ -1,37 +1,36 @@
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
-export default function AppShell({ headerSlot, children }) {
+export default function AppShell({ 
+  children, 
+  headerSlot,
+  variant = 'default', // 'default' | 'detail'
+  hideBottomNav = false,
+  title,
+  headerPaddingClass = 'px-margin',
+  headerHeightClass = 'h-16',
+  backButtonClassName = 'min-w-[44px] min-h-[44px]',
+  rootClassName = 'bg-surface',
+  headerRightSlot,
+  headerLeftSlot,
+  headerTopSlot,
+  headerClassName,
+  titleClassName
+}) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const navItems = [
-    { path: '/', id: 'home', icon: 'home', label: 'Home' },
-    { path: '/planning/crop-plan', id: 'plan', icon: 'calendar_month', label: 'Plan' },
-    { path: '/marketplace/inputs', id: 'marketplace', icon: 'storefront', label: 'Marketplace' },
-    { path: '/community/alerts', id: 'alerts', icon: 'notifications', label: 'Alerts' },
-    { path: '/farm/profile', id: 'profile', icon: 'account_circle', label: 'Profile' }
+    { path: '/', id: 'home', icon: 'home', label: t('nav.home', 'Home') },
+    { path: '/planning/crop-plan', id: 'plan', icon: 'calendar_month', label: t('nav.plan', 'Plan') },
+    { path: '/marketplace/inputs', id: 'marketplace', icon: 'storefront', label: t('nav.marketplace', 'Marketplace') },
+    { path: '/community/alerts', id: 'alerts', icon: 'notifications', label: t('nav.alerts', 'Alerts') },
+    { path: '/farm/profile', id: 'profile', icon: 'account_circle', label: t('nav.profile', 'Profile') }
   ];
 
   const getPageTitle = (path) => {
-    if (path === '/') return 'Home';
-    if (path.startsWith('/planning/crop-plan')) return 'Crop Plan & Recommendations';
-    if (path.startsWith('/planning/season-performance')) return 'Season Performance';
-    if (path.startsWith('/planning/season-timeline')) return 'Season Timeline';
-    if (path.startsWith('/planning/variety-comparison')) return 'Variety Comparison';
-    if (path.startsWith('/planning/rotation')) return 'Crop Rotation Suggestions';
-    if (path.startsWith('/marketplace/inputs')) return 'Inputs Browse';
-    if (path.startsWith('/marketplace/machinery')) return 'Machinery Rental';
-    if (path.startsWith('/marketplace/harvest')) return 'Harvest Marketplace';
-    if (path.startsWith('/marketplace/delivery')) return 'Logistics Tracking';
-    if (path.startsWith('/community/alerts')) return 'Community Alerts';
-    if (path.startsWith('/community/digital-sakhi')) return 'Digital Sakhi AI';
-    if (path.startsWith('/community/shg-bookings')) return 'SHG Shared Bookings';
-    if (path.startsWith('/community/disease-map')) return 'Disease Outbreak Map';
-    if (path.startsWith('/community/fpo-cooperative-suite')) return 'FPO Cooperative Suite';
-    if (path.startsWith('/farm/profile')) return 'Farmer Profile Settings';
-    if (path.startsWith('/more')) return 'More Feature Hub';
-    if (path.startsWith('/health/disease-result')) return 'Diagnosis Result';
     if (path.startsWith('/health/disease-scanner')) return 'Disease Scanner';
     if (path.startsWith('/water-soil/irrigation')) return 'Irrigation Recommendation';
     if (path.startsWith('/water-soil/demand-forecast')) return 'Water Demand Forecast';
@@ -59,11 +58,33 @@ export default function AppShell({ headerSlot, children }) {
   const isHome = location.pathname === '/';
 
   return (
-    <div className="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen antialiased">
+    <div className={`${rootClassName} font-body-md text-body-md text-on-surface flex flex-col min-h-screen antialiased`}>
       {headerSlot ? (
         headerSlot
+      ) : variant === 'detail' ? (
+        <header className={`fixed top-0 w-full z-50 pt-safe ${headerClassName || 'bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]'}`}>
+          {headerTopSlot && (
+            <div className="flex flex-col">
+              {headerTopSlot}
+            </div>
+          )}
+          <div className={`${headerHeightClass} ${headerPaddingClass} flex items-center justify-between gap-space-sm`}>
+            <div className="flex items-center gap-space-xs min-w-0">
+              <button aria-label="Go back" className={`${backButtonClassName} shrink-0 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container active:bg-surface-container-high transition-colors`} onClick={() => navigate(-1)}>
+                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              </button>
+              {headerLeftSlot}
+              <h1 className={titleClassName || "font-headline-sm text-on-surface leading-tight truncate max-w-[150px]"}>{title !== undefined ? title : getPageTitle(location.pathname)}</h1>
+            </div>
+            {headerRightSlot && (
+              <div className="flex items-center gap-space-xs shrink-0">
+                {headerRightSlot}
+              </div>
+            )}
+          </div>
+        </header>
       ) : (
-        <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
+        <header className={`fixed top-0 w-full z-50 pt-safe ${headerClassName || 'bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]'}`}>
           {isHome ? (
             <div className="h-28 px-gutter flex flex-col justify-between py-space-xs">
               <div className="flex items-center justify-between gap-space-xs">
@@ -88,7 +109,7 @@ export default function AppShell({ headerSlot, children }) {
                     <span className="material-symbols-outlined text-[22px]">notifications</span>
                     <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-secondary-container text-on-secondary font-label-sm text-[10px] rounded-full flex items-center justify-center px-1">3</span>
                   </button>
-                  <Link to="/farm/profile" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                  <Link to="/farm/profile" className="w-11 h-11 rounded-full bg-primary flex items-center justify-center">
                     <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
                   </Link>
                 </div>
@@ -110,7 +131,7 @@ export default function AppShell({ headerSlot, children }) {
                 <h1 className="font-headline-sm text-headline-sm text-on-surface truncate ml-space-xs">{getPageTitle(location.pathname)}</h1>
               </div>
               <div className="flex items-center gap-space-xs shrink-0">
-                <Link to="/farm/profile" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <Link to="/farm/profile" className="w-11 h-11 rounded-full bg-primary flex items-center justify-center">
                   <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
                 </Link>
               </div>
@@ -123,30 +144,32 @@ export default function AppShell({ headerSlot, children }) {
         {children || <Outlet />}
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-bold">
-        <div className="flex justify-around items-center h-20 px-space-xs">
-          {navItems.map((item) => {
-            const isActive = item.path === '/' 
-              ? location.pathname === '/' 
-              : location.pathname.startsWith(item.path);
+      {(!hideBottomNav && navItems.length > 0) && (
+        <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-bold">
+          <div className="flex justify-around items-center h-20 px-space-xs">
+            {navItems.map((item) => {
+              const isActive = item.path === '/' 
+                ? location.pathname === '/' 
+                : location.pathname.startsWith(item.path);
 
-            return (
-              <Link
-                key={item.id}
-                to={item.path}
-                className={`flex flex-col items-center justify-center gap-space-xs min-w-[56px] min-h-[48px] transition-colors ${
-                  isActive 
-                    ? 'text-primary font-bold' 
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
-                <span className="font-label-sm text-label-sm">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  className={`flex flex-col items-center justify-center gap-space-xs min-w-[56px] min-h-[48px] transition-colors ${
+                    isActive 
+                      ? 'text-primary font-bold' 
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
+                  <span className="font-label-sm text-label-sm">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

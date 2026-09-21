@@ -15,6 +15,9 @@ const HIDE_CONTENT_CSS = `
     color: transparent !important;
     text-shadow: none !important;
     background-image: none !important;
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
   }
   input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {
     color: transparent !important;
@@ -54,13 +57,15 @@ async function run() {
 
     if (targetComponent && componentName !== targetComponent) continue;
     
-    // Check for AppShell conflicts
-    const absComponentPath = path.resolve(__dirname, componentPath.replace(/^frontend\//, ''));
-    if (fs.existsSync(absComponentPath)) {
-      const compSource = fs.readFileSync(absComponentPath, 'utf-8');
-      const hasFixedHeader = /<header[^>]+className=["'][^"']*fixed[^"']*top/.test(compSource);
-      const hasFixedNav = /<nav[^>]+className=["'][^"']*fixed[^"']*bottom/.test(compSource);
-      if (hasFixedHeader || hasFixedNav) {
+      // Check for AppShell conflicts
+      const absComponentPath = path.resolve(__dirname, componentPath.replace(/^frontend\//, ''));
+      if (fs.existsSync(absComponentPath)) {
+        const compSource = fs.readFileSync(absComponentPath, 'utf-8');
+        // If the component returns a custom header but passes it cleanly via headerSlot, it is NOT a structural duplication.
+        const isPassedViaSlot = /headerSlot\s*=\s*{\s*<header[^>]+className=["'][^"']*fixed[^"']*top/.test(compSource);
+        const hasFixedHeader = !isPassedViaSlot && /<header[^>]+className=["'][^"']*fixed[^"']*top/.test(compSource);
+        const hasFixedNav = /<nav[^>]+className=["'][^"']*fixed[^"']*bottom/.test(compSource);
+        if (hasFixedHeader || hasFixedNav) {
         doubleHeaderConflicts.push({
           component: componentName,
           hasHeader: hasFixedHeader,
@@ -130,6 +135,9 @@ async function run() {
   const pageBaseline = await context.newPage();
   const pageTarget = await context.newPage();
   
+  pageTarget.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  pageTarget.on('pageerror', err => console.error('PAGE ERROR:', err.message));
+
   // Go to root to establish the SPA wrapper
   await pageTarget.goto('http://localhost:5175/app', { waitUntil: 'load', timeout: 30000 });
   await pageTarget.screenshot({ path: path.join(DIFFS_DIR, 'debug_init.png') });
@@ -177,6 +185,7 @@ async function run() {
     }
         let targetBuffer;
       try {
+        fs.writeFileSync(path.join(DIFFS_DIR, task.componentName + '_actual_dom.html'), await pageTarget.content());
         targetBuffer = await pageTarget.screenshot({ fullPage: false, timeout: 15000, animations: 'disabled' });
       } catch (e) {
         console.error(`  -> Failed to screenshot target: ${e.message}`);

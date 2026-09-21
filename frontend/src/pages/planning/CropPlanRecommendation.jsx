@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCropPlan, createCropPlan } from '../../api/planningApi';
+import AppShell from '../../layouts/AppShell';
+import DataBoundary from '../../components/DataBoundary';
 
 const WHY_REASONS = [
   {
@@ -22,20 +24,27 @@ const WHY_REASONS = [
 
 export default function CropPlanRecommendation() {
   const navigate = useNavigate();
-  const farmId = localStorage.getItem('farmId');
+  const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [whyOpen, setWhyOpen] = useState(true);
 
   useEffect(() => {
+    fetchPlan();
+  }, [farmId]);
+
+  const fetchPlan = () => {
     if (!farmId) return;
+    setLoading(true);
+    setError(null);
     getCropPlan(farmId)
       .then(r => setPlan(r.data))
-      .catch(() => {})
+      .catch(e => setError(e))
       .finally(() => setLoading(false));
-  }, [farmId]);
+  };
 
   const cropName = plan?.crop_name || 'Sharbati Gold Wheat (HD-2967)';
   const matchScore = plan?.match_score ?? 96;
@@ -60,7 +69,8 @@ export default function CropPlanRecommendation() {
       
 
       <main className="flex flex-col relative w-full pt-20 pb-24 px-margin bg-background flex-1">
-        <div className="flex flex-col w-full pb-6 space-y-space-lg">
+        <DataBoundary loading={loading} error={error} onRetry={fetchPlan}>
+          <div className="flex flex-col w-full pb-6 space-y-space-lg">
           
           {/* Plot Context Pill Strip */}
           <div className="flex items-center justify-between bg-surface-container-low px-space-md py-space-sm rounded-xl">
@@ -207,6 +217,7 @@ export default function CropPlanRecommendation() {
             Based on ICAR agronomy guidelines &amp; Nashik district agro-climatic zone.
           </p>
         </div>
+        </DataBoundary>
       </main>
 
       {/* Bottom nav */}

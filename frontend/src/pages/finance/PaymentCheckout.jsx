@@ -5,6 +5,8 @@ import { initiatePayment } from '../../api/financeApi';
 export default function PaymentCheckout() {
   const navigate = useNavigate();
   const [paymentOption, setPaymentOption] = useState('upi');
+  const [upiId, setUpiId] = useState('');
+  const [upiError, setUpiError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStatus, setProcessStatus] = useState(null); // null, 'securing', 'redirecting', 'success'
 
@@ -14,6 +16,19 @@ export default function PaymentCheckout() {
 
   const handleTriggerPayment = async () => {
     if (isProcessing) return;
+    
+    if (paymentOption === 'upi') {
+      if (!upiId.trim()) {
+        setUpiError('UPI ID is required');
+        return;
+      }
+      if (!upiId.includes('@')) {
+        setUpiError('Please enter a valid UPI ID (e.g. name@bank)');
+        return;
+      }
+    }
+    
+    setUpiError('');
     setIsProcessing(true);
     setProcessStatus('securing');
 
@@ -191,12 +206,27 @@ export default function PaymentCheckout() {
             
             {paymentOption === 'upi' && (
               <div className="mt-space-md pt-space-sm pl-8 flex flex-col gap-space-sm animate-fade-in">
-                <label className="font-label-sm text-label-sm text-on-surface-variant font-medium">Enter your VPA / UPI ID</label>
-                <div className="flex items-center gap-space-xs bg-surface-container-low rounded-xl px-space-sm py-1">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[20px]">account_balance_wallet</span>
-                  <input className="bg-transparent flex-1 font-label-md text-label-md text-on-surface outline-none py-2" placeholder="username@upi" type="text" defaultValue="farmer.kisan@oksbi" />
+                <label className={`font-label-sm text-label-sm font-medium ${upiError ? 'text-error' : 'text-on-surface-variant'}`}>Enter your VPA / UPI ID <span className="text-error">*</span></label>
+                <div className={`flex items-center gap-space-xs bg-surface-container-low rounded-xl px-space-sm py-1 ${upiError ? 'border border-error' : ''}`}>
+                  <span className={`material-symbols-outlined text-[20px] ${upiError ? 'text-error' : 'text-on-surface-variant'}`}>account_balance_wallet</span>
+                  <input 
+                    className={`bg-transparent flex-1 font-label-md text-label-md outline-none py-2 ${upiError ? 'text-error' : 'text-on-surface'}`} 
+                    placeholder="username@upi" 
+                    type="text" 
+                    value={upiId}
+                    onChange={(e) => {
+                      setUpiId(e.target.value);
+                      if(upiError) setUpiError('');
+                    }}
+                  />
                   <button className="bg-primary-container text-on-primary-container px-space-sm py-1.5 rounded-lg font-label-sm text-label-sm font-bold active:scale-95 transition-transform" type="button">Verified</button>
                 </div>
+                {upiError && (
+                  <span className="font-label-sm text-label-sm text-error flex items-center gap-1 mt-0">
+                    <span className="material-symbols-outlined text-[14px]">error</span>
+                    {upiError}
+                  </span>
+                )}
                 <div className="flex items-center gap-space-xs text-primary font-label-sm text-label-sm pt-1">
                   <span className="material-symbols-outlined text-[16px]">storefront</span>
                   <span className="font-medium">Or scan QR code at Village CSC Center</span>

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppShell from '../../layouts/AppShell';
 import { submitVoiceQuery } from '../../api/advancedAiApi';
 
 export default function VoiceAssistantPage() {
@@ -180,28 +181,25 @@ export default function VoiceAssistantPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+      <AppShell 
+        variant="detail" 
+        hideBottomNav={true}
+        rootClassName="bg-surface selection:bg-primary-fixed"
+        title="Voice Assistant"
+        headerPaddingClass="px-gutter"
+        headerLeftSlot={<img alt="Simple modern agricultural leaf sprout emblem for KhetSaathi, green and gold theme, minimal flat vector style. Brand logo. - Primary color: #1b5e20" className="h-7 w-auto object-contain hidden xs:block" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8" />}
+        headerRightSlot={
+          <>
+            <button className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface active:bg-surface-container-high">
+              <span className="material-symbols-outlined text-[20px]">volume_up</span>
             </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Agronomist Voice</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center justify-center gap-1 w-auto px-3 h-9 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm" type="button">
-              <span className="material-symbols-outlined text-[18px] text-primary">volume_up</span>
-              <span className="font-label-sm text-on-surface">Auto-play</span>
-            </button>
-            <div className="px-3 py-1 bg-surface-container rounded-full shadow-sm">
-              <span className="font-label-sm text-primary font-bold">EN</span>
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1">
+              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
             </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex flex-col w-full pt-[64px] flex-1 pb-4">
+          </>
+        }
+      >
+        <div className="flex flex-col w-full pb-32 relative pt-16 min-h-screen">
         
         <div className="px-gutter my-space-xs">
           <div className="w-full bg-surface-container-low p-space-sm rounded-xl flex items-center justify-between shadow-sm">
@@ -314,7 +312,7 @@ export default function VoiceAssistantPage() {
           </div>
         </div>
 
-      </main>
-    </div>
+        </div>
+      </AppShell>
   );
 }

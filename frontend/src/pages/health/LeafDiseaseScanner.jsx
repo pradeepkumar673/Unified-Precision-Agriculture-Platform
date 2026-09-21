@@ -1,9 +1,18 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import AppShell from '../../layouts/AppShell';
 import { detectDisease } from '../../api/healthApi';
+import { useTranslation } from 'react-i18next';
 
 export default function LeafDiseaseScanner() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const handleLanguageToggle = () => {
+    const nextLang = i18n.language === 'en' ? 'hi' : 'en';
+    i18n.changeLanguage(nextLang);
+    localStorage.setItem('agri_language', nextLang);
+  };
   const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
   const [loading, setLoading] = useState(false);
   const [flipped, setFlipped] = useState(false);
@@ -41,9 +50,15 @@ export default function LeafDiseaseScanner() {
   };
 
   return (
-    <div className="bg-inverse-surface text-inverse-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased">
-      <header className="fixed top-0 w-full z-50 pt-safe bg-inverse-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]">
-        <div className="flex flex-col">
+      <AppShell 
+        variant="detail" 
+        hideBottomNav={true}
+        title=""
+        rootClassName="bg-inverse-surface text-inverse-on-surface selection:bg-primary-fixed"
+        headerClassName="bg-surface/80 backdrop-blur-md"
+        headerHeightClass="h-14"
+        backButtonClassName="w-11 h-11 shrink-0"
+        headerTopSlot={
           <div className="h-6 px-margin flex items-center justify-between bg-black/40">
             <div className="flex items-center gap-space-xs">
               <span className="w-2 h-2 rounded-full bg-primary-fixed animate-pulse"></span>
@@ -53,148 +68,136 @@ export default function LeafDiseaseScanner() {
               <span className="material-symbols-outlined text-[14px]">offline_bolt</span>
             </div>
           </div>
-          <div className="h-14 px-margin flex items-center justify-between">
-            <div className="flex items-center gap-space-xs">
-              <button 
-                aria-label="Back" 
-                onClick={() => navigate(-1)}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-inverse-on-surface hover:bg-white/10 active:bg-white/20 transition-colors"
-                type="button"
+        }
+        headerRightSlot={
+          <>
+            <button aria-label="Toggle Flash" className="w-11 h-11 flex items-center justify-center rounded-full text-inverse-on-surface hover:bg-white/10 active:bg-white/20 transition-colors" type="button">
+              <span className="material-symbols-outlined text-[22px]">flash_on</span>
+            </button>
+            <button onClick={handleLanguageToggle} aria-label="Select Language" className="min-h-[44px] px-4 rounded-full bg-white/15 text-inverse-on-surface flex items-center gap-space-xs hover:bg-white/25 active:bg-white/30 transition-colors" type="button">
+              <span className="material-symbols-outlined text-[16px] text-primary-fixed">language</span>
+              <span className="font-label-md text-label-md">{i18n.language === 'hi' ? 'हिंदी' : 'English'}</span>
+            </button>
+          </>
+        }
+      >
+        <div className="flex-1 flex flex-col relative w-full pt-[104px] pb-safe">
+          <div className="flex flex-col w-full relative select-none">
+            {/* Interactive Viewfinder Stage */}
+            <div className="relative w-full overflow-hidden bg-inverse-surface rounded-b-xl shadow-md" style={{ height: 'calc(100dvh - 180px)', minHeight: '520px' }}>
+              {/* Live Camera Feed Simulation with Image from Context */}
+              <div 
+                className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-700 ease-out"
+                style={{ 
+                  transform: flipped ? 'scaleX(-1)' : 'scaleX(1)',
+                  backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB3_g40s_n38iX-s8nZ_cK2XFpZ80R1xY_4lR7aGq-D9N3e0bXk2O4uD9vE_hM7oYm6K6VqZ6y8mPqI8R8x_t_Q8Cj-z_R0n_VlqE7_32_PZc8Kx-3K_V0A5s7L_L5n7Uf5l3J6W5qM-5vR_4dG_V9oR_9H_3U8Y3v2h_6fI-9R8u5_gX')"
+                }}
               >
-                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-              </button>
-              <h1 className="font-headline-sm text-headline-sm text-inverse-on-surface leading-none pl-1">Scan Leaf for Disease</h1>
-            </div>
-            <div className="flex items-center gap-space-xs">
-              <button aria-label="Toggle Flash" className="w-11 h-11 flex items-center justify-center rounded-full text-inverse-on-surface hover:bg-white/10 active:bg-white/20 transition-colors" type="button">
-                <span className="material-symbols-outlined text-[22px]">flash_on</span>
-              </button>
-              <button aria-label="Select Language" className="h-9 px-space-sm rounded-full bg-white/15 text-inverse-on-surface flex items-center gap-space-xs hover:bg-white/25 active:bg-white/30 transition-colors" type="button">
-                <span className="material-symbols-outlined text-[16px] text-primary-fixed">language</span>
-                <span className="font-label-md text-label-md">English</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 flex flex-col relative w-full pt-20 pb-safe">
-        <div className="flex flex-col w-full relative select-none">
-          {/* Interactive Viewfinder Stage */}
-          <div className="relative w-full overflow-hidden bg-inverse-surface rounded-b-xl shadow-md" style={{ height: 'calc(100dvh - 180px)', minHeight: '520px' }}>
-            {/* Live Camera Feed Simulation with Image from Context */}
-            <div 
-              className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-700 ease-out"
-              style={{ 
-                transform: flipped ? 'scaleX(-1)' : 'scaleX(1)',
-                backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB3_g40s_n38iX-s8nZ_cK2XFpZ80R1xY_4lR7aGq-D9N3e0bXk2O4uD9vE_hM7oYm6K6VqZ6y8mPqI8R8x_t_Q8Cj-z_R0n_VlqE7_32_PZc8Kx-3K_V0A5s7L_L5n7Uf5l3J6W5qM-5vR_4dG_V9oR_9H_3U8Y3v2h_6fI-9R8u5_gX')"
-              }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-inverse-surface/70 via-transparent to-inverse-surface/80 pointer-events-none"></div>
-            </div>
-            
-            {/* Top Guidance & Audio Readout Banner */}
-            <div className="relative z-10 mx-margin mt-space-sm">
-              <div className="bg-surface/95 backdrop-blur-md text-on-surface px-space-md py-space-sm rounded-xl shadow-md flex items-center justify-between gap-space-sm">
-                <div className="flex items-center gap-space-sm min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 text-secondary">
-                    <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>wb_sunny</span>
+                <div className="absolute inset-0 bg-gradient-to-b from-inverse-surface/70 via-transparent to-inverse-surface/80 pointer-events-none"></div>
+              </div>
+              
+              {/* Top Guidance & Audio Readout Banner */}
+              <div className="relative z-10 mx-margin mt-space-sm">
+                <div className="bg-surface/95 backdrop-blur-md text-on-surface px-space-md py-space-sm rounded-xl shadow-md flex items-center justify-between gap-space-sm">
+                  <div className="flex items-center gap-space-sm min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 text-secondary">
+                      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>wb_sunny</span>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-label-md text-label-md text-on-surface font-bold leading-tight truncate">Place diseased leaf inside box</span>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant leading-none pt-0.5">Keep sunlight bright &amp; steady</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-label-md text-label-md text-on-surface font-bold leading-tight truncate">Place diseased leaf inside box</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant leading-none pt-0.5">Keep sunlight bright &amp; steady</span>
-                  </div>
+                  <button
+                    onClick={handleAudio}
+                    aria-label="Audio Instructions"
+                    className={`w-11 h-11 shrink-0 rounded-full text-on-tertiary flex items-center justify-center transition-transform shadow-sm ${audioActive ? 'scale-110 bg-primary-container' : 'bg-tertiary-container active:scale-95'}`}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[22px]">volume_up</span>
+                  </button>
                 </div>
+              </div>
+
+              {/* Central Augmented Leaf Targeting Reticle */}
+              <div className="absolute inset-0 flex items-center justify-center p-gutter pointer-events-none z-10">
+                <div className="relative w-full max-w-[280px] h-[340px] flex items-center justify-center">
+                  {/* Four Corner Framing Brackets */}
+                  <div className="absolute top-0 left-0 w-8 h-8 rounded-tl-xl border-t-4 border-l-4 border-primary-fixed shadow-sm"></div>
+                  <div className="absolute top-0 right-0 w-8 h-8 rounded-tr-xl border-t-4 border-r-4 border-primary-fixed shadow-sm"></div>
+                  <div className="absolute bottom-0 left-0 w-8 h-8 rounded-bl-xl border-b-4 border-l-4 border-primary-fixed shadow-sm"></div>
+                  <div className="absolute bottom-0 right-0 w-8 h-8 rounded-br-xl border-b-4 border-r-4 border-primary-fixed shadow-sm"></div>
+                  
+                  {/* Animated Center Target Laser & Leaf Silhouette */}
+                  <div className="w-full h-full flex flex-col items-center justify-center p-space-md">
+                    <svg className="w-48 h-64 text-primary-fixed/60 drop-shadow-md animate-pulse" fill="none" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M50 10C50 10 20 45 20 95C20 135 48 150 50 155C52 150 80 135 80 95C80 45 50 10 50 10Z" stroke="currentColor" strokeDasharray="6 6" strokeLinecap="round" strokeWidth="2.5"></path>
+                      <path d="M50 20V150" stroke="currentColor" strokeDasharray="4 4" strokeLinecap="round" strokeWidth="2"></path>
+                      <path d="M36 65L50 80L64 65" stroke="currentColor" strokeLinecap="round" strokeWidth="2"></path>
+                      <path d="M32 95L50 110L68 95" stroke="currentColor" strokeLinecap="round" strokeWidth="2"></path>
+                    </svg>
+                  </div>
+                  
+                  {/* Dynamic Realtime AI Quality Feedback Badge */}
+                  {loading ? (
+                    <div className="absolute -bottom-4 bg-secondary-container text-on-secondary font-label-sm text-label-sm px-space-md py-1 rounded-full shadow-md flex items-center gap-space-xs transition-all duration-300">
+                      <span className="material-symbols-outlined text-[16px] text-secondary-fixed animate-spin">sync</span>
+                      <span>Analyzing Leaf Health...</span>
+                    </div>
+                  ) : (
+                    <div className="absolute -bottom-4 bg-primary-container text-on-primary font-label-sm text-label-sm px-space-md py-1 rounded-full shadow-md flex items-center gap-space-xs transition-all duration-300">
+                      <span className="material-symbols-outlined text-[16px] text-primary-fixed" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <span>Leaf Detected - Yellow Rust Suspected</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Outdoor Capture Rule Chips */}
+              <div className="absolute bottom-space-md inset-x-0 z-10 flex justify-center items-center gap-space-xs px-margin pointer-events-none">
+                <div className="bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full flex items-center gap-1 shadow-sm">
+                  <span className="material-symbols-outlined text-[16px] text-primary-fixed">straighten</span>
+                  <span className="font-label-sm text-label-sm text-inverse-on-surface">15 cm distance</span>
+                </div>
+                <div className="bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full flex items-center gap-1 shadow-sm">
+                  <span className="material-symbols-outlined text-[16px] text-primary-fixed">filter_vintage</span>
+                  <span className="font-label-sm text-label-sm text-inverse-on-surface">1 Leaf only</span>
+                </div>
+                <div className="bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full flex items-center gap-1 shadow-sm">
+                  <span className="material-symbols-outlined text-[16px] text-secondary-fixed">wb_sunny</span>
+                  <span className="font-label-sm text-label-sm text-inverse-on-surface">No shadow</span>
+                </div>
+              </div>
+
+              {/* Interactive Capture Shutter Flash Screen Overlay */}
+              <div className={`absolute inset-0 bg-surface-container-lowest pointer-events-none transition-opacity duration-150 z-30 ${flash ? 'opacity-90' : 'opacity-0'}`}></div>
+            </div>
+
+            {/* Bottom Ergonomic Control Dock */}
+            <div className="w-full bg-inverse-surface px-margin py-space-md flex items-center justify-between z-20">
+              {/* Gallery Upload Option */}
+              <button aria-label="Upload from Phone Gallery" className="flex flex-col items-center justify-center min-w-[72px] h-14 rounded-xl bg-white/10 active:bg-white/20 text-inverse-on-surface transition-colors p-1" type="button">
+                <span className="material-symbols-outlined text-[24px]">photo_library</span>
+                <span className="font-label-sm text-label-sm mt-0.5">Gallery</span>
+              </button>
+              
+              {/* Main Tactile Shutter Button */}
+              <div className="relative flex items-center justify-center">
+                <div className="absolute w-20 h-20 rounded-full bg-primary-fixed/20 animate-ping pointer-events-none"></div>
                 <button
-                  onClick={handleAudio}
-                  aria-label="Audio Instructions"
-                  className={`w-11 h-11 shrink-0 rounded-full text-on-tertiary flex items-center justify-center transition-transform shadow-sm ${audioActive ? 'scale-110 bg-primary-container' : 'bg-tertiary-container active:scale-95'}`}
+                  onClick={handleCapture}
+                  disabled={loading}
+                  aria-label="Capture Leaf Image"
+                  className="w-[68px] h-[68px] rounded-full bg-primary-fixed flex items-center justify-center shadow-lg active:scale-90 transition-transform focus:outline-none p-1.5"
                   type="button"
                 >
-                  <span className="material-symbols-outlined text-[22px]">volume_up</span>
+                  <div className="w-full h-full rounded-full bg-surface-container-lowest flex items-center justify-center shadow-inner">
+                    <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+                      <span className="material-symbols-outlined text-[26px]">photo_camera</span>
+                    </div>
+                  </div>
                 </button>
               </div>
-            </div>
-
-            {/* Central Augmented Leaf Targeting Reticle */}
-            <div className="absolute inset-0 flex items-center justify-center p-gutter pointer-events-none z-10">
-              <div className="relative w-full max-w-[280px] h-[340px] flex items-center justify-center">
-                {/* Four Corner Framing Brackets */}
-                <div className="absolute top-0 left-0 w-8 h-8 rounded-tl-xl border-t-4 border-l-4 border-primary-fixed shadow-sm"></div>
-                <div className="absolute top-0 right-0 w-8 h-8 rounded-tr-xl border-t-4 border-r-4 border-primary-fixed shadow-sm"></div>
-                <div className="absolute bottom-0 left-0 w-8 h-8 rounded-bl-xl border-b-4 border-l-4 border-primary-fixed shadow-sm"></div>
-                <div className="absolute bottom-0 right-0 w-8 h-8 rounded-br-xl border-b-4 border-r-4 border-primary-fixed shadow-sm"></div>
-                
-                {/* Animated Center Target Laser & Leaf Silhouette */}
-                <div className="w-full h-full flex flex-col items-center justify-center p-space-md">
-                  <svg className="w-48 h-64 text-primary-fixed/60 drop-shadow-md animate-pulse" fill="none" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M50 10C50 10 20 45 20 95C20 135 48 150 50 155C52 150 80 135 80 95C80 45 50 10 50 10Z" stroke="currentColor" strokeDasharray="6 6" strokeLinecap="round" strokeWidth="2.5"></path>
-                    <path d="M50 20V150" stroke="currentColor" strokeDasharray="4 4" strokeLinecap="round" strokeWidth="2"></path>
-                    <path d="M36 65L50 80L64 65" stroke="currentColor" strokeLinecap="round" strokeWidth="2"></path>
-                    <path d="M32 95L50 110L68 95" stroke="currentColor" strokeLinecap="round" strokeWidth="2"></path>
-                  </svg>
-                </div>
-                
-                {/* Dynamic Realtime AI Quality Feedback Badge */}
-                {loading ? (
-                  <div className="absolute -bottom-4 bg-secondary-container text-on-secondary font-label-sm text-label-sm px-space-md py-1 rounded-full shadow-md flex items-center gap-space-xs transition-all duration-300">
-                    <span className="material-symbols-outlined text-[16px] text-secondary-fixed animate-spin">sync</span>
-                    <span>Analyzing Leaf Health...</span>
-                  </div>
-                ) : (
-                  <div className="absolute -bottom-4 bg-primary-container text-on-primary font-label-sm text-label-sm px-space-md py-1 rounded-full shadow-md flex items-center gap-space-xs transition-all duration-300">
-                    <span className="material-symbols-outlined text-[16px] text-primary-fixed" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                    <span>Leaf Detected - Yellow Rust Suspected</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Outdoor Capture Rule Chips */}
-            <div className="absolute bottom-space-md inset-x-0 z-10 flex justify-center items-center gap-space-xs px-margin pointer-events-none">
-              <div className="bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full flex items-center gap-1 shadow-sm">
-                <span className="material-symbols-outlined text-[16px] text-primary-fixed">straighten</span>
-                <span className="font-label-sm text-label-sm text-inverse-on-surface">15 cm distance</span>
-              </div>
-              <div className="bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full flex items-center gap-1 shadow-sm">
-                <span className="material-symbols-outlined text-[16px] text-primary-fixed">filter_vintage</span>
-                <span className="font-label-sm text-label-sm text-inverse-on-surface">1 Leaf only</span>
-              </div>
-              <div className="bg-inverse-surface/85 backdrop-blur-md px-space-sm py-1 rounded-full flex items-center gap-1 shadow-sm">
-                <span className="material-symbols-outlined text-[16px] text-secondary-fixed">wb_sunny</span>
-                <span className="font-label-sm text-label-sm text-inverse-on-surface">No shadow</span>
-              </div>
-            </div>
-
-            {/* Interactive Capture Shutter Flash Screen Overlay */}
-            <div className={`absolute inset-0 bg-surface-container-lowest pointer-events-none transition-opacity duration-150 z-30 ${flash ? 'opacity-90' : 'opacity-0'}`}></div>
-          </div>
-
-          {/* Bottom Ergonomic Control Dock */}
-          <div className="w-full bg-inverse-surface px-margin py-space-md flex items-center justify-between z-20">
-            {/* Gallery Upload Option */}
-            <button aria-label="Upload from Phone Gallery" className="flex flex-col items-center justify-center min-w-[72px] h-14 rounded-xl bg-white/10 active:bg-white/20 text-inverse-on-surface transition-colors p-1" type="button">
-              <span className="material-symbols-outlined text-[24px]">photo_library</span>
-              <span className="font-label-sm text-label-sm mt-0.5">Gallery</span>
-            </button>
-            
-            {/* Main Tactile Shutter Button */}
-            <div className="relative flex items-center justify-center">
-              <div className="absolute w-20 h-20 rounded-full bg-primary-fixed/20 animate-ping pointer-events-none"></div>
-              <button
-                onClick={handleCapture}
-                disabled={loading}
-                aria-label="Capture Leaf Image"
-                className="w-[68px] h-[68px] rounded-full bg-primary-fixed flex items-center justify-center shadow-lg active:scale-90 transition-transform focus:outline-none p-1.5"
-                type="button"
-              >
-                <div className="w-full h-full rounded-full bg-surface-container-lowest flex items-center justify-center shadow-inner">
-                  <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
-                    <span className="material-symbols-outlined text-[26px]">photo_camera</span>
-                  </div>
-                </div>
-              </button>
-            </div>
             
             {/* Camera Flip / Lens Toggle */}
             <button 
@@ -207,8 +210,8 @@ export default function LeafDiseaseScanner() {
               <span className="font-label-sm text-label-sm mt-0.5">Flip</span>
             </button>
           </div>
+          </div>
         </div>
-      </main>
-    </div>
+      </AppShell>
   );
 }

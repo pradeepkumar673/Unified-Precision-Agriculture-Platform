@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "AgriPlatform"
+  },
+  "nav": {
+    "home": "Home",
+    "plan": "Plan",
+    "market": "Market",
+    "alerts": "Alerts",
+    "profile": "Profile",
+    "more": "More"
+  },
+  "dashboard": {
+    "greeting": "Hello, {{name}}",
+    "farm_overview": "Farm Overview",
+    "health_status": "Health Status",
+    "market_prices": "Market Prices",
+    "weather": "Weather Forecast",
+    "action_required": "Action Required"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "retry": "Retry",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  }
+}

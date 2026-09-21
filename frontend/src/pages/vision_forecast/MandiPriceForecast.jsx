@@ -3,24 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { getPriceForecast } from '../../api/visionForecastApi';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts';
 import AppShell from '../../layouts/AppShell';
+import DataBoundary from '../../components/DataBoundary';
 
 export default function MandiPriceForecast() {
   const navigate = useNavigate();
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [alertSet, setAlertSet] = useState(false);
 
+  const fetchForecast = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getPriceForecast({ crop: 'Wheat', district: 'Nashik', weeks_ahead: 4 });
+      setForecast(res.data);
+    } catch (err) {
+      setError(err);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchForecast = async () => {
-      try {
-        const res = await getPriceForecast({ crop: 'Wheat', district: 'Nashik', weeks_ahead: 4 });
-        setForecast(res.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchForecast();
   }, []);
 
@@ -83,7 +89,8 @@ export default function MandiPriceForecast() {
         </header>
       }
     >
-        <div className="flex flex-col relative w-full pt-14 pb-20">
+      <main className="flex flex-col relative w-full pt-[72px] pb-safe bg-background">
+        <DataBoundary loading={loading} error={error} onRetry={fetchForecast}>
           <div className="flex flex-col w-full px-margin pb-space-xl gap-space-md">
             {/* Title & Voice Readout Header */}
           <div className="flex items-start justify-between gap-space-sm pt-space-sm">
@@ -359,7 +366,8 @@ export default function MandiPriceForecast() {
             </button>
           </div>
         </div>
-      </div>
+        </DataBoundary>
+      </main>
     </AppShell>
   );
 }

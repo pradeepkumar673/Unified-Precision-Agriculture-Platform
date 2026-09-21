@@ -26,9 +26,15 @@ export default function FarmSetupWizardStep1Of3() {
   const [soil, setSoil] = useState('clay_loam');
   const [water, setWater] = useState('borewell');
   const [farmName, setFarmName] = useState('');
+  const [nameError, setNameError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
+    if (!farmName.trim()) {
+      setNameError('Farm name is required');
+      return;
+    }
+    setNameError('');
     setLoading(true);
     try {
       const farmId = localStorage.getItem('farmId');
@@ -73,15 +79,24 @@ export default function FarmSetupWizardStep1Of3() {
       <main className="flex flex-col w-full pt-20 pb-24 px-margin bg-background flex-1 gap-space-lg">
         {/* Farm Name */}
         <div className="flex flex-col gap-space-xs">
-          <label className="font-label-md text-label-md text-on-surface" htmlFor="farmName">Farm / Plot Name</label>
+          <label className={`font-label-md text-label-md ${nameError ? 'text-error' : 'text-on-surface'}`} htmlFor="farmName">Farm / Plot Name <span className="text-error">*</span></label>
           <input
             id="farmName"
             type="text"
             value={farmName}
-            onChange={e => setFarmName(e.target.value)}
+            onChange={e => {
+              setFarmName(e.target.value);
+              if (nameError) setNameError('');
+            }}
             placeholder="e.g. Ramesh's North Plot"
-            className="h-14 w-full rounded-xl bg-surface-container-lowest shadow-sm px-space-md font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container"
+            className={`h-14 w-full rounded-xl bg-surface-container-lowest shadow-sm px-space-md font-body-md text-body-md placeholder:text-outline focus:outline-none focus:ring-2 ${nameError ? 'border-2 border-error text-error focus:ring-error' : 'text-on-surface focus:ring-primary-container'}`}
           />
+          {nameError && (
+            <span className="font-label-sm text-label-sm text-error flex items-center gap-1 mt-1">
+              <span className="material-symbols-outlined text-[14px]">error</span>
+              {nameError}
+            </span>
+          )}
         </div>
 
         {/* Land Size Stepper */}

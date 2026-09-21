@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "कृषि मंच"
+  },
+  "nav": {
+    "home": "होम",
+    "plan": "योजना",
+    "market": "बाज़ार",
+    "alerts": "अलर्ट",
+    "profile": "प्रोफ़ाइल",
+    "more": "अधिक"
+  },
+  "dashboard": {
+    "greeting": "नमस्ते, {{name}}",
+    "farm_overview": "खेत का अवलोकन",
+    "health_status": "स्वास्थ्य स्थिति",
+    "market_prices": "बाज़ार मूल्य",
+    "weather": "मौसम का पूर्वानुमान",
+    "action_required": "कार्रवाई आवश्यक"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "कुछ गलत हो गया।",
+    "retry": "पुनः प्रयास करें",
+    "save": "परिवर्तन सहेजें",
+    "cancel": "रद्द करें",
+    "submit": "जमा करें"
+  }
+}

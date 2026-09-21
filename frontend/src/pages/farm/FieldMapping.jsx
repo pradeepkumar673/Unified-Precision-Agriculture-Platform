@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import AppShell from '../../layouts/AppShell';
 import { useNavigate } from 'react-router-dom';
 import { saveFarmBoundary } from '../../api/farmApi';
 import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
@@ -102,26 +103,22 @@ export default function FieldMapping() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
-      {/* Fixed header */}
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
-        <div className="h-16 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-xs min-w-0">
-            <button aria-label="Go back" onClick={() => navigate(-1)} className="w-11 h-11 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-variant transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <img alt="AgriPlatform Logo" className="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8" />
-            <h1 className="font-headline-sm text-headline-sm text-on-surface truncate ml-space-xs">Field Boundary Mapping</h1>
-          </div>
-          <div className="flex items-center gap-space-xs shrink-0">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-            </div>
-          </div>
+    <AppShell 
+      variant="detail" 
+      hideBottomNav={true}
+      title="Field Boundary Mapping"
+      rootClassName="bg-background"
+      headerClassName="pointer-events-none bg-transparent"
+      backButtonClassName="w-11 h-11 pointer-events-auto bg-surface/90 backdrop-blur-md shadow-sm"
+      titleClassName="font-headline-sm text-headline-sm text-on-surface truncate ml-space-xs pointer-events-auto bg-surface/80 px-2 py-1 rounded-md backdrop-blur-sm shadow-sm"
+      headerLeftSlot={<img alt="AgriPlatform Logo" className="h-8 w-auto object-contain shrink-0 pointer-events-auto" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8" />}
+      headerRightSlot={
+        <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center pointer-events-auto shadow-sm">
+          <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
         </div>
-      </header>
-
-      <main className="flex flex-col relative w-full pt-16 pb-24 bg-background flex-1">
+      }
+    >
+      <div className="flex flex-col relative w-full pt-16 pb-24 bg-background flex-1">
         <div className="flex flex-col w-full pb-safe relative">
 
           {/* Top Segmented Survey Progress Bar */}
@@ -146,7 +143,7 @@ export default function FieldMapping() {
                 <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">18 Sats (L1/L5)</span>
               </div>
               {/* Audio Guidance Pill */}
-              <button aria-label="Listen to voice navigation guidance" className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-container text-on-primary shadow-sm active:scale-95 transition-transform">
+              <button aria-label="Listen to voice navigation guidance" className="flex items-center justify-center w-11 h-11 rounded-full bg-primary-container text-on-primary shadow-sm active:scale-95 transition-transform">
                 <span className="material-symbols-outlined text-[18px]">volume_up</span>
               </button>
             </div>
@@ -178,7 +175,7 @@ export default function FieldMapping() {
           <div className="absolute top-3 left-3 bg-surface rounded-xl shadow-md p-1 flex gap-1">
             <button
               onClick={() => setMode('walk')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${mode === 'walk' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:bg-surface-container-highest'}`}
+              className={`flex items-center justify-center gap-1.5 py-2 px-4 min-h-[44px] rounded-lg transition-all ${mode === 'walk' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:bg-surface-container-highest'}`}
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">directions_walk</span>
@@ -186,7 +183,7 @@ export default function FieldMapping() {
             </button>
             <button
               onClick={() => setMode('tap')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${mode === 'tap' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:bg-surface-container-highest'}`}
+              className={`flex items-center justify-center gap-1.5 py-2 px-4 min-h-[44px] rounded-lg transition-all ${mode === 'tap' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:bg-surface-container-highest'}`}
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">touch_app</span>
@@ -202,16 +199,16 @@ export default function FieldMapping() {
 
           {/* Right toolbar */}
           <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-auto">
-            <button aria-label="Reset North" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
+            <button aria-label="Reset North" className="w-11 h-11 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
               <span className="material-symbols-outlined text-[20px]">navigation</span>
             </button>
-            <button aria-label="Toggle Satellite layer" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-on-surface active:scale-95 transition-transform" type="button">
+            <button aria-label="Toggle Satellite layer" className="w-11 h-11 rounded-xl bg-surface shadow-md flex items-center justify-center text-on-surface active:scale-95 transition-transform" type="button">
               <span className="material-symbols-outlined text-[20px]">layers</span>
             </button>
-            <button aria-label="Recenter on Farmer Location" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
+            <button aria-label="Recenter on Farmer Location" className="w-11 h-11 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
               <span className="material-symbols-outlined text-[20px]">my_location</span>
             </button>
-            <button onClick={handleUndo} disabled={waypoints.length === 0} aria-label="Undo last surveyed point" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-secondary active:scale-95 transition-transform disabled:opacity-50" type="button">
+            <button onClick={handleUndo} disabled={waypoints.length === 0} aria-label="Undo last surveyed point" className="w-11 h-11 rounded-xl bg-surface shadow-md flex items-center justify-center text-secondary active:scale-95 transition-transform disabled:opacity-50" type="button">
               <span className="material-symbols-outlined text-[20px]">undo</span>
             </button>
           </div>
@@ -284,7 +281,7 @@ export default function FieldMapping() {
             </div>
             <button
               onClick={() => setIsPaused(p => !p)}
-              className="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface text-label-sm font-semibold active:bg-surface-variant flex items-center gap-1"
+              className="px-4 py-2 min-h-[44px] rounded-lg bg-surface-container-highest text-on-surface text-label-sm font-semibold active:bg-surface-variant flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[16px]">{isPaused ? 'play_arrow' : 'pause'}</span>
               <span>{isPaused ? 'Resume' : 'Pause'}</span>
@@ -315,7 +312,7 @@ export default function FieldMapping() {
           </div>
         </footer>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

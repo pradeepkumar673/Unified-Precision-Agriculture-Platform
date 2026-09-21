@@ -132,21 +132,21 @@ function App() {
           <Route path="/onboarding/phone" element={<PhoneNumberLogin />} />
           <Route path="/onboarding/role" element={<RoleSelection />} />
           <Route path="/onboarding/farm-setup" element={<FarmSetupWizardStep1Of3 />} />
-          <Route path="/onboarding/field-mapping" element={<FieldMapping />} />
           <Route path="/login" element={<PhoneNumberLogin />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           
           {/* Genuine No-Chrome / Fullscreen Routes */}
+          {/* Fullscreen screens (if any remaining) */}
           <Route element={<ProtectedRoute><FullscreenLayout /></ProtectedRoute>}>
+          </Route>
+
+          {/* Self-wrapped screens that inject a headerSlot or use AppShell internally */}
+          <Route element={<ProtectedRoute />}>
             <Route path="/farm/boundary" element={<FieldMapping />} />
             <Route path="/health/disease-scanner" element={<LeafDiseaseScanner />} />
             <Route path="/ai/assistant" element={<VoiceAssistantPage />} />
             <Route path="/ai/multimodal-query" element={<MultimodalQuery />} />
-          </Route>
-
-          {/* Self-wrapped screens that inject a headerSlot */}
-          <Route element={<ProtectedRoute />}>
             <Route path="/vision/price-forecast" element={<MandiPriceForecast />} />
             <Route path="/vision/drone-climate" element={<DronePlantCountingClimateRisk />} />
           </Route>

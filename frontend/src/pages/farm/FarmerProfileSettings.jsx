@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../App'; // Import auth to allow logout
+import { useTranslation } from 'react-i18next';
 
 export default function FarmerProfileSettings() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const handleLanguageToggle = () => {
+    const nextLang = i18n.language === 'en' ? 'hi' : 'en';
+    i18n.changeLanguage(nextLang);
+    localStorage.setItem('agri_language', nextLang);
+  };
+
   const { logout } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -156,17 +165,17 @@ export default function FarmerProfileSettings() {
         <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-space-xs">Preferences & Records</span>
         <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
           {/* Language & Audio */}
-          <div className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
+          <div onClick={handleLanguageToggle} className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
             <div className="flex items-center gap-space-md min-w-0">
               <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
                 <span className="material-symbols-outlined text-[20px]">translate</span>
               </div>
               <div className="min-w-0">
                 <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">Language & Voice Assistance</p>
-                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">English • Audio Readout (Normal)</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">{i18n.language === 'hi' ? 'हिंदी (Hindi)' : 'English'} • Audio Readout (Normal)</p>
               </div>
             </div>
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">chevron_right</span>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">sync_alt</span>
           </div>
           <div className="h-[1px] bg-surface-container mx-space-md"></div>
           

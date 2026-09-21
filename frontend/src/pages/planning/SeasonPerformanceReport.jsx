@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCropPlan } from '../../api/planningApi';
+import DataBoundary from '../../components/DataBoundary';
 
 const COMPARISON_METRICS = [
   {
@@ -39,14 +40,25 @@ const COMPARISON_METRICS = [
 
 export default function SeasonPerformanceReport() {
   const navigate = useNavigate();
-  const farmId = localStorage.getItem('farmId');
+  const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
   const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
 
-  useEffect(() => {
+  const fetchReport = () => {
     if (!farmId) return;
-    getCropPlan(farmId).then(r => setReport(r.data)).catch(() => {});
+    setLoading(true);
+    setError(null);
+    getCropPlan(farmId)
+      .then(r => setReport(r.data))
+      .catch(e => setError(e))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchReport();
   }, [farmId]);
 
   const handleDownload = () => {
@@ -62,7 +74,9 @@ export default function SeasonPerformanceReport() {
       {/* Fixed header */}
       
 
-      <main className="flex flex-col w-full pt-20 pb-36 px-margin bg-background flex-1 space-y-space-lg">
+      <main className="flex flex-col relative w-full pt-[72px] pb-safe px-margin bg-background">
+        <DataBoundary loading={loading} error={error} onRetry={fetchReport}>
+        <div className="flex flex-col w-full pb-24 space-y-space-lg pt-space-md">
         {/* Hero Yield Strip */}
         <section className="mt-4 bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
           <div className="flex items-center justify-between mb-space-sm">
@@ -185,6 +199,8 @@ export default function SeasonPerformanceReport() {
             <span className="material-symbols-outlined text-primary text-[20px]">task_alt</span>
           </div>
         </section>
+        </div>
+        </DataBoundary>
       </main>
 
       {/* Sticky bottom action bar */}

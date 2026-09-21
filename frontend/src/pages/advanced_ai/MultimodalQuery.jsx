@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppShell from '../../layouts/AppShell';
 import { submitMultimodalQuery } from '../../api/advancedAiApi';
 
 export default function MultimodalQuery() {
@@ -107,29 +108,26 @@ export default function MultimodalQuery() {
   };
 
   return (
-    <div className="bg-surface font-body-md text-on-surface flex flex-col min-h-screen selection:bg-primary-fixed">
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-16 px-gutter flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-xs">
-            <button onClick={() => navigate(-1)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <img alt="Brand logo" className="h-7 w-auto object-contain hidden xs:block" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>
-            <h1 className="font-headline-sm text-on-surface leading-tight truncate max-w-[150px]">Multimodal Query</h1>
-          </div>
-          <div className="flex items-center gap-space-xs">
+    <>
+      <AppShell 
+        variant="detail" 
+        hideBottomNav={true}
+        rootClassName="bg-surface selection:bg-primary-fixed"
+        title="Multimodal Query"
+        headerPaddingClass="px-gutter"
+        headerLeftSlot={<img alt="Brand logo" className="h-7 w-auto object-contain hidden xs:block" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>}
+        headerRightSlot={
+          <>
             <button className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface active:bg-surface-container-high">
               <span className="material-symbols-outlined text-[20px]">volume_up</span>
             </button>
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1">
               <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
             </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex flex-col relative w-full pt-16 bg-surface min-h-screen">
-        <div className="flex flex-col w-full pb-28">
+          </>
+        }
+      >
+        <div className="flex flex-col w-full pb-28 pt-16 min-h-screen">
         
         {/* Top Utility Context Strip */}
         <div className="px-gutter py-space-sm bg-surface-container-low flex items-center justify-between">
@@ -358,7 +356,7 @@ export default function MultimodalQuery() {
           )}
         </div>
         </div>
-      </main>
+      </AppShell>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-gutter pt-2.5 pb-safe">
         {previewUrl && (
@@ -416,6 +414,6 @@ export default function MultimodalQuery() {
           <span className="font-label-sm text-label-sm text-xs text-on-surface-variant">Tap mic for Hindi, Marathi, Punjabi, or English voice query</span>
         </div>
       </div>
-    </div>
+    </>
   );
 }
