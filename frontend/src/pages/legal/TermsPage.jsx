@@ -1,6 +1,6 @@
 const TermsPage = () => {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 text-slate-200">
+    <div className="mx-auto max-w-4xl px-4 text-slate-200">
       <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 sm:p-8">
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Terms and Conditions</p>
         <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Platform terms</h1>

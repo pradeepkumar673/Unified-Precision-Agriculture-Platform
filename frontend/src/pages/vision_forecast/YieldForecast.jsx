@@ -30,22 +30,8 @@ export default function YieldForecast() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container/50 shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-16 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface">Yield Projections</h1>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">share</span>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-20 pb-28 px-margin bg-surface flex-1 gap-space-md">
         <div className="w-full flex items-center justify-between pt-2">
@@ -306,22 +292,7 @@ export default function YieldForecast() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center h-20 px-space-xs max-w-lg mx-auto">
-          {[
-            { icon: 'home', label: 'Home', to: '/app' },
-            { icon: 'calendar_month', label: 'Plan', to: '/planning/crop-plan' },
-            { icon: 'water_drop', label: 'Water', to: '/water-soil/irrigation' },
-            { icon: 'storefront', label: 'Market', to: '/vision/price-forecast', active: true },
-            { icon: 'crisis_alert', label: 'Alerts', to: '/community/alerts' },
-          ].map(({ icon, label, to, active }) => (
-            <button key={label} onClick={() => navigate(to)} className={`flex flex-col items-center justify-center min-w-[48px] min-h-[48px] py-1 px-2 transition-colors ${active ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{icon}</span>
-              <span className="font-label-sm text-label-sm mt-0.5">{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

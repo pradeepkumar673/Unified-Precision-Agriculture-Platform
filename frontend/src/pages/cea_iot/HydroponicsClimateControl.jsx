@@ -68,20 +68,8 @@ export default function HydroponicsClimateControl() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container/90 backdrop-blur-xl border-b border-surface-container-high shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">NFT/DWC Settings</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">more_vert</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface-container text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[64px] pb-24 flex-1">
         
@@ -393,7 +381,7 @@ export default function HydroponicsClimateControl() {
         </div>
         
         {showToast && (
-          <div className="fixed bottom-24 left-4 right-4 z-50">
+          <div className="fixed bottom-24 left-4 right-4 z-40">
             <div className="bg-primary text-on-primary rounded-lg p-space-sm flex items-center justify-between shadow-lg">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-primary-fixed">check_circle</span>
@@ -406,26 +394,7 @@ export default function HydroponicsClimateControl() {
 
       </main>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,59,113,0.06)]">
-        <div className="flex justify-around items-center h-20 px-space-xs">
-          <button onClick={() => navigate('/iot/dashboard')} className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-space-xs py-1 text-on-surface-variant transition-colors hover:text-on-surface">
-            <span className="material-symbols-outlined text-[24px]">sensors</span>
-            <span className="font-label-sm text-label-sm">Sensors</span>
-          </button>
-          <button onClick={() => navigate('/iot/hydro-climate')} className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-space-xs py-1 text-tertiary transition-colors font-label-md">
-            <span className="material-symbols-outlined text-[24px]">water_drop</span>
-            <span className="font-label-sm text-label-sm">Hydro/Climate</span>
-          </button>
-          <button onClick={() => navigate('/iot/shelves')} className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-space-xs py-1 text-on-surface-variant transition-colors hover:text-on-surface">
-            <span className="material-symbols-outlined text-[24px]">layers</span>
-            <span className="font-label-sm text-label-sm">Shelves</span>
-          </button>
-          <button onClick={() => navigate('/iot/traceability')} className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-space-xs py-1 text-on-surface-variant transition-colors hover:text-on-surface">
-            <span className="material-symbols-outlined text-[24px]">bolt</span>
-            <span className="font-label-sm text-label-sm">Trace & Power</span>
-          </button>
-        </div>
-      </nav>
+      
     </div>
   );
 }

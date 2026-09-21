@@ -95,24 +95,9 @@ export default function SeasonTimeline() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Fixed header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm min-w-0 flex-1">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container flex-shrink-0" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-on-surface-variant truncate">Plot 1 · 4.5 Acres · Nashik</span>
-              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Season Timeline 2024–2025</h1>
-            </div>
-          </div>
-          <button onClick={handleVoice} className="w-11 h-11 bg-surface-container rounded-full flex items-center justify-center text-primary active:bg-surface-container-high" type="button">
-            <span className="material-symbols-outlined text-[20px]">volume_up</span>
-          </button>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col w-full pt-20 pb-28 px-margin bg-background flex-1 space-y-0">
         {/* Timeline connector + cards */}
@@ -239,22 +224,7 @@ export default function SeasonTimeline() {
       </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center h-16 px-space-xs">
-          {[
-            { icon: 'home', label: 'Home', to: '/app' },
-            { icon: 'calendar_month', label: 'Plan', to: '/planning/crop-plan', active: true },
-            { icon: 'storefront', label: 'Market', to: '/marketplace/inputs' },
-            { icon: 'notifications', label: 'Alerts', to: '/community/alerts' },
-            { icon: 'account_circle', label: 'Profile', to: '/farm/profile' },
-          ].map(({ icon, label, to, active }) => (
-            <button key={label} onClick={() => navigate(to)} className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-colors ${active ? 'text-primary-container font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[22px]">{icon}</span>
-              <span className="font-label-sm text-label-sm">{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

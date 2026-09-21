@@ -30,30 +30,9 @@ export default function MainHomeDashboard() {
   const acresLabel = farm?.land_size_acres ? `${farm.land_size_acres} Ac` : '4.5 Ac';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe">
+    <div className="bg-background flex flex-col" style={{ minHeight: 'max(884px, 100dvh)' }}>
       {/* Fixed Top App Bar */}
-      <header className="fixed top-0 inset-x-0 z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm min-w-0 flex-1">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary flex-shrink-0">
-              <span className="material-symbols-outlined text-[22px]">person</span>
-            </div>
-            <div className="min-w-0">
-              <p className="font-label-sm text-label-sm text-on-surface-variant truncate">नमस्ते, {farmerName}</p>
-              <p className="font-label-lg text-label-lg text-on-surface font-bold truncate">{plotLabel} · {cropLabel}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-space-xs flex-shrink-0">
-            <button className="w-11 h-11 rounded-full bg-surface-container flex items-center justify-center text-on-surface relative" type="button">
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary-container"></span>
-            </button>
-            <button onClick={() => navigate('/farm/profile')} className="w-11 h-11 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold font-label-lg text-label-lg" type="button">
-              {farmerName.charAt(0)}
-            </button>
-          </div>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col w-full pt-20 pb-28 px-margin bg-background flex-1 space-y-space-lg">
         {/* Weather + Plot Context Strip */}
@@ -174,22 +153,7 @@ export default function MainHomeDashboard() {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
-        <div className="flex justify-around items-center h-20 px-space-xs">
-          {NAV_ITEMS.map(({ path, icon, label, to, badge }) => (
-            <button
-              key={path}
-              onClick={() => { setActiveNav(path); navigate(to); }}
-              className={`flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-2 py-1 transition-colors relative ${activeNav === path ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[24px]">{icon}</span>
-              <span className="font-label-sm text-label-sm mt-0.5">{label}</span>
-              {badge && <span className="absolute top-1 right-2.5 w-2 h-2 rounded-full bg-secondary-container"></span>}
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

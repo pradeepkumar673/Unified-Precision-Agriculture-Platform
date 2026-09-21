@@ -226,7 +226,7 @@ export default function LivestockPage() {
                     ) : (
                       <div className="relative rounded-xl overflow-hidden border border-slate-700 h-48 group">
                         <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity gap-2">
                           <button onClick={() => { setFile(null); setPreviewUrl(null); setHealthResult(null); }} className="p-2 bg-slate-700 text-white rounded-full hover:bg-slate-600 transition-colors">
                             <X className="w-4 h-4" />
                           </button>

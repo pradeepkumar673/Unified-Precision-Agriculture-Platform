@@ -13,7 +13,7 @@
 | `1._live_sensor_dashboard` | Live Sensor Dashboard | `cea_iot` | `frontend/src/pages/cea_iot/LiveSensorDashboard.jsx` |
 | `1._mandi_price_forecast` | Mandi Price Forecast | `vision_forecast` | `frontend/src/pages/vision_forecast/MandiPriceForecast.jsx` |
 | `1._splash_welcome_screen` | KhetSaathi Splash | `farm` | `frontend/src/pages/farm/SplashWelcomeScreen.jsx` |
-| `1._voice_assistant` | Voice Assistant | `advanced_ai` | `frontend/src/pages/advanced_ai/VoiceAssistant.jsx` |
+| `1._voice_assistant` | Voice Assistant | `advanced_ai` | `frontend/src/pages/advanced_ai/VoiceAssistantPage.jsx` |
 | `1._wallet_transaction_ledger` | Kisan Wallet & Passbook | `finance` | `frontend/src/pages/finance/WalletTransactionLedger.jsx` |
 | `2._crop_diagnosis_result` | Diagnosis Result | `health` | `frontend/src/pages/health/CropDiagnosisResult.jsx` |
 | `2._farmer_document_vault` | Farmer Document Vault | `gov_compliance` | `frontend/src/pages/gov_compliance/FarmerDocumentVault.jsx` |

@@ -34,26 +34,9 @@ export default function CropDiagnosisResult() {
                    'bg-primary text-on-primary';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe relative">
+    <div className="min-h-screen bg-background flex flex-col relative">
       {/* Fixed Header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm min-w-0 flex-1">
-            <button onClick={() => navigate('/app')} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container flex-shrink-0" type="button">
-              <span className="material-symbols-outlined text-[24px]">close</span>
-            </button>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-primary-container truncate flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">auto_awesome</span> KhetSaathi AI
-              </span>
-              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Diagnosis Result</h1>
-            </div>
-          </div>
-          <button className="w-11 h-11 bg-surface-container rounded-full flex items-center justify-center text-primary active:bg-surface-container-high shrink-0" type="button">
-            <span className="material-symbols-outlined text-[20px]">share</span>
-          </button>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col w-full pt-20 pb-12 px-margin bg-background flex-1 space-y-space-lg mt-4">
         {/* Core Diagnosis Card */}

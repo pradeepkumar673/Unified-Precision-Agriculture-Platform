@@ -18,7 +18,7 @@ export default function FarmAlerts() {
         
         // Auto-expand the first critical alert if any exist
         if (data && data.length > 0) {
-          const firstCritical = data.findIndex(a => a.severity.toLowerCase() === 'critical');
+          const firstCritical = data.findIndex(a => (a.severity || '').toLowerCase() === 'critical');
           if (firstCritical !== -1) {
             setExpandedAlerts({ [data[firstCritical].id]: true });
           }
@@ -45,8 +45,8 @@ export default function FarmAlerts() {
   };
 
   const getAlertStyle = (type, severity) => {
-    const t = type.toLowerCase();
-    const s = severity.toLowerCase();
+    const t = (type || '').toLowerCase();
+    const s = (severity || '').toLowerCase();
     
     if (s === 'critical' || t === 'pest') {
       return {
@@ -107,33 +107,17 @@ export default function FarmAlerts() {
 
   const filteredAlerts = alerts.filter(a => {
     if (activeFilter === 'All') return true;
-    if (activeFilter === 'Weather' && a.alert_type.toLowerCase() === 'weather') return true;
-    if (activeFilter === 'Pest & Disease' && a.alert_type.toLowerCase() === 'pest') return true;
-    if (activeFilter === 'Market' && a.alert_type.toLowerCase() === 'market') return true;
-    if (activeFilter === 'Scheme & Subsidies' && a.alert_type.toLowerCase() === 'scheme') return true;
+    const type = (a.alert_type || '').toLowerCase();
+    if (activeFilter === 'Weather' && type === 'weather') return true;
+    if (activeFilter === 'Pest & Disease' && type === 'pest') return true;
+    if (activeFilter === 'Market' && type === 'market') return true;
+    if (activeFilter === 'Scheme & Subsidies' && type === 'scheme') return true;
     return false;
   });
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container/50 shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Farm Alerts</h1>
-          </div>
-          <div className="flex items-center gap-1">
-            <button id="readAloudBtn" className="w-10 h-10 flex items-center justify-center rounded-full text-primary bg-surface-container active:scale-95 transition-all" type="button" title="Read Aloud">
-              <span className="material-symbols-outlined text-[22px]">record_voice_over</span>
-            </button>
-            <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">more_vert</span>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[64px] pb-24 px-margin bg-surface flex-1 gap-space-sm">
         
@@ -258,23 +242,7 @@ export default function FarmAlerts() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center h-16 px-space-xs">
-          {[
-            { icon: 'home', label: 'Home', path: '/app' },
-            { icon: 'calendar_month', label: 'Plan', path: '/planning/crop-plan' },
-            { icon: 'water_drop', label: 'Water', path: '/water/irrigation' },
-            { icon: 'storefront', label: 'Market', path: '/marketplace/inputs' },
-            { icon: 'notifications', label: 'Alerts', path: '/community/alerts', active: true },
-            { icon: 'account_circle', label: 'Profile', path: '/profile/settings' },
-          ].map(nav => (
-            <button key={nav.label} onClick={() => navigate(nav.path)} className={`flex flex-col items-center justify-center min-w-[52px] h-12 transition-colors ${nav.active ? 'text-primary-container font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[22px]">{nav.icon}</span>
-              <span className="font-label-sm text-label-sm">{nav.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

@@ -37,10 +37,10 @@ class FarmBase(BaseModel):
     land_size_acres: float
     soil_type: SoilType
     water_source: WaterSource
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = 0.0
+    longitude: Optional[float] = 0.0
     equipment_owned: List[str] = Field(default_factory=list)
-    annual_income_range: AnnualIncomeRange
+    annual_income_range: Optional[AnnualIncomeRange] = None
     crop_history: List[CropHistoryItem] = Field(default_factory=list)
 
 

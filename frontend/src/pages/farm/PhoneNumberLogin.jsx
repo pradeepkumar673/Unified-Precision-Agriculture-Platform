@@ -1,15 +1,21 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/farmApi';
+import { useAuth } from '../../App';
 
 export default function PhoneNumberLogin() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [step, setStep] = useState(1);
   const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [otpError, setOtpError] = useState(false);
   const [sent, setSent] = useState(false);
   const inputRef = useRef(null);
+  const otpInputRef = useRef(null);
 
   const formatPhone = (value) => {
     const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -21,6 +27,8 @@ export default function PhoneNumberLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (step === 2) return handleOtpSubmit(e);
+    
     const digits = phone.replace(/\D/g, '');
     if (digits.length < 10) {
       setError(true);
@@ -32,9 +40,38 @@ export default function PhoneNumberLogin() {
     try {
       await api.post('/auth/send-otp', { phone: `+91${digits}` });
       setSent(true);
-      setTimeout(() => navigate('/onboarding/role'), 1200);
+      setTimeout(() => {
+        setStep(2);
+        setLoading(false);
+        setSent(false);
+        setTimeout(() => otpInputRef.current?.focus(), 100);
+      }, 1000);
     } catch {
       setLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e?.preventDefault();
+    if (otp.length < 6) {
+      setOtpError(true);
+      setTimeout(() => setOtpError(false), 700);
+      return;
+    }
+    setLoading(true);
+    try {
+      const digits = phone.replace(/\D/g, '');
+      const res = await api.post('/auth/verify-otp', { phone: `+91${digits}`, otp });
+      login(res.data.access_token);
+      if (res.data.is_new_user) {
+        navigate('/onboarding/role');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      setOtpError(true);
+      setLoading(false);
+      setTimeout(() => setOtpError(false), 1500);
     }
   };
 
@@ -86,7 +123,9 @@ export default function PhoneNumberLogin() {
         {/* Headline */}
         <div className="flex flex-col gap-space-xs mb-space-lg">
           <div className="flex items-start justify-between gap-space-sm">
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Enter your mobile number</h1>
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">
+              {step === 1 ? 'Enter your mobile number' : 'Enter OTP'}
+            </h1>
             <button
               aria-label="Listen instructions in English"
               onClick={handleVoice}
@@ -97,66 +136,100 @@ export default function PhoneNumberLogin() {
             </button>
           </div>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            We will send a 6-digit verification code (OTP) via SMS to verify your account.
+            {step === 1 
+              ? 'We will send a 6-digit verification code (OTP) via SMS to verify your account.'
+              : `Enter the 6-digit code sent to +91 ${phone}`}
           </p>
         </div>
 
         {/* Form */}
         <form className="flex flex-col gap-space-lg" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-space-xs">
-            <label className="font-label-md text-label-md text-on-surface flex items-center gap-1.5" htmlFor="mobileNumber">
-              <span className="material-symbols-outlined text-label-md text-primary">smartphone</span>
-              Mobile Phone Number
-            </label>
+          {step === 1 ? (
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface flex items-center gap-1.5" htmlFor="mobileNumber">
+                <span className="material-symbols-outlined text-label-md text-primary">smartphone</span>
+                Mobile Phone Number
+              </label>
 
-            {/* Input shell */}
-            <div
-              className={`flex items-stretch h-16 w-full rounded-xl shadow-sm transition-all overflow-hidden focus-within:ring-2 focus-within:ring-primary-container ${error ? 'bg-error-container' : 'bg-surface-container-lowest'}`}
-            >
-              {/* India flag + code */}
-              <div className="flex items-center gap-2 px-3.5 bg-surface-container-high flex-shrink-0 select-none">
-                <div className="flex flex-col w-6 h-4 rounded overflow-hidden shadow-xs border-none justify-between">
-                  <span className="w-full h-1.5 bg-[#FF9933]"></span>
-                  <span className="w-full h-1 bg-surface-container-lowest flex items-center justify-center">
-                    <span className="w-1 h-1 rounded-full bg-tertiary"></span>
-                  </span>
-                  <span className="w-full h-1.5 bg-[#138808]"></span>
+              {/* Input shell */}
+              <div
+                className={`flex items-stretch h-16 w-full rounded-xl shadow-sm transition-all overflow-hidden focus-within:ring-2 focus-within:ring-primary-container ${error ? 'bg-error-container' : 'bg-surface-container-lowest'}`}
+              >
+                {/* India flag + code */}
+                <div className="flex items-center gap-2 px-3.5 bg-surface-container-high flex-shrink-0 select-none">
+                  <div className="flex flex-col w-6 h-4 rounded overflow-hidden shadow-xs border-none justify-between">
+                    <span className="w-full h-1.5 bg-[#FF9933]"></span>
+                    <span className="w-full h-1 bg-surface-container-lowest flex items-center justify-center">
+                      <span className="w-1 h-1 rounded-full bg-tertiary"></span>
+                    </span>
+                    <span className="w-full h-1.5 bg-[#138808]"></span>
+                  </div>
+                  <span className="font-label-lg text-label-lg text-on-surface tracking-wide">+91</span>
+                  <span className="w-px h-6 bg-outline-variant ml-1"></span>
                 </div>
-                <span className="font-label-lg text-label-lg text-on-surface tracking-wide">+91</span>
-                <span className="w-px h-6 bg-outline-variant ml-1"></span>
+
+                {/* Input */}
+                <input
+                  ref={inputRef}
+                  id="mobileNumber"
+                  name="mobileNumber"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  maxLength={11}
+                  placeholder="98765 43210"
+                  value={phone}
+                  onChange={(e) => formatPhone(e.target.value)}
+                  className="flex-1 bg-transparent px-space-md text-headline-sm font-headline-sm text-on-surface placeholder:text-outline tracking-wider focus:outline-none"
+                />
+
+                {/* Validation check */}
+                {isValid && (
+                  <div className="flex items-center pr-space-md text-primary-container">
+                    <span className="material-symbols-outlined text-headline-sm">check_circle</span>
+                  </div>
+                )}
               </div>
 
-              {/* Input */}
-              <input
-                ref={inputRef}
-                id="mobileNumber"
-                name="mobileNumber"
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel-national"
-                maxLength={11}
-                placeholder="98765 43210"
-                value={phone}
-                onChange={(e) => formatPhone(e.target.value)}
-                className="flex-1 bg-transparent px-space-md text-headline-sm font-headline-sm text-on-surface placeholder:text-outline tracking-wider focus:outline-none"
-              />
-
-              {/* Validation check */}
-              {isValid && (
-                <div className="flex items-center pr-space-md text-primary-container">
-                  <span className="material-symbols-outlined text-headline-sm">check_circle</span>
-                </div>
-              )}
+              <div className="flex items-center justify-between px-1">
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                  <span className="material-symbols-outlined text-label-sm text-secondary">key_off</span>
+                  No password needed. Simple OTP login.
+                </span>
+                <span className="font-label-sm text-label-sm text-outline">{rawDigits.length}/10</span>
+              </div>
             </div>
+          ) : (
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface flex items-center gap-1.5" htmlFor="otpCode">
+                <span className="material-symbols-outlined text-label-md text-primary">pin</span>
+                Verification Code
+              </label>
 
-            <div className="flex items-center justify-between px-1">
-              <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-label-sm text-secondary">key_off</span>
-                No password needed. Simple OTP login.
-              </span>
-              <span className="font-label-sm text-label-sm text-outline">{rawDigits.length}/10</span>
+              <div
+                className={`flex items-center h-16 w-full rounded-xl shadow-sm transition-all overflow-hidden focus-within:ring-2 focus-within:ring-primary-container ${otpError ? 'bg-error-container' : 'bg-surface-container-lowest'}`}
+              >
+                <input
+                  ref={otpInputRef}
+                  id="otpCode"
+                  name="otpCode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full h-full bg-transparent px-space-md text-center text-headline-md font-headline-md tracking-[1em] text-on-surface placeholder:text-outline focus:outline-none"
+                />
+              </div>
+              <div className="flex justify-center mt-2">
+                <span className="font-label-sm text-label-sm text-primary cursor-pointer hover:underline" onClick={() => setStep(1)}>
+                  Wrong number? Change it
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Reassurance */}
           <div className="flex items-start gap-3 p-space-md rounded-xl bg-surface-container">
@@ -174,8 +247,8 @@ export default function PhoneNumberLogin() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || sent}
-            className={`flex items-center justify-center gap-2 w-full h-14 rounded-xl font-label-lg text-label-lg text-on-primary shadow-md active:opacity-90 active:scale-[0.99] transition-all ${sent ? 'bg-primary-container' : isValid ? 'bg-secondary' : 'bg-secondary-container'}`}
+            disabled={loading || (step === 1 && sent)}
+            className={`flex items-center justify-center gap-2 w-full h-14 rounded-xl font-label-lg text-label-lg text-on-primary shadow-md active:opacity-90 active:scale-[0.99] transition-all ${sent ? 'bg-primary-container' : (step === 1 ? isValid : otp.length === 6) ? 'bg-secondary' : 'bg-secondary-container'}`}
           >
             {sent ? (
               <>
@@ -185,11 +258,11 @@ export default function PhoneNumberLogin() {
             ) : loading ? (
               <>
                 <span className="w-5 h-5 rounded-full border-2 border-on-primary border-t-transparent animate-spin inline-block"></span>
-                <span>Sending OTP SMS...</span>
+                <span>{step === 1 ? 'Sending OTP SMS...' : 'Verifying...'}</span>
               </>
             ) : (
               <>
-                <span>Get OTP Code</span>
+                <span>{step === 1 ? 'Get OTP Code' : 'Verify & Login'}</span>
                 <span className="material-symbols-outlined text-headline-sm">arrow_forward</span>
               </>
             )}

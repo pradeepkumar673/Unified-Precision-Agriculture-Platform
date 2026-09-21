@@ -55,89 +55,87 @@ export default function CropPlanRecommendation() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Fixed header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm min-w-0 flex-1">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container flex-shrink-0" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-space-xs">
-                <span className="font-label-sm text-label-sm text-primary-container flex items-center">🌱</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant truncate">Synced 1m ago · Offline Ready</span>
-              </div>
-              <span className="font-headline-sm text-headline-sm text-on-surface truncate">Plan</span>
+      
+
+      <main className="flex flex-col relative w-full pt-20 pb-24 px-margin bg-background flex-1">
+        <div className="flex flex-col w-full pb-6 space-y-space-lg">
+          
+          {/* Plot Context Pill Strip */}
+          <div className="flex items-center justify-between bg-surface-container-low px-space-md py-space-sm rounded-xl">
+            <div className="flex items-center gap-space-xs min-w-0">
+              <span className="material-symbols-outlined text-primary text-[20px] flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>landscape</span>
+              <span className="font-label-md text-label-md text-on-surface truncate">Plot 1 (4.5 Acres, Clay Loam)</span>
             </div>
+            <span className="font-label-sm text-label-sm bg-surface-container-highest text-on-surface-variant px-space-xs py-0.5 rounded-md flex-shrink-0">
+              Rabi 2024-25
+            </span>
           </div>
-          <div className="flex items-center gap-space-xs flex-shrink-0">
-            <button className="h-11 px-space-sm bg-surface-container rounded-full flex items-center justify-center gap-space-xs text-on-surface hover:bg-surface-container-high transition-colors" type="button">
-              <span className="font-label-md text-label-md font-bold text-primary">EN</span>
-            </button>
-            <button className="w-11 h-11 bg-surface-container rounded-full flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[20px]">volume_up</span>
-            </button>
+
+          {/* Header Section */}
+          <div className="flex flex-col space-y-space-xs">
+            <div className="flex items-center justify-between">
+              <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Recommended Crop Plan</h1>
+              <button aria-label="Listen to Plan Summary" className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
+                <span className="material-symbols-outlined text-[20px]">volume_up</span>
+              </button>
+            </div>
+            <p className="font-body-md text-body-md text-on-surface-variant">
+              AI recommendation matched to your soil test, local rainfall forecast &amp; mandi trends.
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="flex flex-col w-full pt-20 pb-28 px-margin bg-background flex-1 space-y-space-lg">
-        {/* Plot context pill */}
-        <div className="flex items-center justify-between bg-surface-container-low px-space-md py-space-sm rounded-xl mt-2">
-          <div className="flex items-center gap-space-xs min-w-0">
-            <span className="material-symbols-outlined text-primary text-[20px] flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>landscape</span>
-            <span className="font-label-md text-label-md text-on-surface truncate">Plot 1 (4.5 Acres, Clay Loam)</span>
+        {/* Primary Recommended Crop Card */}
+        <div className="flex flex-col bg-surface-container-lowest rounded-2xl shadow-md overflow-hidden">
+          {/* Crop Visual with Integrated Match Badge */}
+          <div className="relative w-full h-52 overflow-hidden">
+            <img alt="High quality golden wheat crop ear in an Indian field under sunny sky, clean agricultural photography, warm golden and green natural lighting" className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=600&auto=format&fit=crop"/>
+            <div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-inverse-surface/20 to-transparent"></div>
+            
+            {/* Top Match Badge */}
+            <div className="absolute top-space-md left-space-md flex items-center gap-1.5 bg-primary-container/95 text-on-primary font-label-md text-label-md px-space-md py-1.5 rounded-full shadow-sm">
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+              <span>{matchScore}% Best Match</span>
+            </div>
+            
+            {/* Live Weather Sync Chip */}
+            <div className="absolute top-space-md right-space-md flex items-center gap-1 bg-surface-container-lowest/90 backdrop-blur-sm text-on-surface font-label-sm text-label-sm px-2.5 py-1 rounded-full">
+              <span className="material-symbols-outlined text-secondary text-[16px]">wb_sunny</span>
+              <span>Optimal Window</span>
+            </div>
+            
+            {/* Title overlaid at bottom of photo */}
+            <div className="absolute bottom-space-md left-space-md right-space-md text-surface-container-lowest">
+              <div className="font-label-sm text-label-sm tracking-wide uppercase opacity-90 text-primary-fixed">Rabi Grain Champion</div>
+              <h2 className="font-headline-md text-headline-md text-surface-container-lowest leading-tight">{cropName}</h2>
+              <p className="font-label-md text-label-md text-surface-container-highest opacity-95">Variety: HD-2967 (Certified Seed)</p>
+            </div>
           </div>
-          <span className="font-label-sm text-label-sm bg-surface-container-highest text-on-surface-variant px-space-xs py-0.5 rounded-md flex-shrink-0">Rabi 2024-25</span>
-        </div>
+          
+          {/* Sowing Window Banner */}
+          <div className="bg-surface-container-low px-space-md py-space-sm flex items-center gap-space-xs text-on-surface-variant">
+            <span className="material-symbols-outlined text-primary text-[20px] flex-shrink-0">calendar_month</span>
+            <span className="font-label-md text-label-md text-on-surface">Rabi Season • Sowing Window: <strong>15 Oct - 10 Nov</strong></span>
+          </div>
 
-        {/* Headline */}
-        <div className="flex items-center justify-between">
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Recommended Crop Plan</h1>
-          <button className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
-            <span className="material-symbols-outlined text-[20px]">volume_up</span>
-          </button>
-        </div>
-        <p className="font-body-md text-body-md text-on-surface-variant -mt-2">
-          AI recommendation matched to your soil test, local rainfall forecast &amp; mandi trends.
-        </p>
-
-        {/* Hero crop card */}
-        <div className="rounded-xl bg-surface-container-lowest shadow-md overflow-hidden">
-          {/* Colour accent strip */}
-          <div className="h-2 bg-gradient-to-r from-primary-container to-primary"></div>
-          <div className="p-space-md flex flex-col space-y-space-md">
-            <div className="flex items-start gap-space-md">
-              <div className="w-16 h-16 rounded-xl bg-primary-fixed/30 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-[36px] text-primary">grass</span>
+          {/* Key Metrics Grid */}
+          <div className="p-space-md grid grid-cols-3 gap-space-xs bg-surface-container-lowest">
+            {[
+              { icon: 'psychiatry', iconColor: 'text-primary', label: 'Yield', value: `${yieldQtl}`, sub: 'Qtl / Acre' },
+              { icon: 'account_balance_wallet', iconColor: 'text-tertiary', label: 'Cost', value: cost, sub: 'per Acre' },
+              { icon: 'trending_up', iconColor: 'text-secondary-container', label: 'Profit', value: profit, sub: 'Net / Acre', valueColor: 'text-primary' },
+            ].map(({ icon, iconColor, label, value, sub, valueColor }) => (
+              <div key={label} className="flex flex-col bg-surface-container-low p-space-sm rounded-xl">
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                  <span className={`material-symbols-outlined text-[16px] ${iconColor}`}>{icon}</span>
+                  {label}
+                </span>
+                <span className={`font-headline-sm text-headline-sm mt-1 ${valueColor || 'text-on-surface'}`}>{value}</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">{sub}</span>
               </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center gap-space-xs flex-wrap">
-                  <span className="font-headline-sm text-headline-sm text-on-surface">{cropName}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold">{matchScore}% Match</span>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Rabi Sowing · Oct 25 – Nov 10</span>
-              </div>
-            </div>
-
-            {/* 3-metric grid */}
-            <div className="grid grid-cols-3 gap-space-sm">
-              {[
-                { icon: 'grain', iconColor: 'text-primary', label: 'Expected Yield', value: `${yieldQtl} Qtl/Ac` },
-                { icon: 'account_balance_wallet', iconColor: 'text-tertiary', label: 'Cost', value: cost, sub: 'per Acre' },
-                { icon: 'trending_up', iconColor: 'text-secondary-container', label: 'Profit', value: profit, sub: 'Net / Acre', valueColor: 'text-primary' },
-              ].map(({ icon, iconColor, label, value, sub, valueColor }) => (
-                <div key={label} className="flex flex-col bg-surface-container-low p-space-sm rounded-xl">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                    <span className={`material-symbols-outlined text-[16px] ${iconColor}`}>{icon}</span>
-                    {label}
-                  </span>
-                  <span className={`font-headline-sm text-headline-sm mt-1 ${valueColor || 'text-on-surface'}`}>{value}</span>
-                  {sub && <span className="font-label-sm text-label-sm text-on-surface-variant">{sub}</span>}
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
 
           {/* Why this crop collapsible */}
@@ -212,22 +210,7 @@ export default function CropPlanRecommendation() {
       </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center h-16 px-space-xs">
-          {[
-            { icon: 'home', label: 'Home', to: '/app' },
-            { icon: 'calendar_month', label: 'Plan', to: '/planning/crop-plan', active: true },
-            { icon: 'storefront', label: 'Market', to: '/marketplace/inputs' },
-            { icon: 'notifications', label: 'Alerts', to: '/community/alerts' },
-            { icon: 'account_circle', label: 'Profile', to: '/farm/profile' },
-          ].map(({ icon, label, to, active }) => (
-            <button key={label} onClick={() => navigate(to)} className={`flex flex-col items-center justify-center min-w-[56px] h-12 transition-colors ${active ? 'text-primary-container font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[22px]">{icon}</span>
-              <span className="font-label-sm text-label-sm">{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getClimateRisk } from '../../api/visionForecastApi';
+import AppShell from '../../layouts/AppShell';
 
 export default function DronePlantCountingClimateRisk() {
   const navigate = useNavigate();
@@ -21,59 +22,140 @@ export default function DronePlantCountingClimateRisk() {
     }
   }, [activeTab]);
 
-  return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container/50 shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-16 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Advanced Insights</h1>
+  const customHeader = (
+    <div className="h-14 px-margin flex items-center justify-between gap-space-sm w-full">
+      <div className="flex items-center gap-space-sm min-w-0 flex-1">
+        <img alt="Brand logo." className="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1">
+            <span className="font-headline-sm text-headline-sm text-primary truncate leading-tight">KhetSaathi</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant truncate hidden sm:inline">• Home</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">more_vert</span>
-            </button>
-          </div>
+          <button className="flex items-center gap-1 text-left min-w-0 group">
+            <span className="material-symbols-outlined text-[16px] text-secondary">location_on</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant truncate group-hover:text-primary">Plot 1 • Wheat</span>
+            <span className="material-symbols-outlined text-[14px] text-outline">arrow_drop_down</span>
+          </button>
         </div>
-        
-        {/* Module Segmented Tab Controller */}
-        <div className="px-margin pb-3 pt-1">
-          <div className="bg-surface-container p-1 rounded-xl flex items-center justify-between w-full shadow-inner">
-            <button 
-              onClick={() => setActiveTab('plant')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg transition-all duration-200 ${activeTab === 'plant' ? 'bg-surface text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} 
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[18px]">camera</span>
-              <span className="font-label-md text-label-md font-semibold">Plant Count</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('climate')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg transition-all duration-200 ${activeTab === 'climate' ? 'bg-surface text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} 
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[18px]">thermostat</span>
-              <span className="font-label-md text-label-md font-semibold">Climate Risk</span>
-            </button>
-          </div>
+      </div>
+      <div className="flex items-center gap-space-xs flex-shrink-0">
+        <div className="flex items-center gap-1 bg-surface-container-high px-space-xs py-0.5 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Synced</span>
         </div>
-      </header>
+        <button className="min-h-[44px] min-w-[44px] px-2 flex items-center justify-center gap-1 bg-surface-container rounded-full text-on-surface hover:bg-surface-container-high">
+          <span className="font-label-sm text-label-sm font-bold">EN</span>
+          <span className="material-symbols-outlined text-[16px] text-primary">volume_up</span>
+        </button>
+        <button className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container">
+          <span className="material-symbols-outlined text-[22px]">notifications</span>
+        </button>
+        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+          <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+        </div>
+      </div>
+    </div>
+  );
 
-      <main className="flex flex-col w-full pt-32 pb-24 bg-surface flex-1">
-        {activeTab === 'plant' && (
-          <div className="flex flex-col gap-space-md px-margin pb-space-xl">
-            <div className="flex items-center justify-between pt-1">
-              <div>
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Drone AI Stand Density</h2>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Flight: 08-Jan-25 • RGB 4K</span>
+  return (
+    <AppShell headerSlot={customHeader}>
+      <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
+        <main className="flex flex-col w-full pt-14 pb-20 bg-surface flex-1">
+          <div className="flex flex-col w-full">
+            {/* System Status Banner */}
+            <div className="px-margin pt-space-sm pb-space-xs flex items-center justify-between">
+              <div className="inline-flex items-center gap-1.5 bg-surface-container-high px-space-sm py-1 rounded-full">
+                <span className="material-symbols-outlined text-[15px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">AI Vision Engine v2.4</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                <span className="font-label-sm text-label-sm text-primary">Offline Synced</span>
               </div>
-              <span className="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed px-2.5 py-1 rounded-full font-bold">Processed</span>
+              <div className="flex items-center gap-1 text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px]">sensors</span>
+                <span className="font-label-sm text-label-sm">DJI Agras T40</span>
+              </div>
             </div>
 
-            <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-md bg-surface-container-highest">
-              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1593928136263-88339c0faae9?q=80&w=600&auto=format&fit=crop')" }}></div>
+            {/* Segmented Tab Switcher (Interactive) */}
+            <div className="px-margin py-space-sm">
+              <div className="grid grid-cols-2 p-1 bg-surface-container-high rounded-xl">
+                <button 
+                  className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg transition-all duration-200 ${activeTab === 'plant' ? 'bg-surface text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  onClick={() => setActiveTab('plant')}
+                >
+                  <span className="material-symbols-outlined text-[18px]">nest_cam_stand</span>
+                  <span className="font-label-md text-label-md">Plant Counting</span>
+                  {activeTab === 'plant' && <span className="w-2 h-2 rounded-full bg-secondary-container"></span>}
+                </button>
+                <button 
+                  className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg transition-all duration-200 ${activeTab === 'climate' ? 'bg-surface text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  onClick={() => setActiveTab('climate')}
+                >
+                  <span className="material-symbols-outlined text-[18px]">thermostat</span>
+                  <span className="font-label-md text-label-md">Climate Risk</span>
+                  {activeTab === 'climate' && <span className="w-2 h-2 rounded-full bg-secondary-container"></span>}
+                </button>
+              </div>
+            </div>
+
+            {activeTab === 'plant' && (
+              <div className="flex flex-col gap-space-md px-margin pb-space-xl">
+                {/* Header Block with voice readout trigger */}
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-headline-sm text-headline-sm text-on-surface">AI Drone Sapling &amp; Stand Count</h2>
+                    </div>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Plot 1 • Sharbati Gold Wheat</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded-full">Flight: 08:30 AM Today</span>
+                    <button aria-label="Listen to advisory" className="w-9 h-9 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed hover:bg-tertiary transition-colors shadow-sm">
+                      <span className="material-symbols-outlined text-[18px]">volume_up</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Hero Plant Count Result Card */}
+                <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Stand Census</span>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">1,42,800</span>
+                        <span className="font-body-md text-body-md text-on-surface-variant">Plants</span>
+                      </div>
+                      <span className="font-label-md text-label-md text-secondary mt-0.5">31,730 plants / acre avg.</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-1 bg-primary-fixed px-2.5 py-1 rounded-full text-on-primary-fixed">
+                        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                        <span className="font-label-sm text-label-sm">94% Optimal</span>
+                      </div>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant mt-1">High Emergence</span>
+                    </div>
+                  </div>
+                  
+                  {/* Target Benchmark Bar */}
+                  <div className="bg-surface-container-low rounded-lg p-space-sm flex flex-col gap-1.5 mt-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Benchmark Range</span>
+                      <span className="font-label-sm text-label-sm text-primary font-semibold">30,000 – 33,000 / acre</span>
+                    </div>
+                    <div className="relative w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+                      <div className="absolute left-[20%] right-[15%] top-0 bottom-0 bg-primary-fixed-dim/60"></div>
+                      <div className="h-full bg-primary-container rounded-full" style={{ width: '78%' }}></div>
+                    </div>
+                    <div className="flex justify-between text-on-surface-variant">
+                      <span className="font-label-sm text-label-sm">Poor (&lt;24k)</span>
+                      <span className="font-label-sm text-label-sm font-bold text-on-surface">Actual: 31.7k</span>
+                      <span className="font-label-sm text-label-sm">Dense (&gt;35k)</span>
+                    </div>
+                  </div>
+                </div>
+
+            <div className="relative w-full rounded-xl overflow-hidden bg-surface-container-highest shadow-sm">
+              <img className="w-full h-56 object-cover" data-alt="Top down aerial orthomosaic drone photography of lush geometric Indian wheat crop field rows in golden morning sunlight with subtle bright digital computer vision grid vectors, neon telemetry lines highlighting planting rows, and precision agricultural analysis overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjJ264l_91NDY2tHeQATbyPPgsXW3LVtSAHMsdCpVVErQlTEv-48_5eSmVW4YVLi71CzXN8ZEvViV9_zHDPU9NQJsfpLa5q3AO71DYySEN7jcJGOGKlIhDWRFx3ZvEkCgS_xxNbJ2wTzfD2grZ-C-VMsFy7iPS6GJGjxeL8JN-PhTjr7TWOFNoji2nqPmniL4j4gFMStWxp85taRkJu2VmwrmnRfy7EZMMDeJGPdfwh9ZInJhShCC5"/>
               <div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-transparent to-inverse-surface/40 pointer-events-none"></div>
               
               <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-center pointer-events-none">
@@ -260,9 +342,10 @@ export default function DronePlantCountingClimateRisk() {
             </div>
           </div>
         )}
+        </div>
       </main>
 
-      <div className="fixed bottom-[80px] w-full z-40 bg-surface/95 backdrop-blur-md px-margin py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+      <div className="sticky bottom-0 w-full z-40 bg-surface/95 backdrop-blur-md px-margin py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <button className="w-full min-h-[56px] bg-secondary-container hover:bg-secondary text-surface-container-lowest font-label-lg text-label-lg rounded-xl shadow-md flex items-center justify-center gap-2 px-4 transition-all active:scale-[0.99]">
           <span className="material-symbols-outlined text-[22px]">sync_saved_locally</span>
           <span>Sync Drone Telemetry &amp; Download Advisory</span>
@@ -270,22 +353,8 @@ export default function DronePlantCountingClimateRisk() {
         </button>
       </div>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center h-20 px-space-xs max-w-lg mx-auto">
-          {[
-            { icon: 'home', label: 'Home', to: '/app', active: true },
-            { icon: 'calendar_month', label: 'Plan', to: '/planning/crop-plan' },
-            { icon: 'water_drop', label: 'Water', to: '/water-soil/irrigation' },
-            { icon: 'storefront', label: 'Market', to: '/vision/price-forecast' },
-            { icon: 'crisis_alert', label: 'Alerts', to: '/community/alerts' },
-          ].map(({ icon, label, to, active }) => (
-            <button key={label} onClick={() => navigate(to)} className={`flex flex-col items-center justify-center min-w-[48px] min-h-[48px] py-1 px-2 transition-colors ${active ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{icon}</span>
-              <span className="font-label-sm text-label-sm mt-0.5">{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
+    </AppShell>
   );
 }

@@ -53,7 +53,7 @@ export default function SchemeMatching() {
             <p className="font-label-sm text-label-sm text-primary-fixed-dim uppercase tracking-wider font-semibold">
               Ministry of Agriculture &amp; Farmers Welfare
             </p>
-            <h2 className="font-headline-sm text-headline-sm font-bold leading-tight">
+            <h2 className="font-headline-sm text-headline-sm font-bold leading-tight truncate">
               {scheme.name}
             </h2>
           </div>
@@ -147,7 +147,7 @@ export default function SchemeMatching() {
             <p className="font-label-sm text-label-sm text-primary-fixed-dim uppercase tracking-wider font-semibold">
               Maharashtra Dept of Agriculture
             </p>
-            <h2 className="font-headline-sm text-headline-sm font-bold leading-tight">
+            <h2 className="font-headline-sm text-headline-sm font-bold leading-tight truncate">
               {scheme.name}
             </h2>
           </div>
@@ -219,7 +219,7 @@ export default function SchemeMatching() {
                 <span className="material-symbols-outlined text-[14px]">star</span>
                 <span>88% Match</span>
               </div>
-              <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">
+              <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug line-clamp-2">
                 {scheme.name}
               </h2>
               <p className="font-label-sm text-label-sm text-outline font-medium">Central Sector Scheme • Custom Hiring</p>
@@ -266,7 +266,7 @@ export default function SchemeMatching() {
                 <span className="material-symbols-outlined text-[14px]">shield</span>
                 <span>82% Match</span>
               </div>
-              <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">
+              <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug line-clamp-2">
                 {scheme.name}
               </h2>
               <p className="font-label-sm text-label-sm text-outline font-medium">National Crop Insurance • Rabi Season</p>
@@ -317,7 +317,7 @@ export default function SchemeMatching() {
       <article key={scheme.id} className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col p-space-md space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 pr-2">
-            <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug">
+            <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface leading-snug line-clamp-2">
               {scheme.name}
             </h2>
           </div>
@@ -331,26 +331,7 @@ export default function SchemeMatching() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container/50 shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-16 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm overflow-hidden">
-              <span className="font-label-lg text-label-lg font-bold">RS</span>
-            </div>
-            <div className="flex flex-col">
-              <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Govt Schemes</h1>
-              <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px] text-primary">my_location</span>
-                Nashik, Maharashtra
-              </span>
-            </div>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant active:bg-surface-container-high transition-colors relative" type="button">
-            <span className="material-symbols-outlined text-[24px]">notifications</span>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
-          </button>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col w-full pt-20 pb-24 px-margin bg-surface flex-1 gap-space-md">
         
@@ -422,7 +403,7 @@ export default function SchemeMatching() {
 
         <div className="space-y-space-md">
           {loading && <div className="text-center p-4">Loading schemes...</div>}
-          {!loading && matchData && matchData.eligible_schemes.map(renderScheme)}
+          {!loading && matchData && (matchData.eligible_schemes || []).map(renderScheme)}
         </div>
 
         <div className="bg-surface-container-low rounded-xl p-space-md mt-2 flex flex-col space-y-3">
@@ -448,22 +429,7 @@ export default function SchemeMatching() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
-        <div className="flex justify-around items-center h-20 px-space-xs max-w-md mx-auto">
-          {[
-            { icon: 'home', label: 'Home', path: '/app' },
-            { icon: 'calendar_month', label: 'Plan', path: '/planning/crop-plan' },
-            { icon: 'storefront', label: 'Market', path: '/marketplace/inputs' },
-            { icon: 'assured_workload', label: 'Schemes', path: '/gov/schemes', active: true },
-            { icon: 'badge', label: 'Profile', path: '/profile/settings' },
-          ].map(nav => (
-            <button key={nav.label} onClick={() => navigate(nav.path)} className={`flex flex-col items-center justify-center gap-1 min-w-[56px] h-14 transition-colors ${nav.active ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{nav.icon}</span>
-              <span className="font-label-sm text-label-sm font-medium">{nav.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

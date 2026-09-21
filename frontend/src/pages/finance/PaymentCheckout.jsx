@@ -70,20 +70,8 @@ export default function PaymentCheckout() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container/50 shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Secure Checkout</h1>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-label-sm text-label-sm text-on-surface-variant">Step 3 of 3</span>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[64px] pb-32 px-margin bg-surface flex-1">
         
@@ -312,7 +300,7 @@ export default function PaymentCheckout() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-space-md bg-surface-container-lowest/95 backdrop-blur-md z-40 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      <div className="sticky bottom-20 left-0 right-0 p-space-md bg-surface-container-lowest/95 backdrop-blur-md z-40 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-space-md">
           <div className="flex flex-col min-w-0">
             <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Amount to Pay</span>

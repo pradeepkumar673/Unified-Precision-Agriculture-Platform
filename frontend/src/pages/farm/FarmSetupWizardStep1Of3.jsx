@@ -50,7 +50,7 @@ export default function FarmSetupWizardStep1Of3() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <header className="sticky top-16 w-full z-40 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
           <div className="flex items-center gap-space-sm min-w-0 flex-1">
             <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container flex-shrink-0" type="button">

@@ -51,20 +51,8 @@ export default function CounterfactualWhatIfSimulator() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">What-If Simulator</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">more_vert</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[64px] pb-24 bg-surface-container flex-1 gap-space-sm">
         
@@ -368,22 +356,7 @@ export default function CounterfactualWhatIfSimulator() {
 
       </main>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
-        <div className="flex justify-around items-center h-16 px-gutter">
-          <button onClick={() => navigate('/ai/causal-lab')} className="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-primary font-label-md">
-            <span className="material-symbols-outlined text-[24px]">analytics</span>
-            <span className="font-label-sm">Simulator</span>
-          </button>
-          <button onClick={() => navigate('/ai/multimodal-query')} className="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant">
-            <span className="material-symbols-outlined text-[24px]">document_scanner</span>
-            <span className="font-label-sm">Scan AI</span>
-          </button>
-          <button onClick={() => navigate('/ai/assistant')} className="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-on-surface-variant">
-            <span className="material-symbols-outlined text-[24px]">mic</span>
-            <span className="font-label-sm">Voice</span>
-          </button>
-        </div>
-      </nav>
+      
     </div>
   );
 }

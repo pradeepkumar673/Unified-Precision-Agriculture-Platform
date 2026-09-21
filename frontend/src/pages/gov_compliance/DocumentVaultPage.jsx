@@ -109,7 +109,7 @@ export default function DocumentVaultPage() {
                          <span className="text-slate-400">{file.name}</span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <div className="absolute inset-0 bg-slate-900/60 opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <button onClick={clearSelection} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600">
                         <Trash2 className="w-5 h-5" />
                       </button>

@@ -14,20 +14,8 @@ export default function CommunityDiseaseOutbreakMap() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Community Pest Radar</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">search</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[56px] pb-24 bg-surface-container-lowest flex-1">
         
@@ -287,23 +275,7 @@ export default function CommunityDiseaseOutbreakMap() {
 
       </main>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
-        <div className="flex justify-around items-center h-20 px-space-xs">
-          {[
-            { icon: 'home', label: 'Home', path: '/app' },
-            { icon: 'calendar_month', label: 'Plan', path: '/planning/crop-plan' },
-            { icon: 'storefront', label: 'Market', path: '/marketplace/inputs' },
-            { icon: 'warning', label: 'Alerts', path: '/community/alerts', active: true, hasBadge: true },
-            { icon: 'account_circle', label: 'Profile', path: '/profile/settings' },
-          ].map(nav => (
-            <button key={nav.label} onClick={() => navigate(nav.path)} className={`flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-2 py-1 transition-colors group relative ${nav.active ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{nav.icon}</span>
-              <span className="font-label-sm text-label-sm mt-0.5">{nav.label}</span>
-              {nav.hasBadge && !nav.active && <span className="absolute top-1 right-2.5 w-2 h-2 rounded-full bg-secondary-container"></span>}
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

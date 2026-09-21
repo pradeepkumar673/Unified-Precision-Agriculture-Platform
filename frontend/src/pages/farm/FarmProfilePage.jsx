@@ -97,7 +97,8 @@ export default function FarmProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[max(884px,100dvh)] bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 overflow-auto">
+      <div className="mx-auto max-w-7xl space-y-6">
       {toast && (
         <div className={`fixed right-8 top-24 z-50 flex items-center space-x-2 rounded-lg border border-slate-700 bg-slate-900/90 px-4 py-3 shadow-[0_20px_60px_rgba(2,6,23,0.7)] ${
           toast.type === 'success' ? 'text-emerald-400' : 'text-red-400'
@@ -316,6 +317,7 @@ export default function FarmProfilePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

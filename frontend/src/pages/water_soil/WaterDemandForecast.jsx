@@ -7,38 +7,9 @@ export default function WaterDemandForecast() {
   const [pumpActive, setPumpActive] = useState(false);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
       {/* Top Header */}
-      <header className="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_2px_12px_rgba(27,94,32,0.06)] pt-safe">
-        <div className="h-28 px-gutter flex flex-col justify-between py-space-xs">
-          <div className="flex items-center justify-between gap-space-xs">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
-              <span className="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">KhetSaathi</span>
-            </div>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors min-h-[48px] max-w-[190px] border border-outline-variant/40" type="button">
-              <span className="material-symbols-outlined text-[18px] text-primary shrink-0">psychiatry</span>
-              <span className="font-label-md text-label-md truncate font-semibold text-primary">Plot 1 • Wheat (4.5 Ac)</span>
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">arrow_drop_down</span>
-            </button>
-            <div className="flex items-center gap-1.5">
-              <button className="min-h-[48px] min-w-[48px] px-2.5 rounded-full bg-surface-container text-primary flex items-center justify-center font-label-md text-label-md border border-outline-variant/50 hover:bg-surface-container-high transition-colors" type="button">
-                EN
-              </button>
-              <button className="min-h-[48px] min-w-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-sm active:scale-95 transition-transform" type="button">
-                <span className="material-symbols-outlined text-[20px]">volume_up</span>
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low border border-outline-variant/30">
-              <span className="w-2 h-2 rounded-full bg-[#2E7D32] animate-pulse"></span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Synced 1m ago • Offline Ready</span>
-            </div>
-            <h1 className="font-label-lg text-label-lg text-primary truncate pr-1">Irrigation Water Management</h1>
-          </div>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col relative w-full pt-32 pb-24 bg-surface flex-1">
         <div className="flex flex-col w-full px-gutter gap-space-md py-space-sm">
@@ -293,23 +264,7 @@ export default function WaterDemandForecast() {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-4px_14px_rgba(27,94,32,0.06)]">
-        <div className="flex justify-around items-center h-16 px-1">
-          {[
-            { icon: 'home', label: 'Home', to: '/app' },
-            { icon: 'calendar_month', label: 'Plan', to: '/planning/crop-plan' },
-            { icon: 'water_drop', label: 'Water', to: '/water-soil/irrigation', active: true },
-            { icon: 'storefront', label: 'Market', to: '/marketplace/inputs' },
-            { icon: 'notifications', label: 'Alerts', to: '/community/alerts' },
-            { icon: 'person', label: 'Profile', to: '/farm/profile' },
-          ].map(({ icon, label, to, active }) => (
-            <button key={label} onClick={() => navigate(to)} className={`flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-1 py-1 transition-colors ${active ? 'text-primary font-bold' : 'text-on-surface-variant'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{icon}</span>
-              <span className="font-label-sm text-label-sm mt-0.5">{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

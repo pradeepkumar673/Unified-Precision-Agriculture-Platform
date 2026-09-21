@@ -36,20 +36,8 @@ export default function ProduceTraceabilityEnergy() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Facility Control</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">settings</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col relative">
+      
 
       <div className="fixed top-[56px] w-full z-40 bg-surface-container-lowest px-margin py-2 border-b border-surface-container shadow-sm">
         <div className="flex p-1 bg-surface-container rounded-xl gap-1">
@@ -415,28 +403,14 @@ export default function ProduceTraceabilityEnergy() {
         )}
         
         {toastMessage && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-full bg-inverse-surface text-inverse-on-surface font-label-md text-label-md shadow-xl transition-all duration-300 z-50 flex items-center gap-2 animate-fade-in">
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-full bg-inverse-surface text-inverse-on-surface font-label-md text-label-md shadow-xl transition-all duration-300 z-40 flex items-center gap-2 animate-fade-in">
             <span className="material-symbols-outlined text-[18px] text-primary-fixed">check_circle</span>
             <span>{toastMessage}</span>
           </div>
         )}
       </main>
 
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,59,113,0.06)]">
-        <div className="flex justify-around items-center h-20 px-space-xs">
-          {[
-            { icon: 'sensors', label: 'Sensors', path: '/sensors' },
-            { icon: 'water_drop', label: 'Hydro/Climate', path: '/hydro-climate' },
-            { icon: 'layers', label: 'Shelves', path: '/shelves' },
-            { icon: 'bolt', label: 'Trace & Power', path: '/gov/traceability', active: true },
-          ].map(nav => (
-            <button key={nav.label} onClick={() => navigate(nav.path)} className={`flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-space-xs py-1 transition-colors hover:text-on-surface ${nav.active ? 'text-tertiary font-label-md' : 'text-on-surface-variant'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{nav.icon}</span>
-              <span className="font-label-sm text-label-sm">{nav.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

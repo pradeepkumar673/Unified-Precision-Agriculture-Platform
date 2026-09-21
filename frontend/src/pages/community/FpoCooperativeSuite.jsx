@@ -35,20 +35,8 @@ export default function FpoCooperativeSuite() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">FPO Hub</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">more_vert</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[64px] pb-24 px-margin bg-surface-container flex-1 gap-space-md">
         
@@ -313,22 +301,7 @@ export default function FpoCooperativeSuite() {
 
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
-        <div className="flex justify-around items-center h-20 px-space-xs max-w-md mx-auto">
-          {[
-            { icon: 'home', label: 'Home', path: '/app' },
-            { icon: 'calendar_month', label: 'Plan', path: '/planning/crop-plan' },
-            { icon: 'storefront', label: 'Market', path: '/marketplace/inputs' },
-            { icon: 'groups', label: 'Coop', path: '/community/fpo-cooperative-suite', active: true },
-            { icon: 'folder_shared', label: 'Vault', path: '/gov/document-vault' },
-          ].map(nav => (
-            <button key={nav.label} onClick={() => navigate(nav.path)} className={`flex flex-col items-center justify-center gap-1 min-w-[56px] h-14 transition-colors ${nav.active ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{nav.icon}</span>
-              <span className="font-label-sm text-label-sm font-medium">{nav.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

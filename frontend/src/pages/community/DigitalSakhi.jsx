@@ -4,7 +4,30 @@ import { createSupportTicket } from '../../api/communityApi';
 
 export default function DigitalSakhi() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      sender: 'agent',
+      name: 'Sunita Devi',
+      initials: 'SD',
+      time: '10:15 AM',
+      text: 'Namaste Ramesh ji! I reviewed your Plot 1 satellite stress map. Did you get a chance to check Line 4 drip emitters as recommended?',
+      hasAudio: true
+    },
+    {
+      sender: 'user',
+      time: '10:18 AM',
+      text: 'Yes Sunita didi, flushed the emitters this morning. But I noticed slight yellow flecks on the lower leaves in the north corner. Should I spray Propiconazole today?'
+    },
+    {
+      sender: 'agent',
+      name: 'Sunita Devi',
+      initials: 'SD',
+      time: '10:20 AM',
+      text: 'Good that you noticed early! Based on weather forecast, rain is unlikely for 3 days. I advise 1 ml/L spray tomorrow morning before 9 AM. I can also come inspect your parcel tomorrow afternoon if you need help calibrating the sprayer.',
+      weather: { title: 'Dry Canopy Window: 72 Hours', desc: 'Optimal fungicide uptake conditions' },
+      resource: { title: 'Yellow Rust Field Protocol', meta: 'PDF • 1.2 MB • ICAR Verified' }
+    }
+  ]);
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [bookingStatus, setBookingStatus] = useState(null);
@@ -21,13 +44,13 @@ export default function DigitalSakhi() {
     const msg = inputValue.trim();
     if (!msg) return;
 
-    setMessages(prev => [...prev, { text: msg, time: 'Just now' }]);
+    setMessages(prev => [...prev, { sender: 'user', text: msg, time: 'Just now' }]);
     setInputValue('');
     scrollToBottom();
   };
 
   const handleQuickReply = (text) => {
-    setMessages(prev => [...prev, { text, time: 'Just now' }]);
+    setMessages(prev => [...prev, { sender: 'user', text, time: 'Just now' }]);
     scrollToBottom();
   };
 
@@ -55,35 +78,37 @@ export default function DigitalSakhi() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container/50 shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Digital Sakhi &amp; Support</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">more_vert</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background font-body-md text-on-surface flex flex-col antialiased">
+      
 
-      <main className="flex flex-col w-full pt-[64px] pb-24 px-margin bg-surface flex-1 gap-space-md">
+      <main className="flex flex-col relative w-full pt-20 pb-safe px-margin bg-background flex-1 gap-space-md">
         
         <section className="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-surface-container/30">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <img className="w-12 h-12 rounded-full object-cover shadow-sm" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop" alt="Sunita Devi, Digital Krishi Sakhi" />
-                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary border-2 border-surface-container-lowest"></span>
+              <div className="relative flex-shrink-0 w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-headline-sm shadow-sm">
+                <span className="absolute inset-0 flex items-center justify-center">SD</span>
+                <img 
+                  alt="Sunita Devi, Verified Digital Sakhi" 
+                  className="relative w-full h-full object-cover rounded-full z-10" 
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv85ZCVyGFOrQ-7NfxtIA0wMyoqzC1ynaHgGGsQIuoLOLGCBQquG6K-xZN6_b7JoRm06h0vhK67Hq88kIgsMmswT4a5MJwzv-LBMj-eB2ELHuJbTj6jhYHK1iMCILtbHhKHK1O8TQtXu-0aIEsRvAQGhYK1HZ-sy8mglfkzBy1nA1jc4OZcqUtn7QXYyylCOUdBTh93Wj1LdRqVog8slLGhSnebqU6Pu0QoQdws_Uf_p7ZeOjTixEp" 
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-primary-container rounded-full border-2 border-surface-container-lowest z-20" title="Available Online"></span>
               </div>
-              <div className="flex flex-col">
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Sunita Devi</h2>
-                <div className="flex items-center gap-1 mt-0.5">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Sunita Devi</h1>
+                  <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                </div>
+                <p className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                  <span>Verified Digital Sakhi</span>
+                  <span>•</span>
+                  <span>Niphad Block</span>
+                </p>
+                <div className="mt-1 flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
                   <span className="material-symbols-outlined text-[15px] text-tertiary">translate</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Marathi, Hindi, English</span>
+                  <span>Marathi, Hindi, English</span>
                 </div>
               </div>
             </div>
@@ -116,85 +141,68 @@ export default function DigitalSakhi() {
         </div>
 
         <section className="w-full flex flex-col space-y-3.5">
-          
-          <div className="flex items-end gap-2 max-w-[88%] self-start">
-            <div className="w-7 h-7 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center flex-shrink-0">
-              SD
-            </div>
-            <div className="bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl rounded-bl-sm shadow-sm flex flex-col space-y-1">
-              <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="font-label-sm text-label-sm text-primary font-bold">Sunita Devi</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">10:15 AM</span>
-              </div>
-              <p className="font-body-md text-body-md leading-relaxed text-on-surface">
-                Namaste Ramesh ji! I reviewed your Plot 1 satellite stress map. Did you get a chance to check Line 4 drip emitters as recommended?
-              </p>
-              <button aria-label="Listen to voice message" className="self-start flex items-center gap-1 text-tertiary mt-1 font-label-sm text-label-sm hover:opacity-80" onClick={(e) => e.currentTarget.classList.toggle('text-secondary')} type="button">
-                <span className="material-symbols-outlined text-[16px]">volume_up</span>
-                <span>Audio readout</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end self-end max-w-[85%]">
-            <div className="bg-primary text-on-primary p-3.5 rounded-2xl rounded-br-sm shadow-sm flex flex-col space-y-1">
-              <p className="font-body-md text-body-md leading-relaxed text-on-primary">
-                Yes Sunita didi, flushed the emitters this morning. But I noticed slight yellow flecks on the lower leaves in the north corner. Should I spray Propiconazole today?
-              </p>
-              <div className="flex items-center justify-end gap-1 text-on-primary-container font-label-sm text-label-sm pt-0.5">
-                <span>10:18 AM</span>
-                <span className="material-symbols-outlined text-[15px]">done_all</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-2 max-w-[92%] self-start">
-            <div className="w-7 h-7 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center flex-shrink-0">
-              SD
-            </div>
-            <div className="bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl rounded-bl-sm shadow-sm flex flex-col space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-label-sm text-label-sm text-primary font-bold">Sunita Devi</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">10:20 AM</span>
-              </div>
-              <p className="font-body-md text-body-md leading-relaxed text-on-surface">
-                Good that you noticed early! Based on weather forecast, rain is unlikely for 3 days. I advise 1 ml/L spray tomorrow morning before 9 AM. I can also come inspect your parcel tomorrow afternoon if you need help calibrating the sprayer.
-              </p>
-              
-              <div className="bg-surface-container-low rounded-lg p-2 flex items-center gap-2 text-on-surface">
-                <span className="material-symbols-outlined text-secondary text-[20px]">sunny</span>
-                <div className="flex flex-col">
-                  <span className="font-label-sm text-label-sm font-semibold">Dry Canopy Window: 72 Hours</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Optimal fungicide uptake conditions</span>
-                </div>
-              </div>
-              
-              <a className="bg-surface-container rounded-xl p-2.5 flex items-center justify-between gap-3 hover:bg-surface-container-high transition-colors" href="#download-protocol" role="button">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+          {messages.map((msg, idx) => {
+            if (msg.sender === 'agent') {
+              return (
+                <div key={idx} className={`flex items-end gap-2 ${msg.resource ? 'max-w-[92%]' : 'max-w-[88%]'} self-start`}>
+                  <div className="w-7 h-7 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center flex-shrink-0">
+                    {msg.initials}
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-label-md text-label-md text-on-surface truncate">Yellow Rust Field Protocol</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">PDF • 1.2 MB • ICAR Verified</span>
+                  <div className="bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl rounded-bl-sm shadow-sm flex flex-col space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-label-sm text-label-sm text-primary font-bold">{msg.name}</span>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">{msg.time}</span>
+                    </div>
+                    <p className="font-body-md text-body-md leading-relaxed text-on-surface">{msg.text}</p>
+                    
+                    {msg.hasAudio && (
+                      <button aria-label="Listen to voice message" className="self-start flex items-center gap-1 text-tertiary mt-1 font-label-sm text-label-sm hover:opacity-80 transition-colors focus:outline-none" onClick={(e) => { e.stopPropagation(); e.currentTarget.classList.toggle('text-secondary'); }} type="button">
+                        <span className="material-symbols-outlined text-[16px]">volume_up</span>
+                        <span>Audio readout</span>
+                      </button>
+                    )}
+
+                    {msg.weather && (
+                      <div className="bg-surface-container-low rounded-lg p-2 flex items-center gap-2 text-on-surface">
+                        <span className="material-symbols-outlined text-secondary text-[20px]">sunny</span>
+                        <div className="flex flex-col">
+                          <span className="font-label-sm text-label-sm font-semibold">{msg.weather.title}</span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">{msg.weather.desc}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {msg.resource && (
+                      <a className="bg-surface-container rounded-xl p-2.5 flex items-center justify-between gap-3 hover:bg-surface-container-high transition-colors" href="#download-protocol" role="button">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0">
+                            <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-label-md text-label-md text-on-surface truncate">{msg.resource.title}</span>
+                            <span className="font-label-sm text-label-sm text-on-surface-variant">{msg.resource.meta}</span>
+                          </div>
+                        </div>
+                        <span className="material-symbols-outlined text-primary text-[22px] flex-shrink-0">download</span>
+                      </a>
+                    )}
                   </div>
                 </div>
-                <span className="material-symbols-outlined text-primary text-[22px] flex-shrink-0">download</span>
-              </a>
-            </div>
-          </div>
+              );
+            }
 
-          {messages.map((msg, idx) => (
-            <div key={idx} className="flex flex-col items-end self-end max-w-[85%]">
-              <div className="bg-primary text-on-primary p-3.5 rounded-2xl rounded-br-sm shadow-sm flex flex-col space-y-1">
-                <p className="font-body-md text-body-md leading-relaxed text-on-primary">{msg.text}</p>
-                <div className="flex items-center justify-end gap-1 text-on-primary-container font-label-sm text-label-sm pt-0.5">
-                  <span>{msg.time}</span>
-                  <span className="material-symbols-outlined text-[15px]">done</span>
+            return (
+              <div key={idx} className="flex flex-col items-end self-end max-w-[85%]">
+                <div className="bg-primary text-on-primary p-3.5 rounded-2xl rounded-br-sm shadow-sm flex flex-col space-y-1">
+                  <p className="font-body-md text-body-md leading-relaxed text-on-primary">{msg.text}</p>
+                  <div className="flex items-center justify-end gap-1 text-on-primary-container font-label-sm text-label-sm pt-0.5">
+                    <span>{msg.time}</span>
+                    <span className="material-symbols-outlined text-[15px]">done_all</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </section>
 
@@ -236,36 +244,34 @@ export default function DigitalSakhi() {
             </span>
           </button>
         </section>
-
+        <section className="w-full bg-surface-container-lowest rounded-2xl p-2 shadow-md">
+            <form className="flex items-center gap-1.5" onSubmit={handleSendMessage}>
+              <button aria-label="Send Leaf Photo" className="w-11 h-11 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high transition-colors flex-shrink-0" onClick={triggerCameraSimulation} title="Send Leaf Photo" type="button">
+                <span className="material-symbols-outlined text-[22px]">photo_camera</span>
+              </button>
+              
+              <button aria-label="Record voice note in your dialect" className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${isRecording ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-primary hover:bg-surface-container-high'}`} onClick={toggleRecordingState} title="Voice Message" type="button">
+                <span className="material-symbols-outlined text-[22px]">mic</span>
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                <label className="sr-only" htmlFor="farmerMessageInput">Ask Sunita a question</label>
+                <input 
+                  className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md rounded-full px-4 py-2.5 focus:outline-none focus:bg-surface-container-lowest" 
+                  id="farmerMessageInput" 
+                  placeholder="Ask Sunita a question..." 
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                />
+              </div>
+              
+              <button aria-label="Send message" className="w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm flex-shrink-0 active:scale-95 transition-transform" type="submit">
+                <span className="material-symbols-outlined text-[20px]">send</span>
+              </button>
+            </form>
+          </section>
       </main>
-
-      <section className="fixed bottom-0 w-full z-50 bg-surface-container-lowest rounded-t-2xl p-2 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] pb-safe">
-        <form className="flex items-center gap-1.5" onSubmit={handleSendMessage}>
-          <button aria-label="Send Leaf Photo" className="w-11 h-11 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high transition-colors flex-shrink-0" onClick={triggerCameraSimulation} title="Send Leaf Photo" type="button">
-            <span className="material-symbols-outlined text-[22px]">photo_camera</span>
-          </button>
-          
-          <button aria-label="Record voice note in your dialect" className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${isRecording ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-primary hover:bg-surface-container-high'}`} onClick={toggleRecordingState} title="Voice Message" type="button">
-            <span className="material-symbols-outlined text-[22px]">mic</span>
-          </button>
-          
-          <div className="flex-1 min-w-0">
-            <label className="sr-only" htmlFor="farmerMessageInput">Ask Sunita a question</label>
-            <input 
-              className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md rounded-full px-4 py-2.5 focus:outline-none focus:bg-surface-container-lowest" 
-              id="farmerMessageInput" 
-              placeholder="Ask Sunita a question..." 
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-          </div>
-          
-          <button aria-label="Send message" className="w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm flex-shrink-0 active:scale-95 transition-transform" type="submit">
-            <span className="material-symbols-outlined text-[20px]">send</span>
-          </button>
-        </form>
-      </section>
     </div>
   );
 }

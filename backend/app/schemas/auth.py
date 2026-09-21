@@ -18,6 +18,19 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class SendOTPRequest(BaseModel):
+    phone: str
+
+
+class VerifyOTPRequest(BaseModel):
+    phone: str
+    otp: str
+
+
+class SetRoleRequest(BaseModel):
+    role: str
+
+
 class FarmSummary(BaseModel):
     id: UUID
     name: str
@@ -35,3 +48,4 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserRead
     farms: List[FarmSummary] = []
+    is_new_user: bool = False

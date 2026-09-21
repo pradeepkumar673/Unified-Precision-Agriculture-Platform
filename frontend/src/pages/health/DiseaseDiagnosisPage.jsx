@@ -158,7 +158,7 @@ export default function DiseaseDiagnosisPage() {
             ) : (
               <div className="relative rounded-xl overflow-hidden border border-slate-700 group">
                 <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button onClick={handleClear} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
                     <X className="w-5 h-5" />
                   </button>
@@ -289,7 +289,7 @@ export default function DiseaseDiagnosisPage() {
                 {history.map((h, i) => (
                   <div key={i} className="bg-slate-900/50 rounded-lg border border-slate-700 overflow-hidden relative group">
                     <div className="h-24 bg-slate-800 flex items-center justify-center overflow-hidden">
-                       <img src={h.image_path.startsWith('http') ? h.image_path : 'https://images.unsplash.com/photo-1590682680695-43b964a3ae17?w=300&q=80'} alt="Crop" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                       <img src={h.image_path.startsWith('http') ? h.image_path : 'https://images.unsplash.com/photo-1590682680695-43b964a3ae17?w=300&q=80'} alt="Crop" className="w-full h-full object-cover opacity-60 md:opacity-100 md:group-hover:opacity-60 transition-opacity" />
                     </div>
                     <div className="p-2">
                       <p className="text-xs font-semibold text-white truncate capitalize">{h.predicted_disease}</p>

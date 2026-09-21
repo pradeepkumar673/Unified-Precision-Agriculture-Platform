@@ -51,24 +51,8 @@ export default function ProductDetailMachineryRental() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin bg-transparent">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface shadow-sm active:scale-95 transition-transform" type="button">
-            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <button className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface shadow-sm active:scale-95 transition-transform" type="button">
-              <span className="material-symbols-outlined text-[24px]">share</span>
-            </button>
-            <button onClick={() => setIsWishlisted(!isWishlisted)} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-primary shadow-sm active:scale-95 transition-transform" type="button">
-              <span className="material-symbols-outlined text-[24px]" style={isWishlisted ? { fontVariationSettings: "'FILL' 1" } : { fontVariationSettings: "'FILL' 0" }}>
-                {isWishlisted ? 'favorite' : 'favorite_border'}
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pb-32 flex-1">
         <div className="w-full aspect-[4/3] relative bg-surface-variant overflow-hidden">
@@ -305,7 +289,7 @@ export default function ProductDetailMachineryRental() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-surface-container-lowest p-space-md shadow-[0_-4px_12px_rgba(0,0,0,0.05)] space-y-space-sm z-30 pb-safe">
+      <div className="sticky bottom-20 left-0 right-0 bg-surface-container-lowest p-space-md shadow-[0_-4px_12px_rgba(0,0,0,0.05)] space-y-space-sm z-30 pb-safe">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm text-on-surface-variant">Total Rental Quote (2 Days)</span>

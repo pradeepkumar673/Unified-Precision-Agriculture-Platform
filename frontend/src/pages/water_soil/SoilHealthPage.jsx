@@ -223,11 +223,12 @@ export default function SoilHealthPage() {
                     const colorClass = getCellColor(val, activeLayer);
                     return (
                       <div 
-                        key={idx} 
-                        className={`${colorClass} rounded-sm cursor-pointer transition-colors hover:brightness-125 relative group`}
+                        key={idx}
+                        tabIndex="0" 
+                        className={`${colorClass} rounded-sm cursor-pointer transition-colors hover:brightness-125 focus:brightness-125 relative group outline-none`}
                       >
-                        {/* Tooltip on hover */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 w-max bg-slate-900 text-white text-xs py-1 px-2 rounded shadow-xl border border-slate-700 pointer-events-none">
+                        {/* Tooltip on hover or tap */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block z-10 w-max bg-slate-900 text-white text-xs py-1 px-2 rounded shadow-xl border border-slate-700 pointer-events-none">
                           <span className="uppercase text-slate-400">{activeLayer}:</span> <span className="font-bold">{val.toFixed(2)}</span>
                           <br/>
                           <span className="text-[9px] text-slate-500">({cell.lat.toFixed(4)}, {cell.lng.toFixed(4)})</span>

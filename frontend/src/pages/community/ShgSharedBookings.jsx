@@ -28,20 +28,8 @@ export default function ShgSharedBookings() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col pt-safe pb-safe relative">
-      <header className="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-container shadow-sm pt-safe">
-        <div className="flex items-center justify-between h-14 px-margin">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface truncate">Community Sharing</h1>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface active:bg-surface-container-high transition-colors" type="button">
-            <span className="material-symbols-outlined text-[24px]">more_vert</span>
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-surface-container-lowest text-on-surface flex flex-col relative">
+      
 
       <main className="flex flex-col w-full pt-[64px] pb-32 px-margin bg-surface-container flex-1 gap-space-md">
         
@@ -310,7 +298,7 @@ export default function ShgSharedBookings() {
 
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-margin bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-40 pb-safe">
+      <div className="sticky bottom-20 left-0 right-0 p-margin bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-40 pb-safe">
         <div className="max-w-md mx-auto flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

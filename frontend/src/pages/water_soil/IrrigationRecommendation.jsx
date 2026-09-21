@@ -26,30 +26,9 @@ export default function IrrigationRecommendation() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe relative">
+    <div className="min-h-screen bg-background flex flex-col relative">
       {/* Top Fixed Application Bar */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl border-b border-surface-container/50">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm min-w-0 flex-1">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container flex-shrink-0" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-primary-container truncate flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">auto_awesome</span> KhetSaathi AI
-              </span>
-              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Irrigation Action</h1>
-            </div>
-          </div>
-          <button
-            onClick={() => setAudioVisible(!audioVisible)}
-            className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-transform shadow-sm ${audioVisible ? 'bg-primary-container text-on-primary scale-110' : 'bg-surface-container text-primary active:bg-surface-container-high'}`}
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[20px]">record_voice_over</span>
-          </button>
-        </div>
-      </header>
+      
 
       {/* Floating Audio Banner (Toggled) */}
       <div className={`fixed top-[calc(5rem+env(safe-area-inset-top))] inset-x-margin z-40 transition-all duration-300 ${audioVisible ? 'translate-y-0 opacity-100' : '-translate-y-8 opacity-0 pointer-events-none'}`}>
@@ -187,23 +166,7 @@ export default function IrrigationRecommendation() {
       </footer>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-4px_14px_rgba(27,94,32,0.06)]">
-        <div className="flex justify-around items-center h-16 px-1">
-          {[
-            { icon: 'home', label: 'Home', to: '/app' },
-            { icon: 'calendar_month', label: 'Plan', to: '/planning/crop-plan' },
-            { icon: 'water_drop', label: 'Water', to: '/water-soil/irrigation', active: true },
-            { icon: 'storefront', label: 'Market', to: '/marketplace/inputs' },
-            { icon: 'notifications', label: 'Alerts', to: '/community/alerts' },
-            { icon: 'person', label: 'Profile', to: '/farm/profile' },
-          ].map(({ icon, label, to, active }) => (
-            <button key={label} onClick={() => navigate(to)} className={`flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-1 py-1 transition-colors ${active ? 'text-primary font-bold' : 'text-on-surface-variant'}`} type="button">
-              <span className="material-symbols-outlined text-[24px]">{icon}</span>
-              <span className="font-label-sm text-label-sm mt-0.5">{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      
     </div>
   );
 }

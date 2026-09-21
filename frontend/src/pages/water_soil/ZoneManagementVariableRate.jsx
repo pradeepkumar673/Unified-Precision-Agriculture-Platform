@@ -13,22 +13,9 @@ export default function ZoneManagementVariableRate() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col pt-safe pb-safe relative">
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
       {/* Top Header */}
-      <header className="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_2px_12px_rgba(27,94,32,0.06)] pt-safe">
-        <div className="h-16 px-gutter flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button">
-            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          </button>
-          <div className="flex flex-col items-center">
-            <h1 className="font-headline-sm text-headline-sm text-on-surface font-bold">Field Zones &amp; Prescription</h1>
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Plot 1 (Wheat) • 4.5 Ac</span>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-surface-container active:scale-95 transition-all" type="button">
-            <span className="material-symbols-outlined text-[24px]">share</span>
-          </button>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col relative w-full pt-16 pb-36 bg-surface flex-1">
         {/* Interactive VRA Map Canvas */}
@@ -262,7 +249,7 @@ export default function ZoneManagementVariableRate() {
         </section>
 
         {/* Sticky Action Footer Dock */}
-        <footer className="fixed bottom-0 w-full p-margin bg-surface-container-lowest/95 backdrop-blur-md shadow-xl flex flex-col gap-2 z-30 pb-safe">
+        <footer className="sticky bottom-20 w-full p-margin bg-surface-container-lowest/95 backdrop-blur-md shadow-xl flex flex-col gap-2 z-30 pb-safe">
           <button className="w-full h-14 bg-secondary-container hover:bg-secondary text-surface-container-lowest rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md active:scale-[0.98] transition-all" type="button">
             <span>Export Prescription Map (ISO-XML)</span>
             <span className="material-symbols-outlined text-[20px]">arrow_forward</span>

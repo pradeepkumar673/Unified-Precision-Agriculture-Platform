@@ -70,12 +70,12 @@ class User(Base):
 # enums used by the farms table
 # --------------------------------------------------------------------------- #
 class SoilType(str, enum.Enum):
-    clay = "clay"
-    loam = "loam"
-    sandy = "sandy"
+    clay_loam = "clay_loam"
+    black_cotton = "black_cotton"
+    sandy_loam = "sandy_loam"
+    red_laterite = "red_laterite"
+    alluvial = "alluvial"
     silt = "silt"
-    black = "black"
-    red = "red"
 
 
 class WaterSource(str, enum.Enum):
@@ -115,11 +115,11 @@ class Farm(Base):
     water_source: Mapped[WaterSource] = mapped_column(
         SAEnum(WaterSource, name="water_source"), nullable=False
     )
-    latitude: Mapped[float] = mapped_column(Float, nullable=False)
-    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
+    longitude: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
     equipment_owned: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     annual_income_range: Mapped[AnnualIncomeRange] = mapped_column(
-        SAEnum(AnnualIncomeRange, name="annual_income_range"), nullable=False
+        SAEnum(AnnualIncomeRange, name="annual_income_range"), nullable=True, default=None
     )
     crop_history: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

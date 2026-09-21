@@ -1,15 +1,44 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveFarmBoundary } from '../../api/farmApi';
+import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import area from '@turf/area';
+import { polygon } from '@turf/helpers';
+import L from 'leaflet';
+
+// Fix Leaflet default icon issue in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+function MapEvents({ onAddPoint, mode }) {
+  useMapEvents({
+    click(e) {
+      if (mode === 'tap') {
+        onAddPoint([e.latlng.lat, e.latlng.lng]);
+      }
+    },
+  });
+  return null;
+}
 
 export default function FieldMapping() {
   const navigate = useNavigate();
   const farmId = localStorage.getItem('farmId');
-  const [mode, setMode] = useState('walk'); // 'walk' | 'tap'
+  const [mode, setMode] = useState('tap'); // 'walk' | 'tap'
   const [isPaused, setIsPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0); // seconds
   const [saving, setSaving] = useState(false);
-  // Simulated live survey state (in real app this drives GPS polygon)
+  
+  // Polygon state
+  const [waypoints, setWaypoints] = useState([]);
+  const [calculatedArea, setCalculatedArea] = useState(0);
+  const [perimeter, setPerimeter] = useState(0);
+  
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -19,6 +48,40 @@ export default function FieldMapping() {
     return () => clearInterval(timerRef.current);
   }, [isPaused]);
 
+  useEffect(() => {
+    if (waypoints.length >= 3) {
+      try {
+        // turf requires first and last position to be identical for polygon
+        const coords = [...waypoints, waypoints[0]].map(p => [p[1], p[0]]); // [lng, lat] for turf
+        const poly = polygon([coords]);
+        const sqMeters = area(poly);
+        setCalculatedArea(sqMeters * 0.000247105); // m2 to acres
+        
+        // simple perimeter
+        let perim = 0;
+        for (let i = 0; i < waypoints.length; i++) {
+          const p1 = waypoints[i];
+          const p2 = waypoints[i === waypoints.length - 1 ? 0 : i + 1];
+          perim += L.latLng(p1).distanceTo(L.latLng(p2));
+        }
+        setPerimeter(Math.round(perim));
+      } catch (e) {
+        console.error('Area calculation error', e);
+      }
+    } else {
+      setCalculatedArea(0);
+      setPerimeter(0);
+    }
+  }, [waypoints]);
+
+  const handleAddPoint = (point) => {
+    setWaypoints(prev => [...prev, point]);
+  };
+
+  const handleUndo = () => {
+    setWaypoints(prev => prev.slice(0, -1));
+  };
+
   const formatElapsed = (s) => {
     const m = Math.floor(s / 60).toString().padStart(2, '0');
     const sec = (s % 60).toString().padStart(2, '0');
@@ -26,12 +89,11 @@ export default function FieldMapping() {
   };
 
   const handleFinish = async () => {
+    if (waypoints.length < 3) return;
     setSaving(true);
     try {
       await saveFarmBoundary(farmId, {
-        type: 'Polygon',
-        coordinates: [], // Real implementation: captured GPS waypoints
-        area_acres: 4.52,
+        gps_points: waypoints.map(p => ({ lat: p[0], lng: p[1] }))
       });
       navigate('/farm/profile');
     } catch {
@@ -42,32 +104,75 @@ export default function FieldMapping() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
       {/* Fixed header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container" type="button">
+      <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
+        <div className="h-16 px-margin flex items-center justify-between gap-space-sm">
+          <div className="flex items-center gap-space-xs min-w-0">
+            <button aria-label="Go back" onClick={() => navigate(-1)} className="w-11 h-11 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-variant transition-colors" type="button">
               <span className="material-symbols-outlined text-[24px]">arrow_back</span>
             </button>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">GPS Boundary Survey</span>
-              <span className="font-headline-sm text-headline-sm text-on-surface truncate">Field Boundary Mapping</span>
+            <img alt="AgriPlatform Logo" className="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8" />
+            <h1 className="font-headline-sm text-headline-sm text-on-surface truncate ml-space-xs">Field Boundary Mapping</h1>
+          </div>
+          <div className="flex items-center gap-space-xs shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
             </div>
           </div>
-          <button aria-label="Voice assist" className="w-11 h-11 rounded-full bg-surface-container flex items-center justify-center text-primary active:bg-surface-container-high" type="button">
-            <span className="material-symbols-outlined text-[20px]">record_voice_over</span>
-          </button>
         </div>
       </header>
 
-      <main className="flex flex-col w-full pt-20 pb-24 bg-background flex-1">
-        {/* Map mock */}
-        <div className="relative w-full bg-surface-container" style={{ height: '40vh' }}>
-          {/* Map backdrop */}
-          <img
-            alt="Satellite field map"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK7NVGkjzh5BQXmoyfJrI8UUIEXPLGyQanvMIPmW-gJUU9AoXzXgyG-S5-gmK0mg8wP_YVJ4qrhzlz35nQPD61JKTGKJ9y484bURcIjTmyjOvbeFfP855STHVQ8LRuBzXaf2wZh5alnk-j4oCTWhZYMBFPswUzfWxC7A04RirvKH6A3av-_xYkSJElibpYLGAm_6K5h0P1bR9bnA_L6SO-S-9WTWNLLrzTvTSJZu503EPI9zFkP1nR"
-            className="w-full h-full object-cover opacity-50"
-          />
+      <main className="flex flex-col relative w-full pt-16 pb-24 bg-background flex-1">
+        <div className="flex flex-col w-full pb-safe relative">
+
+          {/* Top Segmented Survey Progress Bar */}
+          <div className="w-full bg-surface-container-high h-1.5 flex">
+            <div className="bg-primary h-full w-[82%] transition-all duration-500"></div>
+          </div>
+
+          {/* Telemetry Strip & RTK Accuracy Header Bar */}
+          <section className="px-margin pt-space-sm pb-space-xs flex flex-col gap-space-xs bg-surface shadow-sm">
+            <div className="flex items-center justify-between">
+              {/* High precision RTK GNSS Pill */}
+              <div className="inline-flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-sm">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                </span>
+                <span className="font-label-sm text-label-sm text-primary tracking-wide">RTK FIX • ±0.38m</span>
+              </div>
+              {/* Satellites Badge */}
+              <div className="flex items-center gap-1.5 bg-surface-container px-3 py-1.5 rounded-full">
+                <span className="material-symbols-outlined text-primary text-[18px]">satellite_alt</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">18 Sats (L1/L5)</span>
+              </div>
+              {/* Audio Guidance Pill */}
+              <button aria-label="Listen to voice navigation guidance" className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-container text-on-primary shadow-sm active:scale-95 transition-transform">
+                <span className="material-symbols-outlined text-[18px]">volume_up</span>
+              </button>
+            </div>
+          </section>
+
+        {/* Leaflet Map */}
+        <div className="relative w-full bg-surface-container" style={{ height: '40vh', zIndex: 0 }}>
+          <MapContainer 
+            center={[20.5937, 78.9629]} 
+            zoom={5} 
+            scrollWheelZoom={true} 
+            style={{ width: '100%', height: '100%' }}
+            zoomControl={false}
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap contributors'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+            <MapEvents onAddPoint={handleAddPoint} mode={mode} />
+            {waypoints.length > 0 && (
+              <Polygon positions={waypoints} color="#1b5e20" fillColor="#91d78a" fillOpacity={0.4} />
+            )}
+            {waypoints.map((pos, i) => (
+              <Marker key={i} position={pos} />
+            ))}
+          </MapContainer>
 
           {/* Mode toggle */}
           <div className="absolute top-3 left-3 bg-surface rounded-xl shadow-md p-1 flex gap-1">
@@ -96,17 +201,19 @@ export default function FieldMapping() {
           </div>
 
           {/* Right toolbar */}
-          <div className="absolute top-3 right-3 flex flex-col gap-2">
-            {[
-              { icon: 'navigation', label: 'Reset North', color: 'text-primary' },
-              { icon: 'layers', label: 'Toggle Satellite layer', color: 'text-on-surface' },
-              { icon: 'my_location', label: 'Recenter on Farmer Location', color: 'text-primary' },
-              { icon: 'undo', label: 'Undo last surveyed point', color: 'text-secondary' },
-            ].map(({ icon, label, color }) => (
-              <button key={icon} aria-label={label} className={`w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center ${color} active:scale-95 transition-transform`}>
-                <span className="material-symbols-outlined text-[20px]">{icon}</span>
-              </button>
-            ))}
+          <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-auto">
+            <button aria-label="Reset North" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
+              <span className="material-symbols-outlined text-[20px]">navigation</span>
+            </button>
+            <button aria-label="Toggle Satellite layer" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-on-surface active:scale-95 transition-transform" type="button">
+              <span className="material-symbols-outlined text-[20px]">layers</span>
+            </button>
+            <button aria-label="Recenter on Farmer Location" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
+              <span className="material-symbols-outlined text-[20px]">my_location</span>
+            </button>
+            <button onClick={handleUndo} disabled={waypoints.length === 0} aria-label="Undo last surveyed point" className="w-10 h-10 rounded-xl bg-surface shadow-md flex items-center justify-center text-secondary active:scale-95 transition-transform disabled:opacity-50" type="button">
+              <span className="material-symbols-outlined text-[20px]">undo</span>
+            </button>
           </div>
 
           {/* Voice toast */}
@@ -135,24 +242,30 @@ export default function FieldMapping() {
             </div>
             <div className="flex items-baseline justify-between mt-1 pt-1">
               <div>
-                <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">4.52</span>
+                <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">{calculatedArea.toFixed(2)}</span>
                 <span className="font-headline-sm text-headline-sm text-on-surface font-semibold ml-1">Acres</span>
               </div>
-              <span className="font-label-md text-label-md text-on-surface-variant font-medium bg-surface-container px-2.5 py-1 rounded-md">≈ 1.83 Hectares</span>
+              <span className="font-label-md text-label-md text-on-surface-variant font-medium bg-surface-container px-2.5 py-1 rounded-md">≈ {(calculatedArea * 0.404686).toFixed(2)} Hectares</span>
             </div>
             <div className="grid grid-cols-3 gap-2 mt-3 pt-3 bg-surface-container-low p-2.5 rounded-xl">
-              {[
-                { icon: 'straighten', label: 'Perimeter', value: '912 m' },
-                { icon: 'pin_drop', label: 'Waypoints', value: '14 Points' },
-                { icon: 'speed', label: 'Walk Speed', value: '3.2 km/h' },
-              ].map(({ icon, label, value }) => (
-                <div key={label} className="flex flex-col">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">{icon}</span> {label}
-                  </span>
-                  <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">{value}</span>
-                </div>
-              ))}
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">straighten</span> Perimeter
+                </span>
+                <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">{perimeter} m</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">pin_drop</span> Waypoints
+                </span>
+                <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">{waypoints.length} Points</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">speed</span> Walk Speed
+                </span>
+                <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">3.2 km/h</span>
+              </div>
             </div>
           </div>
         </section>
@@ -184,23 +297,24 @@ export default function FieldMapping() {
           <button
             onClick={handleFinish}
             disabled={saving}
-            className="w-full h-14 bg-secondary-container text-on-secondary rounded-xl font-label-lg text-label-lg font-bold shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+            className="w-full h-14 bg-secondary-container hover:opacity-95 text-on-secondary rounded-xl font-label-lg text-label-lg font-bold shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
           >
             {saving ? (
               <><span className="w-5 h-5 rounded-full border-2 border-on-secondary border-t-transparent animate-spin"></span><span>Saving...</span></>
             ) : (
-              <><span>Finish &amp; Save Boundary (4.52 Ac)</span><span className="material-symbols-outlined text-[22px]">arrow_forward</span></>
+              <><span>Finish &amp; Save Boundary ({calculatedArea.toFixed(2)} Ac)</span><span className="material-symbols-outlined text-[22px]">arrow_forward</span></>
             )}
           </button>
           <div className="flex items-center justify-between gap-2 mt-1">
             <button className="flex-1 py-3 text-center rounded-xl bg-surface-container text-on-surface font-label-md text-label-md font-semibold active:bg-surface-variant" type="button">
               Add Manual Corner
             </button>
-            <button className="flex-1 py-3 text-center rounded-xl bg-surface-container text-error font-label-md text-label-md font-semibold active:bg-surface-variant" type="button">
+            <button onClick={() => setWaypoints([])} className="flex-1 py-3 text-center rounded-xl bg-surface-container text-error font-label-md text-label-md font-semibold active:bg-surface-variant" type="button">
               Discard &amp; Restart
             </button>
           </div>
         </footer>
+        </div>
       </main>
     </div>
   );

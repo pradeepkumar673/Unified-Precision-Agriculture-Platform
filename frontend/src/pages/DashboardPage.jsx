@@ -75,7 +75,7 @@ export default function DashboardPage() {
 
   if (noFarm) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="flex flex-col items-center justify-center text-center">
         <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
           <Sprout className="w-10 h-10 text-emerald-400" />
         </div>

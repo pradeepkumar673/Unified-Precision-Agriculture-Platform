@@ -58,22 +58,9 @@ export default function SeasonPerformanceReport() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Fixed header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-20 px-margin flex items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-space-sm min-w-0 flex-1">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-on-surface rounded-full active:bg-surface-container flex-shrink-0" type="button">
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-on-surface-variant truncate">Rabi 2024-25 Closed</span>
-              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Plot 1 • Wheat (Sharbati Gold)</h1>
-            </div>
-          </div>
-          <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold flex-shrink-0">4.5 Ac</span>
-        </div>
-      </header>
+      
 
       <main className="flex flex-col w-full pt-20 pb-36 px-margin bg-background flex-1 space-y-space-lg">
         {/* Hero Yield Strip */}
@@ -201,7 +188,7 @@ export default function SeasonPerformanceReport() {
       </main>
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-margin bg-surface-container-lowest shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-40 space-y-space-xs max-w-md mx-auto">
+      <div className="sticky bottom-20 left-0 right-0 p-margin bg-surface-container-lowest shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-40 space-y-space-xs max-w-md mx-auto">
         <button
           onClick={handleDownload}
           disabled={downloading}

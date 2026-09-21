@@ -151,7 +151,7 @@ export default function InputsMarketplacePage() {
               </span>
               <div className="flex flex-col items-end">
                 <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  <Star className="w-3 h-3 fill-emerald-400" /> {product.ranking_score.toFixed(1)} AI Score
+                  <Star className="w-3 h-3 fill-emerald-400" /> {(product.ranking_score || 0).toFixed(1)} AI Score
                 </span>
               </div>
             </div>

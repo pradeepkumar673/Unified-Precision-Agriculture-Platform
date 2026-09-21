@@ -1,0 +1,340 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../App'; // Import auth to allow logout
+
+export default function FarmerProfileSettings() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const modules = [
+    { id: 1, icon: 'camera_indoor', colorClass: 'text-primary', title: 'AI Crop Doctor', subtitle: 'Instant disease scan', route: '/health/disease-scanner' },
+    { id: 2, icon: 'thunderstorm', colorClass: 'text-tertiary', title: 'Weather Radar', subtitle: '3-day rain hypercast', route: '/vision/drone-climate' },
+    { id: 3, icon: 'satellite_alt', colorClass: 'text-primary', title: 'Satellite Vigour', subtitle: 'NDVI plot health', route: '/vision/satellite' },
+    { id: 4, icon: 'water_drop', colorClass: 'text-tertiary', title: 'Smart Irrigation', subtitle: 'Moisture schedules', route: '/water-soil/irrigation' },
+    { id: 5, icon: 'storefront', colorClass: 'text-secondary', title: 'Mandi Bhav', subtitle: '14 APMC live prices', route: '/vision/price-forecast' },
+    { id: 6, icon: 'flight_takeoff', colorClass: 'text-primary', title: 'Drone Booking', subtitle: '₹350/Acre service', route: '/vision/drone-climate' },
+    { id: 7, icon: 'agriculture', colorClass: 'text-secondary', title: 'CHC Machinery', subtitle: 'Tractor, Harvester', route: '/marketplace/machinery' },
+    { id: 8, icon: 'biotech', colorClass: 'text-primary', title: 'Soil Testing Lab', subtitle: 'Doorstep sample pickup', route: '/water-soil/soil-health' },
+    { id: 9, icon: 'shield', colorClass: 'text-tertiary', title: 'PMFBY Insurance', subtitle: 'Claims & Policies', route: '/finance/credit-insurance' },
+    { id: 10, icon: 'calculate', colorClass: 'text-primary', title: 'NPK Dosage Tool', subtitle: 'Fertilizer calculator', route: '/planning/variable-rate' }
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  return (
+    <div className="flex flex-col w-full px-space-md py-space-sm space-y-space-md">
+      {/* Farmer Profile Header Card */}
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+        <div className="flex items-start gap-space-md">
+          <div className="relative shrink-0">
+            <img className="w-20 h-20 rounded-full object-cover shadow-sm" alt="Ramesh Patil" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8-QOVgNDaqnS4_3qKqpbCoITU5hTWkXzfryzy5ii7V4XeZbaTkfFpuop3xs_-2Zy8VBNuYjyzKq9P3rRVz98p7eqbYVpTeiWZvDUnERZT-0dyvUpX0qEgAAylWZNhsJK6Oe6UdMpb9lSOXU11gUyhYZpJdo9tDoroJ6P_sGgde_YMdCWGBbu0XEXivYaaOnc3ASZPA9M9XAqwxdOcaIUaEWV1cOhjmSzDrn3KT918KZycIPaXFj8G" />
+            <span className="absolute bottom-0 right-0 w-6 h-6 bg-primary text-on-primary rounded-full flex items-center justify-center shadow">
+              <span className="material-symbols-outlined text-[14px]">check</span>
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-space-xs">
+              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Ramesh Patil</h1>
+              <button aria-label="Edit Profile" className="px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1 active:scale-95 transition-transform" type="button">
+                <span className="material-symbols-outlined text-[16px]">edit</span>
+                <span>Edit</span>
+              </button>
+            </div>
+            <p className="font-label-md text-label-md text-primary font-semibold mt-0.5">Verified Smallholder (SF/MF)</p>
+            <p className="font-label-sm text-label-sm text-on-surface-variant truncate mt-0.5">ID: #KS-MH-88219</p>
+            <div className="flex items-center gap-1 text-on-surface-variant mt-1">
+              <span className="material-symbols-outlined text-[14px] text-secondary shrink-0">location_on</span>
+              <span className="font-label-sm text-label-sm truncate">Niphad, Nashik, Maharashtra</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Verification Badge Strip */}
+        <div className="bg-surface-container-low px-space-sm py-2 rounded-lg flex items-center justify-between gap-space-xs mt-space-sm">
+          <div className="flex items-center gap-space-xs min-w-0">
+            <span className="material-symbols-outlined text-primary text-[18px] shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+            <span className="font-label-sm text-label-sm text-on-surface font-semibold truncate">KCC & Aadhaar KYC Verified</span>
+          </div>
+          <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full shrink-0">Active</span>
+        </div>
+      </div>
+
+      {/* Farm Holdings Summary Bento Card */}
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col space-y-space-md">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-space-xs">
+            <span className="material-symbols-outlined text-primary text-[20px]">landscape</span>
+            <span className="font-label-lg text-label-lg text-on-surface font-bold">Farm Holdings & Assets</span>
+          </div>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">2 Parcels</span>
+        </div>
+
+        {/* Total Area Banner */}
+        <div className="bg-surface-container p-space-sm rounded-lg flex items-center justify-between">
+          <div>
+            <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Operated Land</p>
+            <p className="font-headline-sm text-headline-sm text-on-surface font-bold">4.52 Acres <span className="font-body-sm text-body-sm text-on-surface-variant font-normal">(1.83 Ha)</span></p>
+          </div>
+          <span className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+            <span className="material-symbols-outlined text-[22px]">crop_free</span>
+          </span>
+        </div>
+
+        {/* Plots Quick Snapshot */}
+        <div className="grid grid-cols-2 gap-space-sm">
+          <div onClick={() => navigate('/farm/profile')} className="bg-surface-container-low p-space-sm rounded-lg flex flex-col justify-between space-y-1 cursor-pointer active:scale-95 transition-transform">
+            <div className="flex items-center gap-1 text-primary">
+              <span className="material-symbols-outlined text-[16px]">grass</span>
+              <span className="font-label-sm text-label-sm font-bold truncate">Plot 1 • 2.5 Ac</span>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface font-semibold truncate">Sharbati Wheat</p>
+            <span className="inline-block font-label-sm text-label-sm text-secondary bg-secondary-fixed px-2 py-0.5 rounded-full self-start">Tillering Stage</span>
+          </div>
+          <div onClick={() => navigate('/farm/profile')} className="bg-surface-container-low p-space-sm rounded-lg flex flex-col justify-between space-y-1 cursor-pointer active:scale-95 transition-transform">
+            <div className="flex items-center gap-1 text-primary">
+              <span className="material-symbols-outlined text-[16px]">eco</span>
+              <span className="font-label-sm text-label-sm font-bold truncate">Plot 2 • 2.02 Ac</span>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface font-semibold truncate">Desi Chickpea</p>
+            <span className="inline-block font-label-sm text-label-sm text-primary bg-primary-fixed px-2 py-0.5 rounded-full self-start">Pod Formation</span>
+          </div>
+        </div>
+
+        {/* Soil Health & Equipment Details */}
+        <div className="space-y-space-xs pt-1">
+          <div className="flex items-center justify-between py-1 cursor-pointer hover:bg-surface-container-low transition-colors rounded px-1" onClick={() => navigate('/water-soil/soil-health')}>
+            <div className="flex items-center gap-space-xs text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px] text-primary">science</span>
+              <span className="font-body-sm text-body-sm text-on-surface">Soil Health Card</span>
+            </div>
+            <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full">pH 7.2 • Nov 2024</span>
+          </div>
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-space-xs text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px] text-secondary">solar_power</span>
+              <span className="font-body-sm text-body-sm text-on-surface">Solar Pump</span>
+            </div>
+            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">5 HP Submersible</span>
+          </div>
+          <div className="flex items-center justify-between py-1 cursor-pointer hover:bg-surface-container-low transition-colors rounded px-1" onClick={() => navigate('/marketplace/machinery')}>
+            <div className="flex items-center gap-space-xs text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px] text-secondary">handyman</span>
+              <span className="font-body-sm text-body-sm text-on-surface">Farm Machinery</span>
+            </div>
+            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Power Tiller (Owned)</span>
+          </div>
+          <div className="flex items-center justify-between py-1 cursor-pointer hover:bg-surface-container-low transition-colors rounded px-1" onClick={() => navigate('/community/fpo-cooperative-suite')}>
+            <div className="flex items-center gap-space-xs text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px] text-tertiary">groups</span>
+              <span className="font-body-sm text-body-sm text-on-surface">FPO Member</span>
+            </div>
+            <span className="font-label-sm text-label-sm text-tertiary font-semibold truncate max-w-[170px]">Nashik Kisan (#NSK-442)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Explore More Tools & Services CTA Banner */}
+      <div onClick={() => setIsSheetOpen(true)} className="bg-secondary-container text-on-secondary-container p-space-md rounded-xl shadow-md cursor-pointer active:scale-[0.99] transition-transform flex items-center justify-between gap-space-sm">
+        <div className="flex items-center gap-space-md min-w-0">
+          <div className="w-12 h-12 rounded-xl bg-on-secondary-container/10 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[28px] text-on-secondary-container">apps</span>
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-headline-sm text-headline-sm text-on-secondary-container leading-tight truncate">Explore All 11 Modules</h2>
+            <p className="font-label-sm text-label-sm opacity-90 truncate">AI Advisory, Drone Spraying, CHC Hire & more</p>
+          </div>
+        </div>
+        <span className="material-symbols-outlined text-[24px] text-on-secondary-container shrink-0">arrow_forward</span>
+      </div>
+
+      {/* Account & App Settings Section */}
+      <div className="space-y-space-xs">
+        <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-space-xs">Preferences & Records</span>
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+          {/* Language & Audio */}
+          <div className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
+            <div className="flex items-center gap-space-md min-w-0">
+              <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined text-[20px]">translate</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">Language & Voice Assistance</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">English • Audio Readout (Normal)</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">chevron_right</span>
+          </div>
+          <div className="h-[1px] bg-surface-container mx-space-md"></div>
+          
+          {/* Notifications & Outbreak Alerts */}
+          <div onClick={() => navigate('/community/alerts')} className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
+            <div className="flex items-center gap-space-md min-w-0">
+              <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-secondary shrink-0">
+                <span className="material-symbols-outlined text-[20px]">notifications_active</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">Critical Alerts & Mandi Updates</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">Pest warnings & SMS Fallback Enabled</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">chevron_right</span>
+          </div>
+          <div className="h-[1px] bg-surface-container mx-space-md"></div>
+          
+          {/* Linked Bank & DBT */}
+          <div onClick={() => navigate('/gov/schemes')} className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
+            <div className="flex items-center gap-space-md min-w-0">
+              <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined text-[20px]">account_balance</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">Linked Bank & DBT Subsidy</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">SBI A/C ••••4891 • PM-Kisan Active</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">chevron_right</span>
+          </div>
+          <div className="h-[1px] bg-surface-container mx-space-md"></div>
+          
+          {/* Document Vault */}
+          <div onClick={() => navigate('/gov/documents')} className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
+            <div className="flex items-center gap-space-md min-w-0">
+              <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-tertiary shrink-0">
+                <span className="material-symbols-outlined text-[20px]">folder_shared</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">Farmer Document Vault</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">4 of 5 Verified (7/12, Aadhaar, Soil Card)</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">chevron_right</span>
+          </div>
+          <div className="h-[1px] bg-surface-container mx-space-md"></div>
+          
+          {/* Custom Hiring Operator Mode */}
+          <div className="p-space-md flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors">
+            <div className="flex items-center gap-space-md min-w-0">
+              <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined text-[20px]">rv_hookup</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">Custom Hiring Operator Mode</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant truncate">Rent out your Power Tiller & Pump</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">toggle_off</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Support & Help Center */}
+      <div className="space-y-space-xs">
+        <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-space-xs">Farmer Support & Helplines</span>
+        <div className="grid grid-cols-2 gap-space-sm">
+          {/* Digital Sakhi Contact */}
+          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-sm">
+            <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-[20px]">support_agent</span>
+            </div>
+            <div>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">Assigned Mitra</p>
+              <p className="font-body-sm text-body-sm text-on-surface font-bold truncate">Sunita Devi (Sakhi)</p>
+            </div>
+            <button onClick={() => navigate('/community/digital-sakhi')} className="w-full py-2 bg-primary-container text-on-primary font-label-sm text-label-sm rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-transform" type="button">
+              <span className="material-symbols-outlined text-[16px]">call</span>
+              <span>Call Mitra</span>
+            </button>
+          </div>
+          
+          {/* Kisan Call Center */}
+          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-sm">
+            <div className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+              <span className="material-symbols-outlined text-[20px]">phone_in_talk</span>
+            </div>
+            <div>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">Govt Helpline</p>
+              <p className="font-body-sm text-body-sm text-on-surface font-bold truncate">1800-180-1551</p>
+            </div>
+            <button className="w-full py-2 bg-secondary text-on-secondary font-label-sm text-label-sm rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-transform" type="button">
+              <span className="material-symbols-outlined text-[16px]">headset_mic</span>
+              <span>Toll-Free</span>
+            </button>
+          </div>
+        </div>
+
+        {/* WhatsApp Support Bot Tile */}
+        <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between cursor-pointer active:bg-surface-container-low transition-colors mt-space-sm">
+          <div className="flex items-center gap-space-md min-w-0">
+            <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+              <span className="material-symbols-outlined text-[20px]">chat</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">WhatsApp Krishi Sahayak</p>
+              <p className="font-label-sm text-label-sm text-on-surface-variant truncate">Instant advisory in Marathi & Hindi</p>
+            </div>
+          </div>
+          <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-space-sm py-1 rounded-full shrink-0">Open Chat</span>
+        </div>
+      </div>
+
+      {/* Logout / Switch Profile */}
+      <div className="pt-space-sm pb-space-sm flex flex-col items-center space-y-space-sm">
+        <button onClick={handleLogout} className="w-full py-space-sm bg-error-container text-on-error-container rounded-xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-space-xs active:scale-[0.98] transition-transform" type="button">
+          <span className="material-symbols-outlined text-[20px]">logout</span>
+          <span>Switch Account or Logout</span>
+        </button>
+        <div className="flex items-center gap-space-xs text-on-surface-variant">
+          <span className="font-label-sm text-label-sm">KhetSaathi v2.4.0 (Build 412)</span>
+          <span>•</span>
+          <a className="font-label-sm text-label-sm underline hover:text-on-surface" href="#">Privacy</a>
+          <span>•</span>
+          <a className="font-label-sm text-label-sm underline hover:text-on-surface" href="#">Terms</a>
+        </div>
+      </div>
+
+      {/* Fullscreen Modal / Sheet: 11 Advanced Agritech Modules */}
+      <div className={`${isSheetOpen ? 'flex' : 'hidden'} fixed inset-0 z-50 bg-inverse-surface/60 backdrop-blur-sm flex-col justify-end p-0`} onClick={() => setIsSheetOpen(false)}>
+        <div className="bg-surface rounded-t-xl max-h-[85vh] flex flex-col overflow-hidden shadow-xl animate-in slide-in-from-bottom duration-200" onClick={(e) => e.stopPropagation()}>
+          <div className="p-space-md bg-surface-container-high flex items-center justify-between">
+            <div className="flex items-center gap-space-xs">
+              <span className="material-symbols-outlined text-primary text-[24px]">apps</span>
+              <h3 className="font-headline-sm text-headline-sm text-on-surface">All Agritech Tools & Modules</h3>
+            </div>
+            <button onClick={() => setIsSheetOpen(false)} className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-on-surface active:scale-95" type="button">
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+          
+          <div className="p-space-md overflow-y-auto space-y-space-md">
+            <p className="font-body-sm text-body-sm text-on-surface-variant">Select an agritech module to open specialized field workflows and tools.</p>
+            
+            <div className="grid grid-cols-2 gap-space-sm pb-space-lg">
+              {modules.map((mod) => (
+                <div key={mod.id} onClick={() => { setIsSheetOpen(false); navigate(mod.route); }} className="bg-surface-container-lowest p-space-sm rounded-lg flex items-center gap-space-xs cursor-pointer active:scale-95 transition-transform">
+                  <span className={`material-symbols-outlined text-[24px] shrink-0 ${mod.colorClass}`}>{mod.icon}</span>
+                  <div className="min-w-0">
+                    <p className="font-label-md text-label-md text-on-surface font-bold truncate">{mod.title}</p>
+                    <p className="font-label-sm text-label-sm text-on-surface-variant truncate">{mod.subtitle}</p>
+                  </div>
+                </div>
+              ))}
+
+              {/* 11. Krishi Charcha Community (spans 2 cols) */}
+              <div onClick={() => { setIsSheetOpen(false); navigate('/more'); }} className="col-span-2 bg-surface-container-lowest p-space-sm rounded-lg flex items-center gap-space-xs cursor-pointer active:scale-95 transition-transform">
+                <span className="material-symbols-outlined text-[24px] text-secondary shrink-0">forum</span>
+                <div className="min-w-0">
+                  <p className="font-label-md text-label-md text-on-surface font-bold truncate">Krishi Charcha (Farmer Community)</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant truncate">12,400+ Nashik farmers sharing advice & crop solutions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
