@@ -1,84 +1,84 @@
-import { useState, createContext, useContext, useEffect } from 'react';
+import { useState, createContext, useContext, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 
 // Layouts & Root Pages
 import AppShell from './layouts/AppShell';
 import MainLayout from './layouts/MainLayout';
 import FullscreenLayout from './components/FullscreenLayout';
-import DashboardPage from './pages/DashboardPage';
-import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
-import TermsPage from './pages/legal/TermsPage';
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
 
 // Farm Screens (Stitch pixel-exact)
 import SplashWelcomeScreen from './pages/farm/SplashWelcomeScreen';
 import PhoneNumberLogin from './pages/farm/PhoneNumberLogin';
-import RoleSelection from './pages/farm/RoleSelection';
-import FarmSetupWizardStep1Of3 from './pages/farm/FarmSetupWizardStep1Of3';
-import FieldMapping from './pages/farm/FieldMapping';
-import MainHomeDashboard from './pages/farm/MainHomeDashboard';
+const RoleSelection = lazy(() => import('./pages/farm/RoleSelection'));
+const FarmSetupWizardStep1Of3 = lazy(() => import('./pages/farm/FarmSetupWizardStep1Of3'));
+const FieldMapping = lazy(() => import('./pages/farm/FieldMapping'));
+const MainHomeDashboard = lazy(() => import('./pages/farm/MainHomeDashboard'));
 
 // Planning Screens (Stitch pixel-exact)
-import CropPlanRecommendation from './pages/planning/CropPlanRecommendation';
-import SeasonPerformanceReport from './pages/planning/SeasonPerformanceReport';
-import SeasonTimeline from './pages/planning/SeasonTimeline';
-import CropRotationSuggestion from './pages/planning/CropRotationSuggestion';
-import VarietyComparison from './pages/planning/VarietyComparison';
+const CropPlanRecommendation = lazy(() => import('./pages/planning/CropPlanRecommendation'));
+const SeasonPerformanceReport = lazy(() => import('./pages/planning/SeasonPerformanceReport'));
+const SeasonTimeline = lazy(() => import('./pages/planning/SeasonTimeline'));
+const CropRotationSuggestion = lazy(() => import('./pages/planning/CropRotationSuggestion'));
+const VarietyComparison = lazy(() => import('./pages/planning/VarietyComparison'));
 
 // Health Screens (Stitch pixel-exact)
-import LeafDiseaseScanner from './pages/health/LeafDiseaseScanner';
-import CropDiagnosisResult from './pages/health/CropDiagnosisResult';
+const LeafDiseaseScanner = lazy(() => import('./pages/health/LeafDiseaseScanner'));
+const CropDiagnosisResult = lazy(() => import('./pages/health/CropDiagnosisResult'));
 import { jwtDecode } from 'jwt-decode';
 
 // Feature Groups
-import FarmerProfileSettings from './pages/farm/FarmerProfileSettings';
-import TheMoreMenuFeatureHub from './pages/farm/TheMoreMenuFeatureHub';
-import FarmProfilePage from './pages/farm/FarmProfilePage';
-import FieldBoundaryPage from './pages/farm/FieldBoundaryPage';
-import CropPlanningPage from './pages/planning/CropPlanningPage';
-import RotationPage from './pages/planning/RotationPage';
-import VariableRatePage from './pages/planning/VariableRatePage';
-import DiseaseDiagnosisPage from './pages/health/DiseaseDiagnosisPage';
-import PestRiskPage from './pages/health/PestRiskPage';
-import LivestockPage from './pages/health/LivestockPage';
-import IrrigationRecommendation from './pages/water_soil/IrrigationRecommendation';
-import WaterDemandForecast from './pages/water_soil/WaterDemandForecast';
-import ZoneManagementVariableRate from './pages/water_soil/ZoneManagementVariableRate';
-import SoilHealthHeatmap from './pages/water_soil/SoilHealthHeatmap';
-import MandiPriceForecast from './pages/vision_forecast/MandiPriceForecast';
-import YieldForecast from './pages/vision_forecast/YieldForecast';
-import SatelliteCropStress from './pages/vision_forecast/SatelliteCropStress';
-import DronePlantCountingClimateRisk from './pages/vision_forecast/DronePlantCountingClimateRisk';
-import InputsMarketplacePage from './pages/marketplace/InputsMarketplacePage';
-import MachineryLaborPage from './pages/marketplace/MachineryLaborPage';
-import BuyerExchangePage from './pages/marketplace/BuyerExchangePage';
-import InputsBrowse from './pages/marketplace/InputsBrowse.jsx';
-import ProductDetailMachineryRental from './pages/marketplace/ProductDetailMachineryRental.jsx';
-import HarvestSellProduce from './pages/marketplace/HarvestSellProduce.jsx';
-import DeliveryLogisticsTracking from './pages/marketplace/DeliveryLogisticsTracking.jsx';
-import WalletTransactionLedger from './pages/finance/WalletTransactionLedger.jsx';
-import PaymentCheckout from './pages/finance/PaymentCheckout.jsx';
-import CreditMarketplaceInsurance from './pages/finance/CreditMarketplaceInsurance.jsx';
-import SchemeMatching from './pages/gov_compliance/SchemeMatching.jsx';
-import FarmerDocumentVault from './pages/gov_compliance/FarmerDocumentVault.jsx';
-import ProduceTraceabilityEnergy from './pages/gov_compliance/ProduceTraceabilityEnergy.jsx';
-import SeasonReportPage from './pages/community/SeasonReportPage';
-import GrowerScorePage from './pages/community/GrowerScorePage';
-import FPOCommunityPage from './pages/community/FPOCommunityPage';
-import DigitalSakhi from './pages/community/DigitalSakhi';
-import FarmAlerts from './pages/community/FarmAlerts';
-import ShgSharedBookings from './pages/community/ShgSharedBookings';
-import CommunityDiseaseOutbreakMap from './pages/community/CommunityDiseaseOutbreakMap';
-import FpoCooperativeSuite from './pages/community/FpoCooperativeSuite';
+const FarmerProfileSettings = lazy(() => import('./pages/farm/FarmerProfileSettings'));
+const TheMoreMenuFeatureHub = lazy(() => import('./pages/farm/TheMoreMenuFeatureHub'));
+const FarmProfilePage = lazy(() => import('./pages/farm/FarmProfilePage'));
+const FieldBoundaryPage = lazy(() => import('./pages/farm/FieldBoundaryPage'));
+const CropPlanningPage = lazy(() => import('./pages/planning/CropPlanningPage'));
+const RotationPage = lazy(() => import('./pages/planning/RotationPage'));
+const VariableRatePage = lazy(() => import('./pages/planning/VariableRatePage'));
+const DiseaseDiagnosisPage = lazy(() => import('./pages/health/DiseaseDiagnosisPage'));
+const PestRiskPage = lazy(() => import('./pages/health/PestRiskPage'));
+const LivestockPage = lazy(() => import('./pages/health/LivestockPage'));
+const IrrigationRecommendation = lazy(() => import('./pages/water_soil/IrrigationRecommendation'));
+const WaterDemandForecast = lazy(() => import('./pages/water_soil/WaterDemandForecast'));
+const ZoneManagementVariableRate = lazy(() => import('./pages/water_soil/ZoneManagementVariableRate'));
+const SoilHealthHeatmap = lazy(() => import('./pages/water_soil/SoilHealthHeatmap'));
+const MandiPriceForecast = lazy(() => import('./pages/vision_forecast/MandiPriceForecast'));
+const YieldForecast = lazy(() => import('./pages/vision_forecast/YieldForecast'));
+const SatelliteCropStress = lazy(() => import('./pages/vision_forecast/SatelliteCropStress'));
+const DronePlantCountingClimateRisk = lazy(() => import('./pages/vision_forecast/DronePlantCountingClimateRisk'));
+const InputsMarketplacePage = lazy(() => import('./pages/marketplace/InputsMarketplacePage'));
+const MachineryLaborPage = lazy(() => import('./pages/marketplace/MachineryLaborPage'));
+const BuyerExchangePage = lazy(() => import('./pages/marketplace/BuyerExchangePage'));
+const InputsBrowse = lazy(() => import('./pages/marketplace/InputsBrowse.jsx'));
+const ProductDetailMachineryRental = lazy(() => import('./pages/marketplace/ProductDetailMachineryRental.jsx'));
+const HarvestSellProduce = lazy(() => import('./pages/marketplace/HarvestSellProduce.jsx'));
+const DeliveryLogisticsTracking = lazy(() => import('./pages/marketplace/DeliveryLogisticsTracking.jsx'));
+const WalletTransactionLedger = lazy(() => import('./pages/finance/WalletTransactionLedger.jsx'));
+const PaymentCheckout = lazy(() => import('./pages/finance/PaymentCheckout.jsx'));
+const CreditMarketplaceInsurance = lazy(() => import('./pages/finance/CreditMarketplaceInsurance.jsx'));
+const SchemeMatching = lazy(() => import('./pages/gov_compliance/SchemeMatching.jsx'));
+const FarmerDocumentVault = lazy(() => import('./pages/gov_compliance/FarmerDocumentVault.jsx'));
+const ProduceTraceabilityEnergy = lazy(() => import('./pages/gov_compliance/ProduceTraceabilityEnergy.jsx'));
+const SeasonReportPage = lazy(() => import('./pages/community/SeasonReportPage'));
+const GrowerScorePage = lazy(() => import('./pages/community/GrowerScorePage'));
+const FPOCommunityPage = lazy(() => import('./pages/community/FPOCommunityPage'));
+const DigitalSakhi = lazy(() => import('./pages/community/DigitalSakhi'));
+const FarmAlerts = lazy(() => import('./pages/community/FarmAlerts'));
+const ShgSharedBookings = lazy(() => import('./pages/community/ShgSharedBookings'));
+const CommunityDiseaseOutbreakMap = lazy(() => import('./pages/community/CommunityDiseaseOutbreakMap'));
+const FpoCooperativeSuite = lazy(() => import('./pages/community/FpoCooperativeSuite'));
 
 // Voice/AI
-import VoiceAssistantPage from './pages/advanced_ai/VoiceAssistantPage';
-import CounterfactualWhatIfSimulator from './pages/advanced_ai/CounterfactualWhatIfSimulator';
-import MultimodalQuery from './pages/advanced_ai/MultimodalQuery';
-import FederatedLearningPage from './pages/advanced_ai/FederatedLearningPage';
-import LiveSensorDashboard from './pages/cea_iot/LiveSensorDashboard';
-import HydroponicsClimateControl from './pages/cea_iot/HydroponicsClimateControl';
-import VerticalFarmShelfMonitor from './pages/cea_iot/VerticalFarmShelfMonitor';
-import TraceabilityPage from './pages/cea_iot/TraceabilityPage';
+const VoiceAssistantPage = lazy(() => import('./pages/advanced_ai/VoiceAssistantPage'));
+const CounterfactualWhatIfSimulator = lazy(() => import('./pages/advanced_ai/CounterfactualWhatIfSimulator'));
+const MultimodalQuery = lazy(() => import('./pages/advanced_ai/MultimodalQuery'));
+const FederatedLearningPage = lazy(() => import('./pages/advanced_ai/FederatedLearningPage'));
+const LiveSensorDashboard = lazy(() => import('./pages/cea_iot/LiveSensorDashboard'));
+const HydroponicsClimateControl = lazy(() => import('./pages/cea_iot/HydroponicsClimateControl'));
+const VerticalFarmShelfMonitor = lazy(() => import('./pages/cea_iot/VerticalFarmShelfMonitor'));
+const TraceabilityPage = lazy(() => import('./pages/cea_iot/TraceabilityPage'));
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -126,7 +126,8 @@ function App() {
   return (
     <AuthContext.Provider value={{ token, login, logout }}>
       <RouterHelper />
-      <Routes>
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><span className="material-symbols-outlined animate-spin text-primary text-4xl">sync</span></div>}>
+          <Routes>
           {/* Onboarding flow — no auth needed */}
           <Route path="/splash" element={<SplashWelcomeScreen />} />
           <Route path="/onboarding/phone" element={<PhoneNumberLogin />} />
@@ -219,6 +220,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+          </Suspense>
     </AuthContext.Provider>
   );
 }

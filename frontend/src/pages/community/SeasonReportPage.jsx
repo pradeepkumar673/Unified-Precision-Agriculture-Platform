@@ -58,7 +58,12 @@ export default function SeasonReportPage() {
             <option value="2023">2023</option>
             <option value="2022">2022</option>
           </select>
-          <button onClick={fetchReport} disabled={loading} className="p-1.5 bg-teal-500/20 text-teal-400 rounded-md hover:bg-teal-500/30 transition-colors disabled:opacity-50">
+          <button 
+            onClick={fetchReport} 
+            disabled={loading}
+            aria-label="Refresh data"
+            className="w-11 h-11 flex items-center justify-center bg-teal-500/20 text-teal-400 rounded-md hover:bg-teal-500/30 transition-colors disabled:opacity-50"
+          >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>

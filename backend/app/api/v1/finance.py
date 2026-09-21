@@ -134,6 +134,8 @@ def payment_webhook(
 @router.get("/ledger/{farm_id}", response_model=List[TransactionRead])
 def get_ledger(
     farm_id: UUID,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
     """Get ledger transactions for a user or farm."""
@@ -151,6 +153,8 @@ def get_ledger(
         select(Transaction)
         .where(Transaction.user_id == target_user_id)
         .order_by(Transaction.created_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     transactions = db.execute(stmt).scalars().all()
     return transactions

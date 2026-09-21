@@ -70,7 +70,8 @@ export default function PestRiskPage() {
           />
           <button 
             onClick={fetchData}
-            className="p-1.5 bg-orange-500/20 text-orange-400 rounded-md hover:bg-orange-500/30 transition-colors"
+            aria-label="Refresh data"
+            className="w-11 h-11 flex items-center justify-center bg-orange-500/20 text-orange-400 rounded-md hover:bg-orange-500/30 transition-colors"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>

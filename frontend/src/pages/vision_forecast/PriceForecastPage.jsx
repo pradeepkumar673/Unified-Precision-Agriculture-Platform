@@ -69,7 +69,8 @@ export default function PriceForecastPage() {
           />
           <button 
             onClick={fetchForecast}
-            className="p-1.5 bg-amber-500/20 text-amber-400 rounded-md hover:bg-amber-500/30 transition-colors"
+            aria-label="Refresh data"
+            className="w-11 h-11 flex items-center justify-center bg-amber-500/20 text-amber-400 rounded-md hover:bg-amber-500/30 transition-colors"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>

@@ -1,5 +1,20 @@
-from fastapi import FastAPI
+import os
+import time
+import logging
+import json
+from collections import defaultdict
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+# Setup structured logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("agri_backend")
+
+# In-memory rate limiter store: IP -> list of timestamps
+RATE_LIMIT_STORE = defaultdict(list)
+RATE_LIMIT_MAX_REQUESTS = 5
+RATE_LIMIT_WINDOW_SEC = 60
 
 from app import models  # noqa: F401 - register models on Base.metadata
 from app.api.v1.farm import router as farm_router
@@ -23,13 +38,63 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Read CORS origins from environment, fallback to localhost for dev
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_env:
+    allow_origins = [origin.strip() for origin in allowed_origins_env.split(",")]
+else:
+    allow_origins = [
+        "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", 
+        "http://localhost:5175", "http://127.0.0.1:5175", "http://localhost:4173", 
+        "http://127.0.0.1:4173"
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://localhost:5175", "http://127.0.0.1:5175", "http://localhost:4173", "http://127.0.0.1:4173"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def rate_limit_auth(request: Request, call_next):
+    # Only rate limit the auth endpoints to prevent demo lockout
+    if request.url.path.startswith("/api/v1/auth/login") or request.url.path.startswith("/api/v1/auth/verify-otp"):
+        client_ip = request.client.host
+        current_time = time.time()
+        
+        # Clean up old timestamps
+        RATE_LIMIT_STORE[client_ip] = [
+            ts for ts in RATE_LIMIT_STORE[client_ip] 
+            if current_time - ts < RATE_LIMIT_WINDOW_SEC
+        ]
+        
+        if len(RATE_LIMIT_STORE[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+            logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many login attempts. Please wait a minute."}
+            )
+            
+        RATE_LIMIT_STORE[client_ip].append(current_time)
+        
+    return await call_next(request)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_msg = str(exc)
+    logger.error(json.dumps({
+        "error": "Unhandled Exception",
+        "path": request.url.path,
+        "method": request.method,
+        "message": error_msg,
+        "client": request.client.host
+    }))
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred."}
+    )
 
 # Dev convenience so uvicorn boots straight into a working DB.
 Base.metadata.create_all(bind=engine)

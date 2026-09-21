@@ -59,9 +59,13 @@ def get_equipment_listings(db: Session = Depends(get_db)):
 
 
 @router.get("/labor", response_model=List[LaborListingRead])
-def get_labor_listings(db: Session = Depends(get_db)):
+def get_labor_listings(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
     """Return labor listings; availability is checked when booking."""
-    return db.execute(select(LaborListing)).scalars().all()
+    return db.execute(select(LaborListing).offset(offset).limit(limit)).scalars().all()
 
 
 # --------------------------------------------------------------------------- #
@@ -70,6 +74,8 @@ def get_labor_listings(db: Session = Depends(get_db)):
 @router.get("/products", response_model=List[ProductRead])
 def get_products(
     farm_id: Optional[UUID] = Query(None, description="Optional Farm UUID to tailor rankings"),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
     """Return all products ranked by trained ML scoring model (e.g. LightGBM)."""
@@ -77,7 +83,7 @@ def get_products(
     if farm_id:
         farm = db.execute(select(Farm).where(Farm.id == farm_id)).scalars().first()
 
-    stmt = select(Product)
+    stmt = select(Product).offset(offset).limit(limit)
     products = db.execute(stmt).scalars().all()
     ranked = rank_products(products, farm)
     return ranked
