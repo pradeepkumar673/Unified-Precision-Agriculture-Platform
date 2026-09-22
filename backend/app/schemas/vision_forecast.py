@@ -57,3 +57,12 @@ class ClimateRiskResponse(BaseModel):
     drought_risk: float
     flood_risk: float
     heat_risk: float
+    overall_risk: float
+    overall_index: int
+    risk_category: str
+    station_name: str
+    season_name: str
+    overall_insight: str
+    drought_insight: str
+    flood_insight: str
+    heat_insight: str

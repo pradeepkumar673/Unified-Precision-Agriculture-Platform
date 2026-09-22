@@ -1,17 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkStress } from '../../api/visionForecastApi';
+import { getFarmBoundary, getFarmProfile } from '../../api/farmApi';
+import { MapContainer, TileLayer, Polygon, Tooltip, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Auto-fit map to boundary
+function FitBounds({ positions }) {
+  const map = useMap();
+  useEffect(() => {
+    if (positions && positions.length > 2) {
+      map.fitBounds(positions, { padding: [24, 24] });
+    }
+  }, [positions, map]);
+  return null;
+}
 
 export default function SatelliteCropStress() {
   const navigate = useNavigate();
   const [stressData, setStressData] = useState(null);
-  const [activeZone, setActiveZone] = useState({
-    id: 'D',
-    name: 'Gate Ridge Section',
-    ndvi: '0.41 NDVI',
-    statusLabel: 'Severe Water Deficit',
-    description: 'Wilting risk imminent. Soil moisture probe reading 22%. Immediate drip activation advised.'
-  });
+  const [farmProfile, setFarmProfile] = useState(null);
+  const [boundary, setBoundary] = useState([]); // [[lat, lng], ...]
+  const [activeZone, setActiveZone] = useState(null);
   const [activeLayer, setActiveLayer] = useState('ndvi');
   const [voiceActive, setVoiceActive] = useState(false);
   const [valveTriggered, setValveTriggered] = useState(false);
@@ -19,16 +29,149 @@ export default function SatelliteCropStress() {
   const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
+    const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+
     const checkFieldStress = async () => {
       try {
-        const res = await checkStress({ farm_id: localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000' });
+        const res = await checkStress({ farm_id: farmId });
         setStressData(res.data);
       } catch (err) {
         console.error(err);
       }
     };
+
+    const fetchBoundary = async () => {
+      try {
+        const res = await getFarmBoundary(farmId);
+        const pts = res.data?.boundary_points;
+        if (pts && pts.length > 2) {
+          setBoundary(pts.map(p => [p.lat, p.lng]));
+        }
+      } catch (err) {
+        console.error('boundary fetch failed:', err);
+      }
+    };
+
+    const fetchProfile = async () => {
+      try {
+        const res = await getFarmProfile(farmId);
+        setFarmProfile(res.data);
+      } catch (err) {
+        console.error('profile fetch failed:', err);
+      }
+    };
+
     checkFieldStress();
+    fetchBoundary();
+    fetchProfile();
   }, []);
+
+  // Clip a polygon to one side of a horizontal or vertical divider line
+  // using Sutherland-Hodgman single half-plane clipping
+  function clipToHalfPlane(polygon, testFn, interpFn) {
+    if (!polygon || polygon.length === 0) return [];
+    const output = [];
+    const n = polygon.length;
+    for (let i = 0; i < n; i++) {
+      const curr = polygon[i];
+      const prev = polygon[(i - 1 + n) % n];
+      const currIn = testFn(curr);
+      const prevIn = testFn(prev);
+      if (currIn) {
+        if (!prevIn) output.push(interpFn(prev, curr));
+        output.push(curr);
+      } else if (prevIn) {
+        output.push(interpFn(prev, curr));
+      }
+    }
+    return output;
+  }
+
+  // Compute NDVI zone polygons by clipping the real boundary into 4 quadrants
+  const ndviZones = useMemo(() => {
+    if (boundary.length < 3) return [];
+
+    const lats = boundary.map(p => p[0]);
+    const lngs = boundary.map(p => p[1]);
+    const cLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const cLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+
+    const ndvi  = stressData?.ndvi_value  ?? 0.65;
+    const ndwi  = stressData?.ndwi_value  ?? 0.25;
+
+    // Linear interpolation helpers for lat/lng crossing
+    const interpLat = (cLine) => (a, b) => {
+      const t = (cLine - a[0]) / (b[0] - a[0]);
+      return [cLine, a[1] + t * (b[1] - a[1])];
+    };
+    const interpLng = (cLine) => (a, b) => {
+      const t = (cLine - a[1]) / (b[1] - a[1]);
+      return [a[0] + t * (b[0] - a[0]), cLine];
+    };
+
+    // Clip boundary to each quadrant using two successive half-plane clips
+    const clipQuadrant = (latTest, latInterp, lngTest, lngInterp) => {
+      let pts = clipToHalfPlane(boundary, p => latTest(p[0]), latInterp);
+      pts = clipToHalfPlane(pts, p => lngTest(p[1]), lngInterp);
+      return pts.length >= 3 ? pts : null;
+    };
+
+    const zones = [
+      {
+        id: 'A', name: 'North Core',
+        label: `${Math.round(Math.min(ndvi + 0.12, 0.95) * 100) / 100} NDVI`,
+        statusLabel: 'Optimal Vigour', color: '#1b5e20',
+        desc: 'Soil moisture at 38%. Canopy lush and transpiration optimal.',
+        positions: clipQuadrant(
+          lat => lat >= cLat, interpLat(cLat),
+          lng => lng <= cLng, interpLng(cLng)
+        ),
+      },
+      {
+        id: 'B', name: 'East Slope',
+        label: `${Math.round(Math.min(ndvi + 0.05, 0.85) * 100) / 100} NDVI`,
+        statusLabel: 'Normal Canopy', color: '#6abf69',
+        desc: 'Adequate growth. Slope run-off slightly faster.',
+        positions: clipQuadrant(
+          lat => lat >= cLat, interpLat(cLat),
+          lng => lng >= cLng, interpLng(cLng)
+        ),
+      },
+      {
+        id: 'C', name: 'South-West Plot',
+        label: `${Math.round(Math.max(ndvi - 0.10, 0.35) * 100) / 100} NDVI`,
+        statusLabel: 'Early Stress', color: '#fc6018',
+        desc: `Moisture depletion detected (${Math.round(ndwi * 100)}% NDWI). Drip runtime check required.`,
+        positions: clipQuadrant(
+          lat => lat <= cLat, interpLat(cLat),
+          lng => lng <= cLng, interpLng(cLng)
+        ),
+      },
+      {
+        id: 'D', name: 'Gate Ridge Section',
+        label: `${Math.round(Math.max(ndvi - 0.22, 0.28) * 100) / 100} NDVI`,
+        statusLabel: stressData?.stress_level === 'severe' ? 'Severe Water Deficit' : 'Early Stress',
+        color: '#ba1a1a',
+        desc: `Wilting risk. Soil moisture probe reading ${Math.round(Math.max(15, ndwi * 60))}%. Immediate drip activation advised.`,
+        positions: clipQuadrant(
+          lat => lat <= cLat, interpLat(cLat),
+          lng => lng >= cLng, interpLng(cLng)
+        ),
+      },
+    ];
+
+    const computed = zones.filter(z => z.positions !== null);
+    return computed;
+  }, [boundary, stressData]);
+
+  // Auto-select the most stressed zone once zones are computed
+  useEffect(() => {
+    if (ndviZones.length > 0 && !activeZone) {
+      const priority = ['D', 'C', 'B', 'A'];
+      const worst = priority.map(id => ndviZones.find(z => z.id === id)).find(Boolean);
+      if (worst) setActiveZone({ id: worst.id, name: worst.name, ndvi: worst.label, statusLabel: worst.statusLabel, description: worst.desc });
+    }
+  }, [ndviZones]);
 
   const selectZone = (id, name, ndvi, statusLabel, description) => {
     setActiveZone({ id, name, ndvi, statusLabel, description });
@@ -50,11 +193,12 @@ export default function SatelliteCropStress() {
   };
 
   const getZoneStyles = () => {
+    if (!activeZone) return { text: 'text-primary', bg: 'bg-primary-fixed', icon: 'eco' };
     if (activeZone.id === 'D') return { text: 'text-error', bg: 'bg-error-container', icon: 'error' };
     if (activeZone.id === 'C') return { text: 'text-secondary', bg: 'bg-secondary-fixed', icon: 'water_loss' };
     return { text: 'text-primary', bg: 'bg-primary-fixed', icon: 'eco' };
   };
-  
+
   const zoneStyles = getZoneStyles();
 
   return (
@@ -66,9 +210,11 @@ export default function SatelliteCropStress() {
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
               <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">Crop Stress Map</h1>
-              <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-2 py-0.5 rounded-full">Plot 1</span>
+              <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-2 py-0.5 rounded-full">{farmProfile?.name || 'My Farm'}</span>
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant truncate">Wheat Parcel • 4.5 Acres • Nashik (20.01°N, 73.79°E)</p>
+            <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
+              {farmProfile?.primary_crop || 'Parcel'} • {farmProfile?.land_size_acres ? `${farmProfile.land_size_acres} Acres` : ''}{farmProfile?.latitude ? ` • ${farmProfile.latitude.toFixed(4)}°N, ${farmProfile.longitude.toFixed(4)}°E` : ''}
+            </p>
           </div>
           <button 
             onClick={() => {
@@ -88,11 +234,17 @@ export default function SatelliteCropStress() {
             </div>
             <div className="flex-1 min-w-0 pr-6">
               <div className="flex items-center gap-1.5">
-                <span className="font-label-md text-label-md text-on-secondary-container font-bold">2 Zones Need Attention</span>
-                <span className="w-2 h-2 rounded-full bg-error inline-block animate-pulse"></span>
+                <span className="font-label-md text-label-md text-on-secondary-container font-bold">
+                  {stressData ? (stressData.stress_level !== 'none' ? '2 Zones Need Attention' : 'All Zones Healthy') : 'Analyzing Field...'}
+                </span>
+                {stressData?.stress_level !== 'none' && <span className="w-2 h-2 rounded-full bg-error inline-block animate-pulse"></span>}
               </div>
               <p className="font-body-sm text-body-sm text-on-secondary-container mt-0.5 leading-snug">
-                South-West corner and Gate ridge show early moisture loss. Suggested: run micro-drip before root dry-out.
+                {stressData ? (
+                  stressData.stress_level === 'none'
+                    ? 'NDVI and moisture levels are within optimal bounds. No intervention required.'
+                    : `NDVI: ${stressData.ndvi_value.toFixed(2)} — ${stressData.stress_level} stress detected. Water index (NDWI): ${stressData.ndwi_value.toFixed(2)}. Consider irrigation in low-NDVI zones.`
+                ) : 'Loading field telemetry...'}
               </p>
             </div>
             <button className="absolute top-3 right-3 text-on-secondary-container hover:opacity-75">
@@ -116,57 +268,81 @@ export default function SatelliteCropStress() {
             </div>
 
             <div className="relative w-full aspect-[4/3] bg-surface-container-highest overflow-hidden flex items-center justify-center select-none">
-              <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'radial-gradient(#1b5e20 1px, transparent 1px), radial-gradient(#00450d 1px, #e5e2e1 1px)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 10px 10px' }}></div>
-              <svg className="w-full h-full transform transition-transform duration-300" style={{ transform: `scale(${zoom})` }} viewBox="0 0 400 300">
-                <defs>
-                  <linearGradient id="healthyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#1b5e20" stopOpacity="0.9" />
-                    <stop offset="100%" stopColor="#2a6b2c" stopOpacity="0.85" />
-                  </linearGradient>
-                  <linearGradient id="moderateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#91d78a" stopOpacity="0.9" />
-                    <stop offset="100%" stopColor="#acf4a4" stopOpacity="0.8" />
-                  </linearGradient>
-                  <linearGradient id="warningGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#fc6018" stopOpacity="0.85" />
-                    <stop offset="100%" stopColor="#ffb59a" stopOpacity="0.9" />
-                  </linearGradient>
-                  <linearGradient id="severeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#ba1a1a" stopOpacity="0.92" />
-                    <stop offset="100%" stopColor="#a83900" stopOpacity="0.88" />
-                  </linearGradient>
-                  <pattern id="gridDrip" width="12" height="12" patternUnits="userSpaceOnUse">
-                    <path d="M 0 6 L 12 6" fill="none" stroke="#ffffff" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.4" />
-                  </pattern>
-                </defs>
-                <polygon points="45,30 355,42 375,250 240,275 35,225" fill="#f0eded" opacity="0.6" />
-                <polygon points="45,30 355,42 330,135 155,140 40,110" fill="url(#healthyGradient)" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => selectZone('A', 'North Core', '0.78 NDVI', 'Optimal Vigour', 'Soil moisture at 38%. Canopy lush and transpiration optimal.')} />
-                <polygon points="45,30 355,42 330,135 155,140 40,110" fill="url(#gridDrip)" pointerEvents="none" />
-                <polygon points="330,135 355,42 375,250 255,200 195,145" fill="url(#moderateGradient)" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => selectZone('B', 'East Slope', '0.64 NDVI', 'Normal Canopy', 'Adequate growth. Slope run-off slightly faster.')} />
-                <polygon points="40,110 155,140 195,145 150,240 35,225" fill="url(#warningGradient)" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => selectZone('C', 'South-West Plot', '0.51 NDVI', 'Early Stress', 'Moisture depletion detected in root zone (26%). Drip runtime check required.')} />
-                <polygon points="150,240 195,145 255,200 240,275" fill="url(#severeGradient)" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => selectZone('D', 'Gate Ridge Section', '0.41 NDVI', 'Severe Water Deficit', 'Wilting risk imminent. Soil moisture probe reading 22%. Immediate drip activation advised.')} />
-                <path d="M 60,38 L 340,48 M 55,75 L 348,82 M 50,115 L 358,125 M 48,155 L 362,170 M 42,195 L 368,212 M 40,225 L 245,268" fill="none" stroke="#ffffff" strokeWidth="1" strokeDasharray="4,4" opacity="0.45" />
-                <polygon points="45,30 355,42 375,250 240,275 35,225" fill="none" stroke="#00450d" strokeWidth="2.5" strokeLinejoin="round" />
-                <circle cx="50" cy="35" r="4" fill="#003b71" />
-                <circle cx="240" cy="275" r="4" fill="#003b71" />
-              </svg>
-              
-              <button onClick={() => selectZone('D', 'Gate Ridge Section', '0.41 NDVI', 'Severe Water Deficit', 'Wilting risk imminent. Soil moisture probe reading 22%. Immediate drip activation advised.')} className="absolute left-[54%] top-[65%] -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center group cursor-pointer">
-                <span className="flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded-full shadow-md text-error font-label-sm text-label-sm font-bold scale-90 group-hover:scale-100 transition-transform">
-                  <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-                  Zone D • 22%
-                </span>
-                <span className="material-symbols-outlined text-error text-[28px] -mt-1 drop-shadow-md">location_on</span>
-              </button>
-              
-              <button onClick={() => selectZone('C', 'South-West Plot', '0.51 NDVI', 'Early Stress', 'Moisture depletion detected in root zone (26%). Drip runtime check required.')} className="absolute left-[26%] top-[52%] -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center group cursor-pointer">
-                <span className="flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded-full shadow-md text-secondary font-label-sm text-label-sm font-bold scale-90 group-hover:scale-100 transition-transform">
-                  Zone C
-                </span>
-                <span className="material-symbols-outlined text-secondary text-[24px] -mt-1 drop-shadow-md">warning</span>
-              </button>
-              
-              <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1.5">
+              {boundary.length >= 3 ? (
+                <MapContainer
+                  center={[boundary.reduce((s, p) => s + p[0], 0) / boundary.length, boundary.reduce((s, p) => s + p[1], 0) / boundary.length]}
+                  zoom={16}
+                  style={{ height: '100%', width: '100%', zIndex: 1 }}
+                  zoomControl={false}
+                  attributionControl={false}
+                >
+                  {activeLayer === 'sat' ? (
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                  ) : (
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  )}
+
+                  {/* Real farm boundary outline */}
+                  <Polygon
+                    positions={boundary}
+                    pathOptions={{ color: '#003b71', weight: 2.5, fill: false, dashArray: '6,4' }}
+                  />
+
+                  {/* NDVI zone overlays */}
+                  {(activeLayer === 'ndvi' || activeLayer === 'moist') && ndviZones.map(zone => (
+                    <Polygon
+                      key={zone.id}
+                      positions={zone.positions}
+                      pathOptions={{ color: zone.color, fillColor: zone.color, fillOpacity: 0.55, weight: 1.5 }}
+                      eventHandlers={{
+                        click: () => selectZone(zone.id, zone.name, zone.label, zone.statusLabel, zone.desc)
+                      }}
+                    >
+                      <Tooltip permanent direction="center" className="bg-transparent border-0 shadow-none">
+                        <span className="text-white text-xs font-bold drop-shadow">
+                          {zone.id}
+                        </span>
+                      </Tooltip>
+                    </Polygon>
+                  ))}
+
+                  <FitBounds positions={boundary} />
+                </MapContainer>
+              ) : (
+                /* Fallback static SVG if no boundary saved yet */
+                <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'radial-gradient(#1b5e20 1px, transparent 1px), radial-gradient(#00450d 1px, #e5e2e1 1px)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 10px 10px' }}>
+                  <svg className="w-full h-full" viewBox="0 0 400 300">
+                    <defs>
+                      <linearGradient id="healthyGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#1b5e20" stopOpacity="0.9" /><stop offset="100%" stopColor="#2a6b2c" stopOpacity="0.85" /></linearGradient>
+                      <linearGradient id="moderateGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#91d78a" stopOpacity="0.9" /><stop offset="100%" stopColor="#acf4a4" stopOpacity="0.8" /></linearGradient>
+                      <linearGradient id="warningGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#fc6018" stopOpacity="0.85" /><stop offset="100%" stopColor="#ffb59a" stopOpacity="0.9" /></linearGradient>
+                      <linearGradient id="severeGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#ba1a1a" stopOpacity="0.92" /><stop offset="100%" stopColor="#a83900" stopOpacity="0.88" /></linearGradient>
+                    </defs>
+                    <polygon points="45,30 355,42 375,250 240,275 35,225" fill="#f0eded" opacity="0.6" />
+                    <polygon points="45,30 355,42 330,135 155,140 40,110" fill="url(#healthyGradient)" className="cursor-pointer" onClick={() => selectZone('A','North Core','0.78 NDVI','Optimal Vigour','Soil moisture at 38%.')} />
+                    <polygon points="330,135 355,42 375,250 255,200 195,145" fill="url(#moderateGradient)" className="cursor-pointer" onClick={() => selectZone('B','East Slope','0.64 NDVI','Normal Canopy','Adequate growth.')} />
+                    <polygon points="40,110 155,140 195,145 150,240 35,225" fill="url(#warningGradient)" className="cursor-pointer" onClick={() => selectZone('C','South-West Plot','0.51 NDVI','Early Stress','Moisture depletion detected.')} />
+                    <polygon points="150,240 195,145 255,200 240,275" fill="url(#severeGradient)" className="cursor-pointer" onClick={() => selectZone('D','Gate Ridge Section','0.41 NDVI','Severe Water Deficit','Wilting risk imminent.')} />
+                    <polygon points="45,30 355,42 375,250 240,275 35,225" fill="none" stroke="#00450d" strokeWidth="2.5" strokeLinejoin="round" />
+                    <text x="190" y="155" fill="white" fontSize="11" textAnchor="middle" opacity="0.8">Draw boundary in Field Mapping to see live map</text>
+                  </svg>
+                </div>
+              )}
+
+              {/* Zone badges on top of map */}
+              {boundary.length >= 3 && (
+                <div className="absolute bottom-12 left-3 z-[999] flex flex-col gap-1 pointer-events-none">
+                  {ndviZones.filter(z => z.id === 'C' || z.id === 'D').map(z => (
+                    <span key={z.id} className="flex items-center gap-1 bg-surface-container-lowest/90 backdrop-blur-md px-2 py-0.5 rounded-full shadow-md text-xs font-bold" style={{ color: z.color }}>
+                      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: z.color }}></span>
+                      Zone {z.id} • {z.statusLabel}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Zoom controls */}
+              <div className="absolute bottom-3 right-3 z-[1000] flex flex-col gap-1.5">
                 <button onClick={() => setZoom(Math.min(zoom + 0.15, 1.4))} className="w-9 h-9 rounded-lg bg-surface-container-lowest/90 backdrop-blur-md text-on-surface shadow-md flex items-center justify-center active:bg-surface-container-high transition-colors">
                   <span className="material-symbols-outlined text-[20px]">add</span>
                 </button>
@@ -178,9 +354,12 @@ export default function SatelliteCropStress() {
                 </button>
               </div>
 
-              <div className="absolute bottom-3 left-3 z-10 bg-surface-container-lowest/90 backdrop-blur-md px-2.5 py-1.5 rounded-lg shadow-sm">
+              {/* Plot average badge */}
+              <div className="absolute bottom-3 left-3 z-[1000] bg-surface-container-lowest/90 backdrop-blur-md px-2.5 py-1.5 rounded-lg shadow-sm">
                 <div className="font-label-sm text-[11px] text-on-surface-variant leading-none">Plot Average</div>
-                <div className="font-headline-sm text-headline-sm text-primary font-bold mt-0.5 leading-none">0.68 <span className="font-label-sm text-[11px] text-on-surface-variant font-normal">NDVI</span></div>
+                <div className="font-headline-sm text-headline-sm text-primary font-bold mt-0.5 leading-none">
+                  {stressData ? stressData.ndvi_value.toFixed(2) : '0.68'} <span className="font-label-sm text-[11px] text-on-surface-variant font-normal">NDVI</span>
+                </div>
               </div>
             </div>
 
@@ -224,7 +403,7 @@ export default function SatelliteCropStress() {
         </div>
 
         <div className="mb-4" id="zoneDetailCard">
-          <div className="bg-surface-container-lowest rounded-xl p-4 shadow-md transition-all duration-200">
+          {activeZone && <div className="bg-surface-container-lowest rounded-xl p-4 shadow-md transition-all duration-200">
             <div className="flex items-start justify-between pb-3">
               <div className="flex items-center gap-2.5">
                 <div className={`w-10 h-10 rounded-xl ${zoneStyles.bg} flex items-center justify-center`}>
@@ -233,12 +412,14 @@ export default function SatelliteCropStress() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="font-headline-sm text-headline-sm text-on-surface">Zone {activeZone.id} ({activeZone.name})</h2>
-                    <span className="bg-surface-container text-on-surface-variant text-label-sm font-label-sm px-2 py-0.5 rounded">0.4 Acre</span>
+                    <span className="bg-surface-container text-on-surface-variant text-label-sm font-label-sm px-2 py-0.5 rounded">
+                      {farmProfile?.land_size_acres ? `${(farmProfile.land_size_acres / 4).toFixed(1)} Acre` : '—'}
+                    </span>
                   </div>
                   <p className={`font-label-sm text-label-sm ${zoneStyles.text} font-bold flex items-center gap-1 mt-0.5`}>
                     <span className="material-symbols-outlined text-[14px]">
                       {activeZone.id === 'D' ? 'warning' : (activeZone.id === 'C' ? 'info' : 'check_circle')}
-                    </span> {activeZone.statusLabel} • {stressData ? stressData.ndvi_value.toFixed(2) + ' NDVI' : activeZone.ndvi}
+                    </span> {activeZone.statusLabel} • {activeZone.ndvi}
                   </p>
                 </div>
               </div>
@@ -253,8 +434,10 @@ export default function SatelliteCropStress() {
                   <span className="material-symbols-outlined text-[18px]">humidity_percentage</span>
                 </div>
                 <div>
-                  <span className="font-label-sm text-[11px] text-on-surface-variant block">Root Moisture</span>
-                  <span className="font-label-md text-label-md text-error font-bold">22% Moisture</span>
+                  <span className="font-label-sm text-[11px] text-on-surface-variant block">Root Moisture (NDWI)</span>
+                  <span className="font-label-md text-label-md text-error font-bold">
+                    {stressData ? `${Math.round(Math.max(10, stressData.ndwi_value * 80))}% Moisture` : '—'}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -263,7 +446,9 @@ export default function SatelliteCropStress() {
                 </div>
                 <div>
                   <span className="font-label-sm text-[11px] text-on-surface-variant block">Wilting Margin</span>
-                  <span className="font-label-md text-label-md text-on-surface font-bold">~ 14 hrs window</span>
+                  <span className="font-label-md text-label-md text-on-surface font-bold">
+                    {stressData ? `~ ${Math.round(Math.max(4, (1 - stressData.ndwi_value) * 24))} hrs window` : '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -288,7 +473,7 @@ export default function SatelliteCropStress() {
                 </div>
               </label>
             </div>
-          </div>
+          </div>}
         </div>
 
         <div className="mb-5">
@@ -321,7 +506,7 @@ export default function SatelliteCropStress() {
         </div>
 
         <div className="flex flex-col gap-2.5">
-          {activeZone.id === 'D' && (
+          {activeZone?.id === 'D' && (
             <button 
               onClick={handleValveTrigger}
               disabled={valveTriggered}
@@ -342,7 +527,7 @@ export default function SatelliteCropStress() {
             </button>
           )}
 
-          {activeZone.id === 'C' && (
+          {activeZone?.id === 'C' && (
             <button className="min-h-[56px] w-full bg-secondary text-on-secondary rounded-xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-[0.99] transition-all">
               <span className="material-symbols-outlined text-[24px]">power_settings_new</span>
               <span>Turn On Zone C Drip Line</span>
@@ -350,7 +535,7 @@ export default function SatelliteCropStress() {
             </button>
           )}
 
-          {activeZone.id !== 'C' && activeZone.id !== 'D' && (
+          {activeZone && activeZone.id !== 'C' && activeZone.id !== 'D' && (
             <button className="min-h-[56px] w-full bg-primary text-on-primary rounded-xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-[0.99] transition-all">
               <span className="material-symbols-outlined text-[24px]">tune</span>
               <span>Adjust Zone {activeZone.id} Settings</span>

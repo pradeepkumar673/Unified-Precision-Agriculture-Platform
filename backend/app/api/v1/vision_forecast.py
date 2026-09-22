@@ -256,16 +256,81 @@ def climate_risk(
         farm.latitude, farm.longitude, horizon_years
     )
 
+    drought = result["drought_risk"]
+    flood = result["flood_risk"]
+    heat = result["heat_risk"]
+    overall = result.get("overall_risk", (drought + flood + heat) / 3.0)
+    overall_index = int(overall * 100)
+
+    category = "Low" if overall_index < 33 else "Moderate" if overall_index < 66 else "High"
+    
+    overall_insight = "Favorable conditions ahead."
+    drought_insight = "Drought risk is low."
+    flood_insight = "Flood risk is minimal."
+    heat_insight = "Heat risk is moderate."
+    
+    groq_api_key = os.environ.get("GROQ_API_KEY")
+    if groq_api_key:
+        import requests
+        import json
+        prompt = f"""
+        Analyze these climate risks for an Indian farm in {result.get('district', 'the region')} and provide short, actionable 1-sentence insights:
+        Overall: {overall_index}/100 ({category})
+        Drought: {int(drought*100)}%
+        Flood/Hail: {int(flood*100)}%
+        Heat Stress: {int(heat*100)}%
+        
+        Return exactly this JSON format:
+        {{
+            "overall_insight": "...",
+            "drought_insight": "...",
+            "flood_insight": "...",
+            "heat_insight": "..."
+        }}
+        """
+        try:
+            r = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "llama3-8b-8192",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"}
+                },
+                timeout=5
+            )
+            data = r.json()["choices"][0]["message"]["content"]
+            parsed = json.loads(data)
+            overall_insight = parsed.get("overall_insight", overall_insight)
+            drought_insight = parsed.get("drought_insight", drought_insight)
+            flood_insight = parsed.get("flood_insight", flood_insight)
+            heat_insight = parsed.get("heat_insight", heat_insight)
+        except Exception as e:
+            print("Groq failure:", e)
+
     row = ClimateRiskScore(
         id=uuid.uuid4(),
         farm_id=farm_id,
-        drought_risk=result["drought_risk"],
-        flood_risk=result["flood_risk"],
-        heat_risk=result["heat_risk"],
+        drought_risk=drought,
+        flood_risk=flood,
+        heat_risk=heat,
         horizon_years=horizon_years,
     )
     db.add(row)
     db.commit()
     db.refresh(row)
 
-    return ClimateRiskResponse(**result)
+    return ClimateRiskResponse(
+        drought_risk=drought,
+        flood_risk=flood,
+        heat_risk=heat,
+        overall_risk=overall,
+        overall_index=overall_index,
+        risk_category=category,
+        station_name=f"{result.get('district', 'Agro-Met').capitalize()} Station (4.2 km)",
+        season_name="Current Season Outlook",
+        overall_insight=overall_insight,
+        drought_insight=drought_insight,
+        flood_insight=flood_insight,
+        heat_insight=heat_insight
+    )

@@ -277,9 +277,9 @@ export default function DronePlantCountingClimateRisk() {
             <div className="flex items-center justify-between pt-1">
               <div>
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Season Climate Risk Forecast</h2>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Station: Malwa Agro-Met (4.2 km)</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Station: {climateRisk?.station_name || "Agro-Met Station"}</span>
               </div>
-              <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2.5 py-1 rounded-full font-bold">Rabi 2024-25 Outlook</span>
+              <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2.5 py-1 rounded-full font-bold">{climateRisk?.season_name || "Season Outlook"}</span>
             </div>
 
             <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm">
@@ -287,8 +287,8 @@ export default function DronePlantCountingClimateRisk() {
                 <div className="flex flex-col">
                   <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Overall Composite Index</span>
                   <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">28<span className="font-headline-sm text-headline-sm text-on-surface-variant font-normal">/100</span></span>
-                    <span className="font-label-lg text-label-lg text-primary font-semibold">Low to Moderate</span>
+                    <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">{climateRisk?.overall_index ?? 28}<span className="font-headline-sm text-headline-sm text-on-surface-variant font-normal">/100</span></span>
+                    <span className="font-label-lg text-label-lg text-primary font-semibold">{climateRisk?.risk_category || "Low to Moderate"}</span>
                   </div>
                   <span className="font-label-sm text-label-sm text-on-surface-variant">Lower score denotes safer crop window</span>
                 </div>
@@ -296,7 +296,7 @@ export default function DronePlantCountingClimateRisk() {
                 <div className="relative w-20 h-20 flex-shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                     <circle className="text-surface-container-highest" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" strokeWidth="3"></circle>
-                    <circle className="text-primary" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" strokeDasharray="28, 100" strokeLinecap="round" strokeWidth="3"></circle>
+                    <circle className="text-primary" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" strokeDasharray={`${climateRisk?.overall_index ?? 28}, 100`} strokeLinecap="round" strokeWidth="3"></circle>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                     <span className="material-symbols-outlined text-[20px] text-primary">verified_user</span>
@@ -306,7 +306,7 @@ export default function DronePlantCountingClimateRisk() {
 
               <div className="bg-surface-container-low rounded-lg p-space-sm flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[20px] flex-shrink-0">wb_sunny</span>
-                <span className="font-body-sm text-body-sm text-on-surface">Favorable temperature window through February. Guard against sudden March heat spikes.</span>
+                <span className="font-body-sm text-body-sm text-on-surface">{climateRisk?.overall_insight || "Favorable temperature window through February. Guard against sudden March heat spikes."}</span>
               </div>
             </div>
 
@@ -326,7 +326,7 @@ export default function DronePlantCountingClimateRisk() {
                 <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden mt-1">
                   <div className="h-full bg-primary rounded-full" style={{ width: `${climateRisk ? Math.round(climateRisk.drought_risk * 100) : 18}%` }}></div>
                 </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Water storage &amp; canal allocation sufficient for 3 more irrigation cycles.</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">{climateRisk?.drought_insight || "Water storage & canal allocation sufficient for 3 more irrigation cycles."}</span>
               </div>
 
               <div className="flex flex-col gap-1 bg-surface-container-low p-3 rounded-lg">
@@ -342,7 +342,7 @@ export default function DronePlantCountingClimateRisk() {
                 <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden mt-1">
                   <div className="h-full bg-tertiary rounded-full" style={{ width: `${climateRisk ? Math.round(climateRisk.flood_risk * 100) : 12}%` }}></div>
                 </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Dry weather pattern, 0 hail events predicted across 30-day forecast.</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">{climateRisk?.flood_insight || "Dry weather pattern, 0 hail events predicted across 30-day forecast."}</span>
               </div>
 
               <div className="flex flex-col gap-1 bg-surface-container-low p-3 rounded-lg">
@@ -358,7 +358,7 @@ export default function DronePlantCountingClimateRisk() {
                 <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden mt-1">
                   <div className="h-full bg-secondary-container rounded-full" style={{ width: `${climateRisk ? Math.round(climateRisk.heat_risk * 100) : 42}%` }}></div>
                 </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Terminal heat risk expected during late grain filling in 3rd week of March.</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">{climateRisk?.heat_insight || "Terminal heat risk expected during late grain filling in 3rd week of March."}</span>
               </div>
             </div>
 
