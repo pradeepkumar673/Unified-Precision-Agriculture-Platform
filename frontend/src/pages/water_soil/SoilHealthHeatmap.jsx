@@ -34,6 +34,7 @@ export default function SoilHealthHeatmap() {
   const [rawGrid, setRawGrid] = useState(null);   // API data
   const [dataSource, setDataSource] = useState(null);
   const [fetchedAt, setFetchedAt] = useState(null);
+  const [centroid, setCentroid] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const farmId = localStorage.getItem('farmId');
@@ -45,6 +46,7 @@ export default function SoilHealthHeatmap() {
         setRawGrid(r.data.grid);
         setDataSource(r.data.source);
         setFetchedAt(r.data.fetched_at);
+        setCentroid(r.data.centroid);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -135,7 +137,9 @@ export default function SoilHealthHeatmap() {
                 <h2 className="font-headline-sm text-headline-sm text-on-surface leading-tight">Field Grid Heatmap</h2>
                 <p className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
                   <span className="material-symbols-outlined text-[14px] text-primary">my_location</span>
-                  <span>Nashik Sector 4 • 20.011° N, 73.790° E</span>
+                  <span>
+                    Plot Centroid • {centroid ? `${centroid.lat}° N, ${centroid.lng}° E` : 'Pending'}
+                  </span>
                 </p>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm flex items-center gap-1">
