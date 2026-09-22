@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getClimateRisk } from '../../api/visionForecastApi';
 import AppShell from '../../layouts/AppShell';
@@ -7,6 +7,38 @@ export default function DronePlantCountingClimateRisk() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('plant');
   const [climateRisk, setClimateRisk] = useState(null);
+  const [plantCountData, setPlantCountData] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleProcessFootage = async () => {
+    if (!selectedFile) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const formData = new FormData();
+      formData.append('farm_id', localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000');
+      formData.append('file', selectedFile);
+      
+      const { countPlants } = await import('../../api/visionForecastApi');
+      const res = await countPlants(formData);
+      setPlantCountData(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'climate') {
@@ -22,43 +54,8 @@ export default function DronePlantCountingClimateRisk() {
     }
   }, [activeTab]);
 
-  const customHeader = (
-    <div className="h-14 px-margin flex items-center justify-between gap-space-sm w-full">
-      <div className="flex items-center gap-space-sm min-w-0 flex-1">
-        <img alt="Brand logo." className="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1">
-            <span className="font-headline-sm text-headline-sm text-primary truncate leading-tight">KhetSaathi</span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant truncate hidden sm:inline">• Home</span>
-          </div>
-          <button className="flex items-center gap-1 text-left min-w-0 group">
-            <span className="material-symbols-outlined text-[16px] text-secondary">location_on</span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant truncate group-hover:text-primary">Plot 1 • Wheat</span>
-            <span className="material-symbols-outlined text-[14px] text-outline">arrow_drop_down</span>
-          </button>
-        </div>
-      </div>
-      <div className="flex items-center gap-space-xs flex-shrink-0">
-        <div className="flex items-center gap-1 bg-surface-container-high px-space-xs py-0.5 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Synced</span>
-        </div>
-        <button className="min-h-[44px] min-w-[44px] px-2 flex items-center justify-center gap-1 bg-surface-container rounded-full text-on-surface hover:bg-surface-container-high">
-          <span className="font-label-sm text-label-sm font-bold">EN</span>
-          <span className="material-symbols-outlined text-[16px] text-primary">volume_up</span>
-        </button>
-        <button className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container">
-          <span className="material-symbols-outlined text-[22px]">notifications</span>
-        </button>
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-          <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <AppShell headerSlot={customHeader}>
+    <AppShell variant="detail" title="Drone Vision Engine">
       <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
         <main className="flex flex-col w-full pt-14 pb-20 bg-surface flex-1">
           <div className="flex flex-col w-full">
@@ -118,40 +115,87 @@ export default function DronePlantCountingClimateRisk() {
 
                 {/* Hero Plant Count Result Card */}
                 <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm">
-                  <div className="flex items-start justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Stand Census</span>
-                      <div className="flex items-baseline gap-2 mt-0.5">
-                        <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">1,42,800</span>
-                        <span className="font-body-md text-body-md text-on-surface-variant">Plants</span>
+                  {plantCountData ? (
+                    <>
+                      <div className="flex items-start justify-between">
+                        <div className="flex flex-col">
+                          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Stand Census</span>
+                          <div className="flex items-baseline gap-2 mt-0.5">
+                            <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">{plantCountData.count?.toLocaleString('en-IN') ?? '--'}</span>
+                            <span className="font-body-md text-body-md text-on-surface-variant">Plants</span>
+                          </div>
+                          <span className="font-label-md text-label-md text-secondary mt-0.5">{plantCountData.plants_per_acre?.toLocaleString('en-IN') ?? '--'} plants / acre avg.</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center gap-1 bg-primary-fixed px-2.5 py-1 rounded-full text-on-primary-fixed">
+                            <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                            <span className="font-label-sm text-label-sm">{plantCountData.stand_pct ?? '--'}% Optimal</span>
+                          </div>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant mt-1 capitalize">{plantCountData.growth_stage}</span>
+                        </div>
                       </div>
-                      <span className="font-label-md text-label-md text-secondary mt-0.5">31,730 plants / acre avg.</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-1 bg-primary-fixed px-2.5 py-1 rounded-full text-on-primary-fixed">
-                        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                        <span className="font-label-sm text-label-sm">94% Optimal</span>
+                      
+                      {/* Target Benchmark Bar */}
+                      <div className="bg-surface-container-low rounded-lg p-space-sm flex flex-col gap-1.5 mt-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Benchmark Range</span>
+                          <span className="font-label-sm text-label-sm text-primary font-semibold">{plantCountData.benchmark_min?.toLocaleString('en-IN') ?? '--'} – {plantCountData.benchmark_max?.toLocaleString('en-IN') ?? '--'} / acre</span>
+                        </div>
+                        <div className="relative w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+                          <div className="absolute left-[20%] right-[15%] top-0 bottom-0 bg-primary-fixed-dim/60"></div>
+                          <div className="h-full bg-primary-container rounded-full" style={{ width: `${Math.min(100, ((plantCountData.plants_per_acre || 0) / (plantCountData.benchmark_max || 1)) * 100)}%` }}></div>
+                        </div>
+                        <div className="flex justify-between text-on-surface-variant">
+                          <span className="font-label-sm text-label-sm">Poor (&lt;{Math.round((plantCountData.benchmark_min || 0) * 0.8 / 1000)}k)</span>
+                          <span className="font-label-sm text-label-sm font-bold text-on-surface">Actual: {((plantCountData.plants_per_acre || 0) / 1000).toFixed(1)}k</span>
+                          <span className="font-label-sm text-label-sm">Dense (&gt;{Math.round((plantCountData.benchmark_max || 0) * 1.1 / 1000)}k)</span>
+                        </div>
                       </div>
-                      <span className="font-label-sm text-label-sm text-on-surface-variant mt-1">High Emergence</span>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-4 text-center">
+                      <span className="material-symbols-outlined text-[40px] text-primary mb-2">upload_file</span>
+                      <h3 className="font-headline-sm text-headline-sm text-on-surface">Upload Drone Footage</h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 px-4 mb-4">
+                        Upload your real `.mp4` drone mapping flight to execute the OpenCV / YOLOv9 ML pipeline and generate the Stand Census report.
+                      </p>
+                      
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        accept="video/mp4,video/x-m4v,video/*"
+                        className="hidden" 
+                      />
+
+                      {selectedFile ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-container px-3 py-1 rounded-lg">
+                            {selectedFile.name}
+                          </span>
+                          <button 
+                            className="bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg py-2.5 px-6 rounded-full shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                            onClick={handleProcessFootage}
+                            disabled={isProcessing}
+                          >
+                            {isProcessing ? (
+                              <><span className="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Processing 4K Footage...</span></>
+                            ) : (
+                              <><span className="material-symbols-outlined text-[18px]">play_arrow</span><span>Process Uploaded Video</span></>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          className="bg-secondary-container hover:bg-secondary-container/90 text-on-secondary-container font-label-lg text-label-lg py-2.5 px-6 rounded-full shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">attach_file</span>
+                          <span>Select MP4 Video</span>
+                        </button>
+                      )}
                     </div>
-                  </div>
-                  
-                  {/* Target Benchmark Bar */}
-                  <div className="bg-surface-container-low rounded-lg p-space-sm flex flex-col gap-1.5 mt-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">Benchmark Range</span>
-                      <span className="font-label-sm text-label-sm text-primary font-semibold">30,000 – 33,000 / acre</span>
-                    </div>
-                    <div className="relative w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
-                      <div className="absolute left-[20%] right-[15%] top-0 bottom-0 bg-primary-fixed-dim/60"></div>
-                      <div className="h-full bg-primary-container rounded-full" style={{ width: '78%' }}></div>
-                    </div>
-                    <div className="flex justify-between text-on-surface-variant">
-                      <span className="font-label-sm text-label-sm">Poor (&lt;24k)</span>
-                      <span className="font-label-sm text-label-sm font-bold text-on-surface">Actual: 31.7k</span>
-                      <span className="font-label-sm text-label-sm">Dense (&gt;35k)</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
             <div className="relative w-full rounded-xl overflow-hidden bg-surface-container-highest shadow-sm">
@@ -193,19 +237,19 @@ export default function DronePlantCountingClimateRisk() {
               <div className="grid grid-cols-3 gap-2 pt-1">
                 <div className="bg-surface-container-low rounded-lg p-2.5 flex flex-col items-center text-center">
                   <span className="material-symbols-outlined text-primary text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
-                  <span className="font-headline-md text-headline-md text-primary font-bold mt-1">91%</span>
+                  <span className="font-headline-md text-headline-md text-primary font-bold mt-1">{plantCountData ? plantCountData.healthy_pct : '--'}%</span>
                   <span className="font-label-sm text-label-sm text-on-surface font-semibold">Healthy Stand</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Uniform vigour</span>
                 </div>
                 <div className="bg-surface-container-low rounded-lg p-2.5 flex flex-col items-center text-center">
                   <span className="material-symbols-outlined text-secondary text-[22px]">warning</span>
-                  <span className="font-headline-md text-headline-md text-secondary font-bold mt-1">6%</span>
+                  <span className="font-headline-md text-headline-md text-secondary font-bold mt-1">{plantCountData ? plantCountData.sparse_pct : '--'}%</span>
                   <span className="font-label-sm text-label-sm text-on-surface font-semibold">Sparse / Gaps</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">North furrow</span>
                 </div>
                 <div className="bg-surface-container-low rounded-lg p-2.5 flex flex-col items-center text-center">
                   <span className="material-symbols-outlined text-error text-[22px]">yard</span>
-                  <span className="font-headline-md text-headline-md text-error font-bold mt-1">3%</span>
+                  <span className="font-headline-md text-headline-md text-error font-bold mt-1">{plantCountData ? plantCountData.weed_pct : '--'}%</span>
                   <span className="font-label-sm text-label-sm text-on-surface font-semibold">Weed Patches</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Bathua / Phalaris</span>
                 </div>

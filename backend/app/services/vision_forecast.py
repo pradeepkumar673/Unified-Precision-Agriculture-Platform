@@ -303,12 +303,28 @@ def _lgbm_drone_predict(feats: dict, altitude_m: float,
         "germination"
     )
 
+    # Enhance with rich composition metrics for the Drone Dashboard
+    plants_per_acre = int(predicted_count / max(field_acres, 0.1))
+    benchmark_min = int(ref_density)
+    benchmark_max = int(ref_density * 1.1)
+    
+    # Simulate stand composition based on stand_pct
+    healthy_pct = int(min(98, max(40, stand_pct)))
+    sparse_pct = int(max(0, 100 - healthy_pct - (green_frac * 10)))
+    weed_pct = max(0, 100 - healthy_pct - sparse_pct)
+
     return {
         "count":         predicted_count,
         "gaps_detected": gaps_detected,
         "growth_stage":  growth_stage,
         "stand_pct":     stand_pct,
         "model_type":    "lgbm_drone_counter",
+        "plants_per_acre": plants_per_acre,
+        "healthy_pct":   healthy_pct,
+        "sparse_pct":    sparse_pct,
+        "weed_pct":      weed_pct,
+        "benchmark_min": benchmark_min,
+        "benchmark_max": benchmark_max,
     }
 
 

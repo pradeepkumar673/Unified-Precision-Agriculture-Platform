@@ -20,6 +20,13 @@ class PlantCountResponse(BaseModel):
     count: int
     gaps_detected: int
     growth_stage: str
+    stand_pct: float
+    plants_per_acre: int
+    healthy_pct: int
+    sparse_pct: int
+    weed_pct: int
+    benchmark_min: int
+    benchmark_max: int
 
 
 class GrainQualityResponse(BaseModel):

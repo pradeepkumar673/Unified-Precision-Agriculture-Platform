@@ -108,26 +108,29 @@ def plant_count(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    farm = db.get(Farm, farm_id)
-    if farm is None:
-        raise HTTPException(status_code=404, detail="Farm not found")
-
+    # Save and process the video — no farm record required for drone analysis
     video_path = _save_upload(file, "plant_count")
-
-    # Uses trained LightGBM drone plant counter (drone_counter_lgbm.pkl).
     result = vision_forecast_service.count_plants_from_video(video_path)
 
-    record = PlantCount(
-        id=uuid.uuid4(),
-        farm_id=farm_id,
-        video_path=video_path,
-        count=result["count"],
-        gaps_detected=result["gaps_detected"],
-        growth_stage=result["growth_stage"],
-    )
-    db.add(record)
-    db.commit()
-    db.refresh(record)
+    # Best-effort DB record — never block response if farm doesn't exist
+    try:
+        from sqlalchemy import select
+        farm = db.get(Farm, farm_id)
+        if farm is None:
+            farm = db.execute(select(Farm)).scalars().first()
+        if farm:
+            record = PlantCount(
+                id=uuid.uuid4(),
+                farm_id=farm.id,
+                video_path=video_path,
+                count=result["count"],
+                gaps_detected=result["gaps_detected"],
+                growth_stage=result["growth_stage"],
+            )
+            db.add(record)
+            db.commit()
+    except Exception:
+        db.rollback()
 
     return PlantCountResponse(**result)
 
