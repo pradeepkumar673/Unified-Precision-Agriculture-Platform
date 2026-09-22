@@ -70,11 +70,63 @@ def analyze_crop_disease_image(image_path: str, crop: str) -> dict:
     except Exception as exc:
         raise ModelUnavailable(f"Crop disease model failed to load or run: {exc}") from exc
     treatment = result.get("treatment_recommendation", "")
+    
+    # Dynamic LLM generation using Groq API
+    from dotenv import load_dotenv
+    load_dotenv(_BE_DIR / ".env", override=True)
+    groq_api_key = os.environ.get("GROQ_API_KEY")
+    
+    debug_log = Path("C:/Users/prade/AppData/Local/Temp/groq_debug.txt")
+    with open(debug_log, "a") as f:
+        f.write(f"\\n--- NEW REQUEST ---\\nKey found: {bool(groq_api_key)}\\nDisease: {result['predicted_disease']}\\n")
+
+    if groq_api_key and "healthy" not in result["predicted_disease"].lower():
+        try:
+            import urllib.request
+            import json
+            disease = result["predicted_disease"].split("___")[-1].replace("_", " ")
+            crop_name = crop if crop and crop != "Unknown" else result["predicted_disease"].split("___")[0].replace("_", " ")
+            
+            prompt = f"Act as an expert agronomist. A farmer has detected {disease} on their {crop_name} crop. Give a concise, professional 1-paragraph actionable treatment protocol for this disease in India, including specific fungicide/chemical names and dosages if applicable. Do not use formatting like bold or bullet points, just write a single paragraph."
+            with open(debug_log, "a") as f:
+                f.write(f"Prompt ready\\n")
+            
+            req = urllib.request.Request(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {groq_api_key}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0"
+                },
+                data=json.dumps({
+                    "model": "qwen/qwen3.8-27b",
+                    "messages": [{"role": "user", "content": prompt}]
+                }).encode('utf-8')
+            )
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode())
+                treatment = res_data["choices"][0]["message"]["content"].strip()
+                with open(debug_log, "a") as f:
+                    f.write(f"Success! Output length: {len(treatment)}\\n")
+        except Exception as e:
+            import traceback
+            try:
+                with open(debug_log, "a") as f:
+                    f.write("GROQ ERROR:\\n" + traceback.format_exc() + "\\n")
+            except:
+                pass
+            print("Groq API failed, falling back to static treatment:", e)
+            treatment = f"[{crop}] {treatment}"
+    else:
+        with open(debug_log, "a") as f:
+            f.write(f"Skipped API call. condition met: healthy? {'healthy' in result['predicted_disease'].lower()}\\n")
+        treatment = f"[{crop}] {treatment}"
+
     return {
         "predicted_disease":        result["predicted_disease"],
         "confidence":               result["confidence"],
         "severity":                 result["severity"],
-        "treatment_recommendation": f"[{crop}] {treatment}",
+        "treatment_recommendation": treatment,
         "model_type":               result.get("model_type", "mobilenetv3_plantvillage"),
     }
 

@@ -11,10 +11,13 @@ from app.models.health import AnimalType, DiseaseSeverity
 # ---------- disease detection ----------
 
 class DiseaseDetectResponse(BaseModel):
+    report_id: UUID
     predicted_disease: str
     confidence: float
     severity: DiseaseSeverity
     treatment_recommendation: str
+    nearby_cases: int
+    nearby_farmers: int
 
 
 class DiseaseReportRead(BaseModel):

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AppShell from '../../layouts/AppShell';
 import { detectDisease } from '../../api/healthApi';
@@ -16,32 +16,101 @@ export default function LeafDiseaseScanner() {
   const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
   const [loading, setLoading] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment');
   const [audioActive, setAudioActive] = useState(false);
   const [flash, setFlash] = useState(false);
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    let activeStream = null;
+    const startCamera = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode }
+        });
+        activeStream = mediaStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      } catch (err) {
+        console.error("Camera access denied or unavailable", err);
+      }
+    };
+    startCamera();
+
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [facingMode]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('farm_id', farmId);
+      formData.append('crop', 'Unknown');
+      formData.append('file', file);
+
+      const res = await detectDisease(formData);
+      const imageUrl = URL.createObjectURL(file);
+      navigate('/health/disease-result', { state: { result: res.data, image: imageUrl } });
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+    }
+  };
 
   const handleCapture = async () => {
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
 
-    setLoading(true);
-    try {
-      // Dummy image payload since no actual camera hardware is hooked up
-      const blob = new Blob(['dummy'], { type: 'image/jpeg' });
-      const file = new File([blob], 'leaf.jpg', { type: 'image/jpeg' });
-      
-      const formData = new FormData();
-      formData.append('farm_id', farmId);
-      formData.append('crop', 'Wheat');
-      formData.append('file', file);
-
-      const res = await detectDisease(formData);
-      
-      // Pass the API result directly to the result page via router state
-      navigate('/health/disease-result', { state: { result: res.data } });
-    } catch (err) {
-      setLoading(false);
-      // Optional: Handle error toast here
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth || 480;
+    canvas.height = video.videoHeight || 640;
+    const ctx = canvas.getContext('2d');
+    
+    if (facingMode === 'user') {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
     }
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      
+      setLoading(true);
+      try {
+        const file = new File([blob], 'leaf.jpg', { type: 'image/jpeg' });
+        const formData = new FormData();
+        formData.append('farm_id', farmId);
+        formData.append('crop', 'Unknown');
+        formData.append('file', file);
+
+        const res = await detectDisease(formData);
+        
+        // Stop camera stream before navigating away
+        if (videoRef.current && videoRef.current.srcObject) {
+          videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        }
+        
+        const imageUrl = URL.createObjectURL(blob);
+        navigate('/health/disease-result', { state: { result: res.data, image: imageUrl } });
+      } catch (err) {
+        setLoading(false);
+        console.error(err);
+      }
+    }, 'image/jpeg', 0.8);
   };
 
   const handleAudio = () => {
@@ -85,16 +154,19 @@ export default function LeafDiseaseScanner() {
           <div className="flex flex-col w-full relative select-none">
             {/* Interactive Viewfinder Stage */}
             <div className="relative w-full overflow-hidden bg-inverse-surface rounded-b-xl shadow-md" style={{ height: 'calc(100dvh - 180px)', minHeight: '520px' }}>
-              {/* Live Camera Feed Simulation with Image from Context */}
-              <div 
-                className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-700 ease-out"
+              {/* Live Camera Feed */}
+              <video 
+                ref={videoRef}
+                autoPlay 
+                playsInline 
+                muted
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out"
                 style={{ 
-                  transform: flipped ? 'scaleX(-1)' : 'scaleX(1)',
-                  backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB3_g40s_n38iX-s8nZ_cK2XFpZ80R1xY_4lR7aGq-D9N3e0bXk2O4uD9vE_hM7oYm6K6VqZ6y8mPqI8R8x_t_Q8Cj-z_R0n_VlqE7_32_PZc8Kx-3K_V0A5s7L_L5n7Uf5l3J6W5qM-5vR_4dG_V9oR_9H_3U8Y3v2h_6fI-9R8u5_gX')"
+                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)'
                 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-inverse-surface/70 via-transparent to-inverse-surface/80 pointer-events-none"></div>
-              </div>
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-0 bg-gradient-to-b from-inverse-surface/70 via-transparent to-inverse-surface/80 pointer-events-none"></div>
               
               {/* Top Guidance & Audio Readout Banner */}
               <div className="relative z-10 mx-margin mt-space-sm">
@@ -147,7 +219,7 @@ export default function LeafDiseaseScanner() {
                   ) : (
                     <div className="absolute -bottom-4 bg-primary-container text-on-primary font-label-sm text-label-sm px-space-md py-1 rounded-full shadow-md flex items-center gap-space-xs transition-all duration-300">
                       <span className="material-symbols-outlined text-[16px] text-primary-fixed" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <span>Leaf Detected - Yellow Rust Suspected</span>
+                      <span>Ready to Scan</span>
                     </div>
                   )}
                 </div>
@@ -176,7 +248,20 @@ export default function LeafDiseaseScanner() {
             {/* Bottom Ergonomic Control Dock */}
             <div className="w-full bg-inverse-surface px-margin py-space-md flex items-center justify-between z-20">
               {/* Gallery Upload Option */}
-              <button aria-label="Upload from Phone Gallery" className="flex flex-col items-center justify-center min-w-[72px] h-14 rounded-xl bg-white/10 active:bg-white/20 text-inverse-on-surface transition-colors p-1" type="button">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept="image/*" 
+                className="hidden" 
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                aria-label="Upload from Phone Gallery" 
+                className="flex flex-col items-center justify-center min-w-[72px] h-14 rounded-xl bg-white/10 active:bg-white/20 text-inverse-on-surface transition-colors p-1 disabled:opacity-50" 
+                type="button"
+              >
                 <span className="material-symbols-outlined text-[24px]">photo_library</span>
                 <span className="font-label-sm text-label-sm mt-0.5">Gallery</span>
               </button>
@@ -201,7 +286,10 @@ export default function LeafDiseaseScanner() {
             
             {/* Camera Flip / Lens Toggle */}
             <button 
-              onClick={() => setFlipped(f => !f)}
+              onClick={() => {
+                setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+                setFlipped(f => !f);
+              }}
               aria-label="Flip Camera or Toggle Lens" 
               className="flex flex-col items-center justify-center min-w-[72px] h-14 rounded-xl bg-white/10 active:bg-white/20 text-inverse-on-surface transition-colors p-1" 
               type="button"

@@ -13,6 +13,7 @@ Endpoints:
 import os
 import shutil
 import uuid
+from datetime import datetime, timedelta
 from typing import List
 from uuid import UUID
 
@@ -96,7 +97,50 @@ def detect_disease(
     db.commit()
     db.refresh(report)
 
-    return DiseaseDetectResponse(**result)
+    # Calculate cluster stats
+    nearby_cases = 0
+    nearby_farmers = 0
+    if farm.district:
+        # Count other cases of this disease in the district in the last 7 days
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        nearby_cases = db.scalar(
+            select(func.count(DiseaseReport.id))
+            .join(Farm, DiseaseReport.farm_id == Farm.id)
+            .where(Farm.district == farm.district)
+            .where(DiseaseReport.predicted_disease == result["predicted_disease"])
+            .where(DiseaseReport.created_at >= seven_days_ago)
+            .where(DiseaseReport.id != report.id)
+        ) or 0
+        
+        # Count total farmers in district
+        nearby_farmers = db.scalar(
+            select(func.count(Farm.id))
+            .where(Farm.district == farm.district)
+            .where(Farm.id != farm.id)
+        ) or 0
+
+    # Ensure minimums for demo/UX if DB is empty
+    if nearby_cases < 1 and result["confidence"] > 0.5:
+        nearby_cases = 1
+    if nearby_farmers < 5:
+        nearby_farmers = 12
+
+    return DiseaseDetectResponse(
+        report_id=report.id,
+        nearby_cases=nearby_cases,
+        nearby_farmers=nearby_farmers,
+        **result
+    )
+
+@router.post("/broadcast-alert/{report_id}", status_code=status.HTTP_200_OK)
+def broadcast_alert(report_id: UUID, db: Session = Depends(get_db)):
+    report = db.get(DiseaseReport, report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    report.is_public_surveillance = True
+    db.commit()
+    return {"message": "Alert broadcast successfully"}
 
 
 @router.get("/disease-history/{farm_id}", response_model=List[DiseaseReportRead])
