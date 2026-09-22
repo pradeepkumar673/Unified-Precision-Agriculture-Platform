@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createFarmProfile, updateFarmProfile } from '../../api/farmApi';
+import { createFarmProfile, updateFarmProfile, getFarmProfile } from '../../api/farmApi';
 
 const SOIL_TYPES = [
   { key: 'clay_loam', icon: 'landscape', label: 'Clay Loam', desc: 'High water retention' },
@@ -28,6 +28,20 @@ export default function FarmSetupWizardStep1Of3() {
   const [farmName, setFarmName] = useState('');
   const [nameError, setNameError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const farmId = localStorage.getItem('farmId');
+    if (farmId) {
+      getFarmProfile(farmId).then(r => {
+        if (r.data) {
+          if (r.data.name) setFarmName(r.data.name);
+          if (r.data.land_size_acres) setLandSize(r.data.land_size_acres);
+          if (r.data.soil_type) setSoil(r.data.soil_type);
+          if (r.data.water_source) setWater(r.data.water_source);
+        }
+      }).catch(console.error);
+    }
+  }, []);
 
   const handleSave = async () => {
     if (!farmName.trim()) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import AppShell from '../../layouts/AppShell';
 import { useNavigate } from 'react-router-dom';
-import { saveFarmBoundary } from '../../api/farmApi';
+import { saveFarmBoundary, getFarmZones } from '../../api/farmApi';
 import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import area from '@turf/area';
@@ -41,6 +41,19 @@ export default function FieldMapping() {
   const [perimeter, setPerimeter] = useState(0);
   
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (farmId) {
+      getFarmZones(farmId).then(res => {
+        if (res.data && res.data.length > 0) {
+          const zone = res.data[0];
+          if (zone.gps_points && zone.gps_points.length > 0) {
+            setWaypoints(zone.gps_points.map(p => [p.lat, p.lng]));
+          }
+        }
+      }).catch(console.error);
+    }
+  }, [farmId]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {

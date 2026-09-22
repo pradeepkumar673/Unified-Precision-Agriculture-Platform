@@ -34,6 +34,12 @@ class Zone(BaseModel):
 # --------------------------------------------------------------------------- #
 class FarmBase(BaseModel):
     name: str
+    owner_name: Optional[str] = None
+    village: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    current_crop: Optional[str] = None
+    crop_stage: Optional[str] = None
     land_size_acres: float
     soil_type: SoilType
     water_source: WaterSource
@@ -50,6 +56,12 @@ class FarmCreate(FarmBase):
 
 class FarmUpdate(BaseModel):
     name: Optional[str] = None
+    owner_name: Optional[str] = None
+    village: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    current_crop: Optional[str] = None
+    crop_stage: Optional[str] = None
     land_size_acres: Optional[float] = None
     soil_type: Optional[SoilType] = None
     water_source: Optional[WaterSource] = None

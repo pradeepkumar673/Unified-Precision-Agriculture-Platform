@@ -108,6 +108,12 @@ class Farm(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    owner_name: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    village: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    district: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    state: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    current_crop: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    crop_stage: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     land_size_acres: Mapped[float] = mapped_column(Float, nullable=False)
     soil_type: Mapped[SoilType] = mapped_column(
         SAEnum(SoilType, name="soil_type"), nullable=False
