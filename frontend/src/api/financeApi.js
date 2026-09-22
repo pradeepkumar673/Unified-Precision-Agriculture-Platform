@@ -7,6 +7,7 @@ const api = axios.create({
 });
 
 export const getCreditProfile = (farmId) => api.get(`/credit-profile/${farmId}`);
+export const getInsuranceProfile = (farmId) => api.get(`/insurance/profile/${farmId}`);
 
 export const initiatePayment = (data) => api.post('/payment/initiate', data);
 export const paymentWebhook = (data) => api.post('/payment/webhook', data);

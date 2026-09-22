@@ -134,6 +134,18 @@ class CreditProfileRead(BaseModel):
 # --------------------------------------------------------------------------- #
 # Insurance Claims (#54 Insurance Claims)
 # --------------------------------------------------------------------------- #
+class InsurancePolicy(BaseModel):
+    policy_id: str
+    name: str
+    crop_details: str
+    sum_insured: float
+    sum_insured_per_acre: float
+    farmer_share_paid: float
+    farmer_share_percent: float
+    coverage_inclusions: List[str]
+    valid_until: date
+    is_active: bool
+
 class InsuranceClaimCreate(BaseModel):
     farm_id: UUID
     policy_id: str
@@ -152,6 +164,12 @@ class InsuranceClaimRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InsuranceProfileRead(BaseModel):
+    farm_id: UUID
+    active_policy: Optional[InsurancePolicy] = None
+    claims: List[InsuranceClaimRead]
 
 
 # --------------------------------------------------------------------------- #

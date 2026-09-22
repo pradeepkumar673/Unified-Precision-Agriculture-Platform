@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applyLoan, fileInsuranceClaim, getCreditProfile } from '../../api/financeApi';
+import { applyLoan, fileInsuranceClaim, getCreditProfile, getInsuranceProfile } from '../../api/financeApi';
 
 export default function CreditMarketplaceInsurance() {
   const navigate = useNavigate();
@@ -8,18 +8,23 @@ export default function CreditMarketplaceInsurance() {
   const [isApplying, setIsApplying] = useState(false);
   const [isFiling, setIsFiling] = useState(false);
   const [creditProfile, setCreditProfile] = useState(null);
+  const [insuranceProfile, setInsuranceProfile] = useState(null);
   
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
         const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
-        const res = await getCreditProfile(farmId);
-        setCreditProfile(res.data);
+        const [creditRes, insuranceRes] = await Promise.all([
+          getCreditProfile(farmId).catch(() => ({data: null})),
+          getInsuranceProfile(farmId).catch(() => ({data: null}))
+        ]);
+        if (creditRes.data) setCreditProfile(creditRes.data);
+        if (insuranceRes.data) setInsuranceProfile(insuranceRes.data);
       } catch (err) {
-        console.error('Failed to load credit profile', err);
+        console.error('Failed to load profiles', err);
       }
     };
-    fetchProfile();
+    fetchData();
   }, []);
 
   const handleApplyLoan = async (amount) => {
@@ -221,43 +226,43 @@ export default function CreditMarketplaceInsurance() {
                 </span>
               </div>
               
-              <div>
-                <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">PM Fasal Bima Yojana (Rabi 2024–25)</h2>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">Policy #PMFBY-MH-2024-99481 • Plot 1 (4.5 Acres Sharbati Wheat)</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 bg-surface p-3 rounded-lg mt-1">
-                <div className="flex flex-col">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Sum Insured</span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-bold">₹1,80,000</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">₹40,000 / Acre</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Farmer Share Paid</span>
-                  <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹2,700</span>
-                  <span className="font-label-sm text-label-sm text-secondary font-semibold">1.5% Rabi Tariff</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-1.5 pt-1">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Coverage Inclusions:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px] text-primary">rainy</span> Hail &amp; Unseasonal Rain
-                  </span>
-                  <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px] text-primary">pest_control</span> Yellow Rust Epidemic
-                  </span>
-                  <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px] text-primary">sunny</span> Extreme Heat Wilting
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 pt-2 text-on-surface-variant font-label-sm text-label-sm">
-                <span className="material-symbols-outlined text-[16px] text-primary">event_available</span>
-                <span>Valid until 30 Apr 2025 • Auto-renewal through KCC</span>
-              </div>
+              {insuranceProfile?.active_policy && (
+                <>
+                  <div>
+                    <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{insuranceProfile.active_policy.name}</h2>
+                    <p className="font-label-sm text-label-sm text-on-surface-variant">Policy #{insuranceProfile.active_policy.policy_id} • {insuranceProfile.active_policy.crop_details}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 bg-surface p-3 rounded-lg mt-1">
+                    <div className="flex flex-col">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Sum Insured</span>
+                      <span className="font-headline-sm text-headline-sm text-primary font-bold">₹{insuranceProfile.active_policy.sum_insured.toLocaleString()}</span>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">₹{insuranceProfile.active_policy.sum_insured_per_acre.toLocaleString()} / Acre</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Farmer Share Paid</span>
+                      <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹{insuranceProfile.active_policy.farmer_share_paid.toLocaleString()}</span>
+                      <span className="font-label-sm text-label-sm text-secondary font-semibold">{insuranceProfile.active_policy.farmer_share_percent}% Tariff</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Coverage Inclusions:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {insuranceProfile.active_policy.coverage_inclusions.map((inc, i) => (
+                        <span key={i} className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-primary">{inc.includes('Rain') ? 'rainy' : inc.includes('Pest') || inc.includes('Epidemic') ? 'pest_control' : 'sunny'}</span> {inc}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pt-2 text-on-surface-variant font-label-sm text-label-sm">
+                    <span className="material-symbols-outlined text-[16px] text-primary">event_available</span>
+                    <span>Valid until {new Date(insuranceProfile.active_policy.valid_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} • Auto-renewal through KCC</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
@@ -286,36 +291,38 @@ export default function CreditMarketplaceInsurance() {
             <div className="flex flex-col gap-space-sm">
               <h3 className="font-headline-sm text-headline-sm text-on-surface">Claims Track Record</h3>
               
-              <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col">
-                    <span className="font-label-md text-label-md text-on-surface font-bold">Kharif Hail Damage (#CLM-2024-03)</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Disbursed 24 Oct 2024 • Plot 1 Soybeans</span>
+              <div className="flex flex-col gap-2 mt-1">
+                {!insuranceProfile?.claims || insuranceProfile?.claims?.length === 0 ? (
+                  <div className="p-4 text-center bg-surface-container-low rounded-lg text-on-surface-variant font-label-md">
+                    No past claims. Your farm is healthy!
                   </div>
-                  <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-2 py-0.5 rounded-full font-bold">
-                    ✓ Settled
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Direct Credit to SBI A/c •••• 4410</span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-bold">₹28,500</span>
-                </div>
-              </div>
-
-              <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col">
-                    <span className="font-label-md text-label-md text-on-surface font-bold">Early Drought Stress Relief (#CLM-2023-11)</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Disbursed 12 Nov 2023 • Satellite Survey</span>
-                  </div>
-                  <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-2 py-0.5 rounded-full font-bold">
-                    ✓ Settled
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Direct Credit to SBI A/c •••• 4410</span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-bold">₹18,000</span>
-                </div>
+                ) : (
+                  insuranceProfile?.claims?.map((claim, idx) => (
+                    <div key={idx} className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex flex-col">
+                          <span className="font-label-md text-label-md text-on-surface font-bold">Claim #{claim.id.substring(0, 8).toUpperCase()}</span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Filed {new Date(claim.loss_event_date).toLocaleDateString('en-GB')} • PMFBY</span>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm font-bold flex items-center gap-1 ${
+                          claim.status === 'settled' || claim.status === 'approved' 
+                            ? 'bg-primary-fixed text-on-primary-fixed' 
+                            : claim.status === 'rejected' 
+                            ? 'bg-error-container text-on-error-container' 
+                            : 'bg-secondary-fixed text-on-secondary-fixed'
+                        }`}>
+                          {claim.status === 'settled' || claim.status === 'approved' ? '✓ Settled' : claim.status === 'rejected' ? '✕ Rejected' : '⧖ Pending'}
+                        </span>
+                      </div>
+                      {claim.settlement_amount && (
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Direct Credit to SBI A/c •••• 4410</span>
+                          <span className="font-headline-sm text-headline-sm text-primary font-bold">₹{claim.settlement_amount.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

@@ -38,6 +38,7 @@ from app.schemas.finance import (
     WarehouseBookingCreate,
     WarehouseBookingRead,
     CreditProfileRead,
+    InsuranceProfileRead,
 )
 from app.services.finance import (
     detect_transaction_anomaly,
@@ -432,6 +433,48 @@ def get_insurance_claim(
     if not claim:
         raise HTTPException(status_code=404, detail="Insurance claim not found")
     return claim
+
+
+@router.get("/insurance/profile/{farm_id}", response_model=InsuranceProfileRead)
+def get_insurance_profile(farm_id: UUID, db: Session = Depends(get_db)):
+    """PMFBY Simulator API: Generates active policy and fetches claims history."""
+    farm = db.execute(select(Farm).where(Farm.id == farm_id)).scalars().first()
+    if not farm:
+        raise HTTPException(status_code=404, detail="Farm not found")
+
+    # Fetch past claims
+    claims = db.execute(
+        select(InsuranceClaim).where(InsuranceClaim.farm_id == farm_id)
+    ).scalars().all()
+
+    # Generate active policy dynamically
+    from datetime import datetime, date
+    now = datetime.now()
+    # Simple simulator logic for season
+    season = "Kharif" if 6 <= now.month <= 10 else "Rabi"
+    year_str = f"{now.year}-{now.year+1}" if season == "Rabi" else str(now.year)
+    
+    # Fake plot details based on farm
+    acres = round(farm.total_area_hectares * 2.47105, 1) if farm.total_area_hectares else 4.5
+    
+    active_policy = {
+        "policy_id": f"PMFBY-{farm.state_or_province[:2].upper() if farm.state_or_province else 'IN'}-{now.year}-99{now.month}{now.day}",
+        "name": f"PM Fasal Bima Yojana ({season} {year_str})",
+        "crop_details": f"Plot 1 ({acres} Acres Farm Coverage)",
+        "sum_insured": round(acres * 40000, 2),
+        "sum_insured_per_acre": 40000.0,
+        "farmer_share_paid": round(acres * 40000 * 0.015, 2) if season == "Rabi" else round(acres * 40000 * 0.02, 2),
+        "farmer_share_percent": 1.5 if season == "Rabi" else 2.0,
+        "coverage_inclusions": ["Hail & Unseasonal Rain", "Yellow Rust Epidemic", "Extreme Heat Wilting", "Pest Attack"],
+        "valid_until": date(now.year + 1 if season == "Rabi" else now.year, 4 if season == "Rabi" else 11, 30),
+        "is_active": True
+    }
+
+    return {
+        "farm_id": farm_id,
+        "active_policy": active_policy,
+        "claims": claims
+    }
 
 
 # --------------------------------------------------------------------------- #
