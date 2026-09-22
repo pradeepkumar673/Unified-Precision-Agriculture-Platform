@@ -34,7 +34,7 @@ export default function MainHomeDashboard() {
       {/* Fixed Top App Bar */}
       
 
-      <main className="flex flex-col w-full pt-20 pb-28 px-margin bg-background flex-1 space-y-space-lg">
+      <main className="flex flex-col w-full pt-32 pb-28 px-margin bg-background flex-1 space-y-space-lg">
         {/* Weather + Plot Context Strip */}
         <div className="flex items-center justify-between bg-surface-container-low px-space-md py-space-sm rounded-xl mt-4">
           <div className="flex items-center gap-space-xs min-w-0">
@@ -63,7 +63,11 @@ export default function MainHomeDashboard() {
               <p className="font-body-sm text-body-sm text-on-surface">Wheat in <strong className="text-primary">Day 42</strong> — Tillering active. Apply 2nd split of Urea (65 kg/Ac) within 5 days.</p>
             </div>
           </div>
-          <button className="w-full mt-3 py-2.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md font-bold flex items-center justify-center gap-1 min-h-[48px]" type="button">
+          <button 
+            className="w-full mt-3 py-2.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md font-bold flex items-center justify-center gap-1 min-h-[48px]" 
+            type="button"
+            onClick={() => navigate('/planning/crop-plan')}
+          >
             <span>View full crop calendar</span>
             <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </button>
@@ -97,7 +101,11 @@ export default function MainHomeDashboard() {
               </p>
             </div>
           </div>
-          <button className="flex items-center justify-between w-full pt-2 font-label-md text-label-md text-primary font-bold min-h-[48px]" type="button">
+          <button 
+            className="flex items-center justify-between w-full pt-2 font-label-md text-label-md text-primary font-bold min-h-[48px]" 
+            type="button"
+            onClick={() => navigate('/finance/credit-insurance')}
+          >
             <span>View detailed breakdown &amp; benefits</span>
             <span className="material-symbols-outlined text-[20px]">chevron_right</span>
           </button>
@@ -107,7 +115,11 @@ export default function MainHomeDashboard() {
         <section className="w-full flex flex-col space-y-2.5">
           <div className="flex items-center justify-between">
             <h3 className="font-headline-sm text-headline-sm text-on-surface">Recent Alerts &amp; Tasks</h3>
-            <button className="font-label-md text-label-md text-primary font-bold min-h-[48px] flex items-center" type="button">
+            <button 
+              className="font-label-md text-label-md text-primary font-bold min-h-[48px] flex items-center" 
+              type="button"
+              onClick={() => navigate('/community/alerts')}
+            >
               <span>View all (7)</span>
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
@@ -144,7 +156,11 @@ export default function MainHomeDashboard() {
                 <span className="font-body-sm text-body-sm text-on-primary-container">Ask crop questions in Hindi or Marathi</span>
               </div>
             </div>
-            <button className="min-h-[48px] px-3 rounded-lg bg-secondary-container text-on-secondary font-label-md text-label-md font-bold flex items-center gap-1 active:scale-95 transition-transform flex-shrink-0" type="button">
+            <button 
+              className="min-h-[48px] px-3 rounded-lg bg-secondary-container text-on-secondary font-label-md text-label-md font-bold flex items-center gap-1 active:scale-95 transition-transform flex-shrink-0" 
+              type="button"
+              onClick={() => navigate('/ai/assistant')}
+            >
               <span>Speak</span>
               <span className="material-symbols-outlined text-[18px]">graphic_eq</span>
             </button>

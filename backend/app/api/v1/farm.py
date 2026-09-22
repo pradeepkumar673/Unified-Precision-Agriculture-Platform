@@ -257,7 +257,6 @@ def get_farm_zones(farm_id: uuid.UUID, db: Session = Depends(get_db)):
         .limit(1)
     )
     if boundary is None:
-        raise HTTPException(
-            status_code=404, detail="No boundary recorded for this farm"
-        )
+        return []
+        
     return boundary.zones

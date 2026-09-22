@@ -111,7 +111,6 @@ export default function FieldMapping() {
       headerClassName="pointer-events-none bg-transparent"
       backButtonClassName="w-11 h-11 pointer-events-auto bg-surface/90 backdrop-blur-md shadow-sm"
       titleClassName="font-headline-sm text-headline-sm text-on-surface truncate ml-space-xs pointer-events-auto bg-surface/80 px-2 py-1 rounded-md backdrop-blur-sm shadow-sm"
-      headerLeftSlot={<img alt="AgriPlatform Logo" className="h-8 w-auto object-contain shrink-0 pointer-events-auto" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8" />}
       headerRightSlot={
         <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center pointer-events-auto shadow-sm">
           <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>

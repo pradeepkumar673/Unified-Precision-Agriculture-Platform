@@ -1,19 +1,44 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function SplashWelcomeScreen() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const [activeFeature, setActiveFeature] = useState(null);
 
-  const handleVoice = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(
-        'Welcome to KhetSaathi. Your smart companion for crop advisories, live mandi rates, and government schemes. Tap Get Started to begin.'
-      );
-      u.rate = 0.95;
-      u.pitch = 1.0;
-      window.speechSynthesis.speak(u);
-    }
+
+
+  const handleFeatureClick = (title, detail) => {
+    setActiveFeature(activeFeature === title ? null : title);
   };
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'hi' : 'en';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('agri_language', newLang);
+  };
+
+  const features = [
+    { 
+      icon: 'eco', color: 'bg-primary-fixed/40 text-primary', 
+      title: 'Crop Health & Advisories', 
+      sub: 'Instant diagnosis via photo & season alerts',
+      detail: 'Snap a picture of your crop to instantly detect diseases. Get personalized season alerts and pesticide recommendations straight to your phone.'
+    },
+    { 
+      icon: 'monitoring', color: 'bg-secondary-fixed text-secondary', 
+      title: 'Live Mandi Market Prices', 
+      sub: 'Daily updated rates from nearby APMCs',
+      detail: 'Stay updated with live market prices from your local APMC mandis. Compare rates across markets to get the best price for your harvest.'
+    },
+    { 
+      icon: 'account_balance', color: 'bg-tertiary-fixed text-tertiary', 
+      title: 'Direct Government Schemes', 
+      sub: 'Subsidy guides & PM-Kisan status tracker',
+      detail: 'Easily check your PM-Kisan status and discover government subsidies tailored for your farm. We help you apply with step-by-step guides.'
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-safe pb-safe">
@@ -25,16 +50,8 @@ export default function SplashWelcomeScreen() {
             <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Synced · Offline Ready</span>
           </div>
           <div className="flex items-center gap-space-xs">
-            <button
-              aria-label="Listen to screen info"
-              onClick={handleVoice}
-              className="w-9 h-9 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed shadow-sm active:scale-95 transition-transform"
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>volume_up</span>
-            </button>
-            <button className="flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-on-surface font-label-md text-label-md shadow-sm active:scale-95 transition-transform" type="button">
-              <span>English</span>
+            <button onClick={toggleLanguage} className="flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-on-surface font-label-md text-label-md shadow-sm active:scale-95 transition-transform" type="button">
+              <span>{i18n.language === 'en' ? 'English' : 'हिंदी'}</span>
               <span className="material-symbols-outlined text-[18px] text-outline">expand_more</span>
             </button>
           </div>
@@ -61,11 +78,7 @@ export default function SplashWelcomeScreen() {
             </div>
           </div>
 
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed/30 text-on-primary-fixed-variant mb-space-xs">
-            <span className="material-symbols-outlined text-[16px]">spa</span>
-            <span className="font-label-sm text-label-sm uppercase tracking-wider">Farmer's Trust Network</span>
-          </div>
+
 
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">KhetSaathi</h1>
           <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs max-w-[280px]">
@@ -79,31 +92,39 @@ export default function SplashWelcomeScreen() {
               alt="Vibrant golden wheat field"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK7NVGkjzh5BQXmoyfJrI8UUIEXPLGyQanvMIPmW-gJUU9AoXzXgyG-S5-gmK0mg8wP_YVJ4qrhzlz35nQPD61JKTGKJ9y484bURcIjTmyjOvbeFfP855STHVQ8LRuBzXaf2wZh5alnk-j4oCTWhZYMBFPswUzfWxC7A04RirvKH6A3av-_xYkSJElibpYLGAm_6K5h0P1bR9bnA_L6SO-S-9WTWNLLrzTvTSJZu503EPI9zFkP1nR"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-space-sm">
-              <span className="font-label-sm text-label-sm text-on-primary flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px] text-primary-fixed">wb_sunny</span>
-                Trusted by 45,000+ kisan families
-              </span>
-            </div>
+
           </div>
         </div>
 
         {/* Feature List */}
         <div className="flex flex-col gap-space-sm">
-          {[
-            { icon: 'eco', color: 'bg-primary-fixed/40 text-primary', title: 'Crop Health & Advisories', sub: 'Instant diagnosis via photo & season alerts' },
-            { icon: 'monitoring', color: 'bg-secondary-fixed text-secondary', title: 'Live Mandi Market Prices', sub: 'Daily updated rates from nearby APMCs' },
-            { icon: 'account_balance', color: 'bg-tertiary-fixed text-tertiary', title: 'Direct Government Schemes', sub: 'Subsidy guides & PM-Kisan status tracker' },
-          ].map(({ icon, color, title, sub }) => (
-            <div key={title} className="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container-lowest shadow-sm active:bg-surface-container-low transition-colors">
-              <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center shrink-0`}>
-                <span className="material-symbols-outlined text-[26px]">{icon}</span>
+          {features.map(({ icon, color, title, sub, detail }) => (
+            <div 
+              key={title} 
+              onClick={() => handleFeatureClick(title, detail)}
+              className="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm active:scale-[0.98] cursor-pointer transition-all duration-300"
+            >
+              <div className="flex items-center gap-space-md">
+                <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center shrink-0`}>
+                  <span className="material-symbols-outlined text-[26px]">{icon}</span>
+                </div>
+                <div className="flex flex-col text-left min-w-0">
+                  <span className="font-headline-sm text-headline-sm text-on-surface truncate">{title}</span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">{sub}</span>
+                </div>
+                <span className={`material-symbols-outlined text-outline ml-auto transition-transform duration-300 ${activeFeature === title ? 'rotate-90' : ''}`}>
+                  chevron_right
+                </span>
               </div>
-              <div className="flex flex-col text-left min-w-0">
-                <span className="font-headline-sm text-headline-sm text-on-surface truncate">{title}</span>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">{sub}</span>
-              </div>
-              <span className="material-symbols-outlined text-outline ml-auto">chevron_right</span>
+              
+              {/* Expandable Detail Section */}
+              {activeFeature === title && (
+                <div className="mt-4 pt-4 border-t border-outline-variant/30 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                    {detail}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -82,7 +82,17 @@ const TraceabilityPage = lazy(() => import('./pages/cea_iot/TraceabilityPage'));
 
 // Auth Context
 const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    return {
+      token: localStorage.getItem('token'),
+      login: (t) => { localStorage.setItem('token', t); window.location.reload(); },
+      logout: () => { localStorage.removeItem('token'); window.location.href = '/#/splash'; window.location.reload(); }
+    };
+  }
+  return ctx;
+};
 
 function RouterHelper() {
   const navigate = useNavigate();
@@ -108,17 +118,17 @@ function App() {
   // Protected Route Wrapper
   const ProtectedRoute = ({ children }) => {
     if (!token) {
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/splash" replace />;
     }
     try {
       const decoded = jwtDecode(token);
       if (decoded.exp * 1000 < Date.now()) {
         localStorage.removeItem('token');
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/splash" replace />;
       }
     } catch (err) {
       localStorage.removeItem('token');
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/splash" replace />;
     }
     return children ? children : <Outlet />;
   };

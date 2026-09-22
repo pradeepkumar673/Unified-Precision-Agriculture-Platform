@@ -1,11 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../App'; // Import auth to allow logout
 import { useTranslation } from 'react-i18next';
+import { getFarmProfile, getFarmZones } from '../../api/farmApi';
 
 export default function FarmerProfileSettings() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  
+  const farmId = localStorage.getItem('farmId');
+  const [farm, setFarm] = useState(null);
+  const [zones, setZones] = useState([]);
+
+  useEffect(() => {
+    if (!farmId) return;
+    getFarmProfile(farmId).then(r => setFarm(r.data)).catch(() => {});
+    getFarmZones(farmId).then(r => setZones(r.data || [])).catch(() => {});
+  }, [farmId]);
+
+  const farmerName = farm?.owner_name || 'Farmer';
+  const farmShortId = farm?.id ? `#KS-${farm.id.slice(0, 6).toUpperCase()}` : '#KS-PENDING';
+  const locationText = [farm?.village, farm?.district, farm?.state].filter(Boolean).join(', ') || 'Location pending';
+  const totalArea = farm?.land_size_acres || 0;
+  const areaHa = (totalArea * 0.404686).toFixed(2);
+  
+  // Use first two zones if available, otherwise fallback to farm level crop
+  const plot1 = zones.length > 0 ? zones[0] : null;
+  const plot2 = zones.length > 1 ? zones[1] : null;
 
   const handleLanguageToggle = () => {
     const nextLang = i18n.language === 'en' ? 'hi' : 'en';
@@ -35,29 +56,31 @@ export default function FarmerProfileSettings() {
   };
 
   return (
-    <div className="flex flex-col w-full px-space-md py-space-sm space-y-space-md">
+    <div className="flex flex-col w-full px-space-md pt-24 pb-28 space-y-space-md">
       {/* Farmer Profile Header Card */}
       <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
         <div className="flex items-start gap-space-md">
           <div className="relative shrink-0">
-            <img className="w-20 h-20 rounded-full object-cover shadow-sm" alt="Ramesh Patil" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8-QOVgNDaqnS4_3qKqpbCoITU5hTWkXzfryzy5ii7V4XeZbaTkfFpuop3xs_-2Zy8VBNuYjyzKq9P3rRVz98p7eqbYVpTeiWZvDUnERZT-0dyvUpX0qEgAAylWZNhsJK6Oe6UdMpb9lSOXU11gUyhYZpJdo9tDoroJ6P_sGgde_YMdCWGBbu0XEXivYaaOnc3ASZPA9M9XAqwxdOcaIUaEWV1cOhjmSzDrn3KT918KZycIPaXFj8G" />
+            <div className="w-20 h-20 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+              <span className="font-display-sm text-display-sm">{farmerName.charAt(0).toUpperCase()}</span>
+            </div>
             <span className="absolute bottom-0 right-0 w-6 h-6 bg-primary text-on-primary rounded-full flex items-center justify-center shadow">
               <span className="material-symbols-outlined text-[14px]">check</span>
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-space-xs">
-              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Ramesh Patil</h1>
+              <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">{farmerName}</h1>
               <button aria-label="Edit Profile" className="px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1 active:scale-95 transition-transform" type="button">
                 <span className="material-symbols-outlined text-[16px]">edit</span>
                 <span>Edit</span>
               </button>
             </div>
-            <p className="font-label-md text-label-md text-primary font-semibold mt-0.5">Verified Smallholder (SF/MF)</p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant truncate mt-0.5">ID: #KS-MH-88219</p>
+            <p className="font-label-md text-label-md text-primary font-semibold mt-0.5">Verified Profile</p>
+            <p className="font-label-sm text-label-sm text-on-surface-variant truncate mt-0.5">ID: {farmShortId}</p>
             <div className="flex items-center gap-1 text-on-surface-variant mt-1">
               <span className="material-symbols-outlined text-[14px] text-secondary shrink-0">location_on</span>
-              <span className="font-label-sm text-label-sm truncate">Niphad, Nashik, Maharashtra</span>
+              <span className="font-label-sm text-label-sm truncate">{locationText}</span>
             </div>
           </div>
         </div>
@@ -66,7 +89,7 @@ export default function FarmerProfileSettings() {
         <div className="bg-surface-container-low px-space-sm py-2 rounded-lg flex items-center justify-between gap-space-xs mt-space-sm">
           <div className="flex items-center gap-space-xs min-w-0">
             <span className="material-symbols-outlined text-primary text-[18px] shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-            <span className="font-label-sm text-label-sm text-on-surface font-semibold truncate">KCC & Aadhaar KYC Verified</span>
+            <span className="font-label-sm text-label-sm text-on-surface font-semibold truncate">KYC Verified</span>
           </div>
           <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full shrink-0">Active</span>
         </div>
@@ -79,14 +102,14 @@ export default function FarmerProfileSettings() {
             <span className="material-symbols-outlined text-primary text-[20px]">landscape</span>
             <span className="font-label-lg text-label-lg text-on-surface font-bold">Farm Holdings & Assets</span>
           </div>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">2 Parcels</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">{zones.length > 0 ? `${zones.length} Parcels` : 'No parcels mapped'}</span>
         </div>
 
         {/* Total Area Banner */}
         <div className="bg-surface-container p-space-sm rounded-lg flex items-center justify-between">
           <div>
             <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Operated Land</p>
-            <p className="font-headline-sm text-headline-sm text-on-surface font-bold">4.52 Acres <span className="font-body-sm text-body-sm text-on-surface-variant font-normal">(1.83 Ha)</span></p>
+            <p className="font-headline-sm text-headline-sm text-on-surface font-bold">{totalArea} Acres <span className="font-body-sm text-body-sm text-on-surface-variant font-normal">({areaHa} Ha)</span></p>
           </div>
           <span className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
             <span className="material-symbols-outlined text-[22px]">crop_free</span>
@@ -95,22 +118,27 @@ export default function FarmerProfileSettings() {
 
         {/* Plots Quick Snapshot */}
         <div className="grid grid-cols-2 gap-space-sm">
-          <div onClick={() => navigate('/farm/profile')} className="bg-surface-container-low p-space-sm rounded-lg flex flex-col justify-between space-y-1 cursor-pointer active:scale-95 transition-transform">
-            <div className="flex items-center gap-1 text-primary">
-              <span className="material-symbols-outlined text-[16px]">grass</span>
-              <span className="font-label-sm text-label-sm font-bold truncate">Plot 1 • 2.5 Ac</span>
+          {plot1 || farm?.current_crop ? (
+            <div onClick={() => navigate('/farm/profile')} className="bg-surface-container-low p-space-sm rounded-lg flex flex-col justify-between space-y-1 cursor-pointer active:scale-95 transition-transform">
+              <div className="flex items-center gap-1 text-primary">
+                <span className="material-symbols-outlined text-[16px]">grass</span>
+                <span className="font-label-sm text-label-sm font-bold truncate">{plot1?.name || 'Main Plot'}</span>
+              </div>
+              <p className="font-body-sm text-body-sm text-on-surface font-semibold truncate">{plot1?.current_crop || farm?.current_crop || 'Not specified'}</p>
+              <span className="inline-block font-label-sm text-label-sm text-secondary bg-secondary-fixed px-2 py-0.5 rounded-full self-start truncate">{plot1?.crop_stage || farm?.crop_stage || 'Unknown Stage'}</span>
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface font-semibold truncate">Sharbati Wheat</p>
-            <span className="inline-block font-label-sm text-label-sm text-secondary bg-secondary-fixed px-2 py-0.5 rounded-full self-start">Tillering Stage</span>
-          </div>
-          <div onClick={() => navigate('/farm/profile')} className="bg-surface-container-low p-space-sm rounded-lg flex flex-col justify-between space-y-1 cursor-pointer active:scale-95 transition-transform">
-            <div className="flex items-center gap-1 text-primary">
-              <span className="material-symbols-outlined text-[16px]">eco</span>
-              <span className="font-label-sm text-label-sm font-bold truncate">Plot 2 • 2.02 Ac</span>
+          ) : null}
+          
+          {plot2 ? (
+            <div onClick={() => navigate('/farm/profile')} className="bg-surface-container-low p-space-sm rounded-lg flex flex-col justify-between space-y-1 cursor-pointer active:scale-95 transition-transform">
+              <div className="flex items-center gap-1 text-primary">
+                <span className="material-symbols-outlined text-[16px]">eco</span>
+                <span className="font-label-sm text-label-sm font-bold truncate">{plot2.name}</span>
+              </div>
+              <p className="font-body-sm text-body-sm text-on-surface font-semibold truncate">{plot2.current_crop || 'Not specified'}</p>
+              <span className="inline-block font-label-sm text-label-sm text-primary bg-primary-fixed px-2 py-0.5 rounded-full self-start truncate">{plot2.crop_stage || 'Unknown Stage'}</span>
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface font-semibold truncate">Desi Chickpea</p>
-            <span className="inline-block font-label-sm text-label-sm text-primary bg-primary-fixed px-2 py-0.5 rounded-full self-start">Pod Formation</span>
-          </div>
+          ) : null}
         </div>
 
         {/* Soil Health & Equipment Details */}
@@ -120,28 +148,21 @@ export default function FarmerProfileSettings() {
               <span className="material-symbols-outlined text-[18px] text-primary">science</span>
               <span className="font-body-sm text-body-sm text-on-surface">Soil Health Card</span>
             </div>
-            <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full">pH 7.2 • Nov 2024</span>
+            <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full">Report Pending</span>
           </div>
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-space-xs text-on-surface-variant">
               <span className="material-symbols-outlined text-[18px] text-secondary">solar_power</span>
-              <span className="font-body-sm text-body-sm text-on-surface">Solar Pump</span>
+              <span className="font-body-sm text-body-sm text-on-surface">Equipment</span>
             </div>
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">5 HP Submersible</span>
-          </div>
-          <div className="flex items-center justify-between py-1 cursor-pointer hover:bg-surface-container-low transition-colors rounded px-1" onClick={() => navigate('/marketplace/machinery')}>
-            <div className="flex items-center gap-space-xs text-on-surface-variant">
-              <span className="material-symbols-outlined text-[18px] text-secondary">handyman</span>
-              <span className="font-body-sm text-body-sm text-on-surface">Farm Machinery</span>
-            </div>
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Power Tiller (Owned)</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">None Listed</span>
           </div>
           <div className="flex items-center justify-between py-1 cursor-pointer hover:bg-surface-container-low transition-colors rounded px-1" onClick={() => navigate('/community/fpo-cooperative-suite')}>
             <div className="flex items-center gap-space-xs text-on-surface-variant">
               <span className="material-symbols-outlined text-[18px] text-tertiary">groups</span>
               <span className="font-body-sm text-body-sm text-on-surface">FPO Member</span>
             </div>
-            <span className="font-label-sm text-label-sm text-tertiary font-semibold truncate max-w-[170px]">Nashik Kisan (#NSK-442)</span>
+            <span className="font-label-sm text-label-sm text-tertiary font-semibold truncate max-w-[170px]">Not Enrolled</span>
           </div>
         </div>
       </div>
@@ -337,7 +358,7 @@ export default function FarmerProfileSettings() {
                 <span className="material-symbols-outlined text-[24px] text-secondary shrink-0">forum</span>
                 <div className="min-w-0">
                   <p className="font-label-md text-label-md text-on-surface font-bold truncate">Krishi Charcha (Farmer Community)</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant truncate">12,400+ Nashik farmers sharing advice & crop solutions</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant truncate">Connect with local farmers to share advice & crop solutions</p>
                 </div>
               </div>
             </div>

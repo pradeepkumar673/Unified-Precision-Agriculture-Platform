@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Dict, List
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, status, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

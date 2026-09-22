@@ -45,7 +45,7 @@ export default function FarmSetupWizardStep1Of3() {
         const res = await createFarmProfile(payload);
         localStorage.setItem('farmId', res.data.id);
       }
-      navigate('/onboarding/field-mapping');
+      navigate('/farm/boundary');
     } catch {
       setLoading(false);
     }

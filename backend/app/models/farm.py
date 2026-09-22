@@ -115,10 +115,10 @@ class Farm(Base):
     water_source: Mapped[WaterSource] = mapped_column(
         SAEnum(WaterSource, name="water_source"), nullable=False
     )
-    latitude: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
-    longitude: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True, default=0.0)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True, default=0.0)
     equipment_owned: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    annual_income_range: Mapped[AnnualIncomeRange] = mapped_column(
+    annual_income_range: Mapped[AnnualIncomeRange | None] = mapped_column(
         SAEnum(AnnualIncomeRange, name="annual_income_range"), nullable=True, default=None
     )
     crop_history: Mapped[list] = mapped_column(JSON, default=list, nullable=False)

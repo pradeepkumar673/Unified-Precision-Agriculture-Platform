@@ -20,7 +20,13 @@ export default function AppShell({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'hi' : 'en';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('agri_language', newLang);
+  };
 
   const navItems = [
     { path: '/', id: 'home', icon: 'home', label: t('nav.home', 'Home') },
@@ -87,25 +93,36 @@ export default function AppShell({
         <header className={`fixed top-0 w-full z-50 pt-safe ${headerClassName || 'bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]'}`}>
           {isHome ? (
             <div className="h-28 px-gutter flex flex-col justify-between py-space-xs">
-              <div className="flex items-center justify-between gap-space-xs">
-                <div className="flex items-center gap-space-xs">
-                  <img 
-                    alt="Brand logo" 
-                    className="h-8 w-auto object-contain" 
-                    src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"
-                  />
-                  <span className="font-headline-sm text-headline-sm text-primary tracking-tight">KhetSaathi</span>
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-primary text-[20px]">eco</span>
+                  </div>
+                  <span className="font-headline-sm text-headline-sm text-primary tracking-tight hidden sm:block">KhetSaathi</span>
                 </div>
-                <button className="flex items-center gap-1 px-space-xs py-1 rounded-full bg-surface-container text-on-surface-variant min-h-[44px] px-3" type="button">
-                  <span className="material-symbols-outlined text-[18px] text-primary">location_on</span>
-                  <span className="font-label-md text-label-md truncate max-w-[150px]">Green Valley Farm • Nashik</span>
-                  <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                <button 
+                  className="flex items-center gap-1 px-2 py-1 rounded-full bg-surface-container text-on-surface-variant min-h-[44px] shrink" 
+                  type="button"
+                  onClick={() => navigate('/farm/profile')}
+                >
+                  <span className="material-symbols-outlined text-[18px] text-primary shrink-0">location_on</span>
+                  <span className="font-label-md text-label-md truncate max-w-[80px] sm:max-w-[150px]">Green Valley Farm</span>
+                  <span className="material-symbols-outlined text-[16px] shrink-0">expand_more</span>
                 </button>
-                <div className="flex items-center gap-space-xs">
-                  <button className="min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-full bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors" type="button">
-                    EN
+                <div className="flex items-center gap-1 shrink-0">
+                  <button 
+                    className="min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-full bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors uppercase" 
+                    type="button"
+                    onClick={toggleLanguage}
+                  >
+                    {i18n.language === 'hi' ? 'HI' : 'EN'}
                   </button>
-                  <button aria-label="Notifications" className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+                  <button 
+                    aria-label="Notifications" 
+                    className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface" 
+                    type="button"
+                    onClick={() => navigate('/community/alerts')}
+                  >
                     <span className="material-symbols-outlined text-[22px]">notifications</span>
                     <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-secondary-container text-on-secondary font-label-sm text-[10px] rounded-full flex items-center justify-center px-1">3</span>
                   </button>
