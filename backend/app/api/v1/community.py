@@ -25,6 +25,8 @@ from app.core.db import get_db
 from app.models.community import (
     Alert,
     FPOGroup,
+    FPOMember,
+    FPOTender,
     GrowerScore,
     SeasonReport,
     SHGBooking,
@@ -36,9 +38,6 @@ from app.models.farm import Farm
 from app.models.marketplace import EquipmentBooking
 from app.schemas.community import (
     AlertRead,
-    FPOGroupCreate,
-    FPOGroupRead,
-    FPOPoolItemCreate,
     GrowerScoreRead,
     SeasonReportRead,
     SHGBookingCreate,
@@ -47,6 +46,8 @@ from app.schemas.community import (
     SHGGroupRead,
     SupportTicketCreate,
     SupportTicketRead,
+    FPOGroupDetailedRead,
+    JoinTenderRequest,
 )
 from app.services.community import (
     compute_grower_score,
@@ -252,81 +253,103 @@ def get_grower_score(
 # ---------------------------------------------------------------------------
 # #53 FPO Suite
 # ---------------------------------------------------------------------------
-@router.post(
-    "/fpo/create",
-    response_model=FPOGroupRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_fpo_group(
-    payload: FPOGroupCreate,
-    db: Session = Depends(get_db),
-):
-    """Create a Farmer Producer Organization (FPO) group."""
+from pydantic import BaseModel
+
+class CreateFPORep(BaseModel):
+    name: str
+    registration_no: str
+    hubs: str
+
+@router.get("/fpo/active", response_model=FPOGroupDetailedRead)
+def get_active_fpo(db: Session = Depends(get_db)):
+    """Fetch the active FPO for the user, return 404 if it doesn't exist."""
+    fpo = db.execute(select(FPOGroup)).scalars().first()
+    
+    if not fpo:
+        raise HTTPException(status_code=404, detail="No active FPO found")
+
+    members = db.execute(select(FPOMember).where(FPOMember.fpo_id == fpo.id)).scalars().all()
+    tenders = db.execute(select(FPOTender).where(FPOTender.fpo_id == fpo.id)).scalars().all()
+
+    return FPOGroupDetailedRead(
+        id=fpo.id,
+        name=fpo.name,
+        registration_no=fpo.registration_no,
+        hubs=fpo.hubs,
+        wallet_balance=fpo.wallet_balance,
+        members=list(members),
+        tenders=list(tenders),
+        created_at=fpo.created_at,
+    )
+
+@router.post("/fpo", response_model=FPOGroupDetailedRead)
+def create_fpo(payload: CreateFPORep, db: Session = Depends(get_db)):
+    """Create a new FPO."""
     fpo = FPOGroup(
         name=payload.name,
-        member_farm_ids=payload.member_farm_ids,
-        pooled_purchases=[],
-        pooled_sales=[],
-        scheme_compliance={},
+        registration_no=payload.registration_no,
+        hubs=payload.hubs,
+        wallet_balance=0.0
     )
     db.add(fpo)
     db.commit()
     db.refresh(fpo)
-    return fpo
+    return FPOGroupDetailedRead(
+        id=fpo.id,
+        name=fpo.name,
+        registration_no=fpo.registration_no,
+        hubs=fpo.hubs,
+        wallet_balance=fpo.wallet_balance,
+        members=[],
+        tenders=[],
+        created_at=fpo.created_at,
+    )
 
-
-@router.post("/fpo/{fpo_id}/pool-purchase", response_model=FPOGroupRead)
-def fpo_pool_purchase(
-    fpo_id: UUID,
-    payload: FPOPoolItemCreate,
+@router.post("/fpo/tender/{tender_id}/join", response_model=FPOGroupDetailedRead)
+def join_fpo_tender(
+    tender_id: UUID,
+    payload: JoinTenderRequest,
     db: Session = Depends(get_db),
 ):
-    """Append a pooled purchase record to the FPO group."""
-    fpo = db.execute(select(FPOGroup).where(FPOGroup.id == fpo_id)).scalars().first()
-    if not fpo:
-        raise HTTPException(status_code=404, detail="FPO group not found")
+    """Join an active collective bargaining tender."""
+    tender = db.execute(select(FPOTender).where(FPOTender.id == tender_id)).scalars().first()
+    if not tender:
+        raise HTTPException(status_code=404, detail="Tender not found")
 
-    purchase_entry = {
-        "recorded_at": datetime.now(timezone.utc).isoformat(),
-        "item": payload.item,
-        "qty_kg": payload.qty_kg,
-        "amount": payload.amount,
-        "vendor": payload.vendor,
-        "notes": payload.notes,
-    }
-    # SQLAlchemy JSON column mutation detection requires reassignment
-    new_purchases = list(fpo.pooled_purchases or [])
-    new_purchases.append(purchase_entry)
-    fpo.pooled_purchases = new_purchases
-
+    fpo = db.execute(select(FPOGroup).where(FPOGroup.id == tender.fpo_id)).scalars().first()
+    
+    # 1. Update the tender pool
+    tender.current_pooled += payload.quantity_qtl
+    
+    # 2. Add the farmer as a member of this FPO if not already
+    member = db.execute(select(FPOMember).where(FPOMember.fpo_id == fpo.id, FPOMember.farm_id == payload.farm_id)).scalars().first()
+    if member:
+        member.pooled_quantity += payload.quantity_qtl
+        member.crop_type = tender.crop_name
+        member.tag = "Awaiting Action"
+    else:
+        new_member = FPOMember(
+            fpo_id=fpo.id,
+            farm_id=payload.farm_id,
+            member_name="Ramesh Patil (You)",
+            pooled_quantity=payload.quantity_qtl,
+            crop_type=tender.crop_name,
+            tag="Awaiting Action"
+        )
+        db.add(new_member)
+        
     db.commit()
-    db.refresh(fpo)
-    return fpo
+    
+    members = db.execute(select(FPOMember).where(FPOMember.fpo_id == fpo.id)).scalars().all()
+    tenders = db.execute(select(FPOTender).where(FPOTender.fpo_id == fpo.id)).scalars().all()
 
-
-@router.post("/fpo/{fpo_id}/pool-sale", response_model=FPOGroupRead)
-def fpo_pool_sale(
-    fpo_id: UUID,
-    payload: FPOPoolItemCreate,
-    db: Session = Depends(get_db),
-):
-    """Append a pooled sale record to the FPO group."""
-    fpo = db.execute(select(FPOGroup).where(FPOGroup.id == fpo_id)).scalars().first()
-    if not fpo:
-        raise HTTPException(status_code=404, detail="FPO group not found")
-
-    sale_entry = {
-        "recorded_at": datetime.now(timezone.utc).isoformat(),
-        "item": payload.item,
-        "qty_kg": payload.qty_kg,
-        "amount": payload.amount,
-        "buyer": payload.buyer,
-        "notes": payload.notes,
-    }
-    new_sales = list(fpo.pooled_sales or [])
-    new_sales.append(sale_entry)
-    fpo.pooled_sales = new_sales
-
-    db.commit()
-    db.refresh(fpo)
-    return fpo
+    return FPOGroupDetailedRead(
+        id=fpo.id,
+        name=fpo.name,
+        registration_no=fpo.registration_no,
+        hubs=fpo.hubs,
+        wallet_balance=fpo.wallet_balance,
+        members=list(members),
+        tenders=list(tenders),
+        created_at=fpo.created_at,
+    )

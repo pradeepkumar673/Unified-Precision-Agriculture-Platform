@@ -34,17 +34,17 @@ export const getGrowerScore = async (farmId) => {
   return response.data;
 };
 
-export const createFpoGroup = async (fpoData) => {
-  const response = await axios.post(`${API_BASE_URL}/api/v1/community/fpo/create`, fpoData);
+export const getActiveFPO = async () => {
+  const response = await axios.get(`${API_BASE_URL}/api/v1/community/fpo/active`);
   return response.data;
 };
 
-export const createFpoPoolPurchase = async (fpoId, purchaseData) => {
-  const response = await axios.post(`${API_BASE_URL}/api/v1/community/fpo/${fpoId}/pool-purchase`, purchaseData);
+export const createFpo = async (fpoData) => {
+  const response = await axios.post(`${API_BASE_URL}/api/v1/community/fpo`, fpoData);
   return response.data;
 };
 
-export const createFpoPoolSale = async (fpoId, saleData) => {
-  const response = await axios.post(`${API_BASE_URL}/api/v1/community/fpo/${fpoId}/pool-sale`, saleData);
+export const joinFpoTender = async (tenderId, joinData) => {
+  const response = await axios.post(`${API_BASE_URL}/api/v1/community/fpo/tender/${tenderId}/join`, joinData);
   return response.data;
 };

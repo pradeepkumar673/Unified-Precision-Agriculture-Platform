@@ -86,6 +86,7 @@ export default function ZoneManagementVariableRate() {
           isStress,
           centroid: markerPos,
           wedgeCoords,
+          ...z,
           ...c
         };
       });
@@ -102,6 +103,33 @@ export default function ZoneManagementVariableRate() {
         boundaryPoints.reduce((sum, p) => sum + p[1], 0) / boundaryPoints.length
       ]
     : [20.5937, 78.9629];
+
+  const activeZoneObj = zones.find(z => z.id === activeZone) || {};
+
+  const handleExportXML = () => {
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<ISO11783_TaskData VersionMajor="4" VersionMinor="3" DataTransferOrigin="1">
+  <XFR>
+${zones.map(z => `    <TZN ZoneId="${z.id}" Designator="Zone ${z.id}">
+      <Polygon>
+${z.wedgeCoords.map(coord => `        <Point Lat="${coord[0]}" Lon="${coord[1]}"/>`).join('\n')}
+      </Polygon>
+      <Treatment Product="Urea_N" Rate="${Math.round(40 - (z.soil_score || 50) * 0.1)}" Unit="kg/ha"/>
+      <Treatment Product="Seed" Rate="${Math.round(45 - (z.soil_score || 50) * 0.1)}" Unit="kg/ha"/>
+    </TZN>`).join('\n')}
+  </XFR>
+</ISO11783_TaskData>`;
+
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `VRA_Prescription_Farm_${farmId}.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
@@ -230,9 +258,11 @@ export default function ZoneManagementVariableRate() {
           <div className="w-full p-space-sm bg-surface-container-low rounded-xl flex items-center justify-between text-[13px]">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-[18px]">water_drop</span>
-              <span className="font-label-md text-label-md text-on-surface">Soil Moisture: <strong>21% (Low)</strong></span>
+              <span className="font-label-md text-label-md text-on-surface">Soil Moisture: <strong>{Math.round(activeZoneObj.soil_score || 0)}% ({activeZoneObj.isStress ? 'Low' : 'Optimum'})</strong></span>
             </div>
-            <span className="font-label-sm text-label-sm text-error font-semibold">NDVI: 0.38 vs 0.71 Ref</span>
+            <span className={`font-label-sm text-label-sm ${activeZoneObj.isStress ? 'text-error' : 'text-primary'} font-semibold`}>
+              NDVI: {(activeZoneObj.ndvi_score || 0).toFixed(2)} vs 0.71 Ref
+            </span>
           </div>
 
           <div className="flex flex-col gap-space-xs">
@@ -245,13 +275,19 @@ export default function ZoneManagementVariableRate() {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <p className="font-label-md text-label-md text-on-surface font-bold">Seed Rate Dosage</p>
-                    <span className="text-[11px] font-bold px-1.5 py-[2px] bg-primary-fixed text-on-primary-fixed rounded">↑ +10%</span>
+                    {activeZoneObj.isStress && (
+                      <span className="text-[11px] font-bold px-1.5 py-[2px] bg-primary-fixed text-on-primary-fixed rounded">↑ +10%</span>
+                    )}
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant text-[13px]">Compensates for low tillering</p>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant text-[13px]">
+                    {activeZoneObj.isStress ? 'Compensates for low tillering' : 'Standard uniform rate'}
+                  </p>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <span className="font-headline-sm text-headline-sm text-on-surface font-bold block">42 kg</span>
+                <span className="font-headline-sm text-headline-sm text-on-surface font-bold block">
+                  {Math.round(45 - (activeZoneObj.soil_score || 50) * 0.1)} kg
+                </span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant">per Acre</span>
               </div>
             </div>
@@ -273,11 +309,15 @@ export default function ZoneManagementVariableRate() {
               <div className="grid grid-cols-3 gap-1.5 pt-1">
                 <div className="bg-surface-container-lowest p-2 rounded-lg text-center shadow-sm">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">Urea (N)</span>
-                  <span className="font-label-md text-label-md text-on-surface font-bold">35 kg</span>
+                  <span className="font-label-md text-label-md text-on-surface font-bold">
+                    {Math.round(40 - (activeZoneObj.soil_score || 50) * 0.1)} kg
+                  </span>
                 </div>
                 <div className="bg-surface-container-lowest p-2 rounded-lg text-center shadow-sm">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">DAP (P)</span>
-                  <span className="font-label-md text-label-md text-on-surface font-bold">22 kg</span>
+                  <span className="font-label-md text-label-md text-on-surface font-bold">
+                    {Math.round(25 - (activeZoneObj.soil_score || 50) * 0.05)} kg
+                  </span>
                 </div>
                 <div className="bg-surface-container-lowest p-2 rounded-lg text-center shadow-sm">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">Nano Zinc</span>
@@ -320,29 +360,14 @@ export default function ZoneManagementVariableRate() {
           </div>
         </section>
 
-        {/* Agronomist Verification */}
-        <section className="px-margin py-space-sm">
-          <div className="p-space-sm bg-surface-container-lowest rounded-2xl shadow-sm flex items-center justify-between gap-space-sm">
-            <div className="flex items-center gap-space-xs">
-              <img className="w-10 h-10 rounded-full object-cover shrink-0" alt="Agronomist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2DecSk5_nYiJg0rU1zMV08vg5QV2Dn8TdRBBIjGm3TLKMn7b5mjtyDFDQdtkOvNRS1aMdv66zEhCUMKs61Nb03w7JqFPwuQwCK_nfEjcjt0NB5Sp2_GMK3zYtqSm0T188U2Wfa_8XGXcZbwDyF-SdjvLTY8eemjaQBB-Yf5Kos9CxLTD-OSmSgTY8qjDVQuIQ74C2unRQPrFKLGlpFwZbcrV1k_GPeJP7aepHLBI-PkZF_nURY4Q-" />
-              <div>
-                <p className="font-label-md text-label-md text-on-surface font-bold">Dr. V. Ramanathan</p>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">ICAR-IARI Agronomy Fellow • Approved</p>
-              </div>
-            </div>
-            <button className="px-3 py-1.5 bg-surface-container text-on-surface rounded-lg font-label-sm text-label-sm font-semibold active:scale-95 transition-transform" type="button">
-              Notes
-            </button>
-          </div>
-        </section>
 
         {/* Sticky Action Footer Dock */}
         <footer className="sticky bottom-20 w-full p-margin bg-surface-container-lowest/95 backdrop-blur-md shadow-xl flex flex-col gap-2 z-30 pb-safe">
-          <button className="w-full h-14 bg-secondary-container hover:bg-secondary text-surface-container-lowest rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md active:scale-[0.98] transition-all" type="button">
+          <button onClick={handleExportXML} className="w-full h-14 bg-secondary-container hover:bg-secondary text-surface-container-lowest rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md active:scale-[0.98] transition-all" type="button">
             <span>Export Prescription Map (ISO-XML)</span>
             <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </button>
-          <button className="w-full h-12 bg-surface-container text-primary-container hover:bg-surface-container-high rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 active:scale-[0.98] transition-all" type="button">
+          <button onClick={() => navigate('/marketplace/drone-booking')} className="w-full h-12 bg-surface-container text-primary-container hover:bg-surface-container-high rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 active:scale-[0.98] transition-all" type="button">
             <span className="material-symbols-outlined text-[18px]">flight_takeoff</span>
             <span>Send to Custom Hiring Drone Operator</span>
           </button>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import sys
+content = """import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getActiveFPO, joinFpoTender, createFpo } from '../../api/communityApi';
 
@@ -325,3 +326,6 @@ export default function FpoCooperativeSuite() {
     </div>
   );
 }
+"""
+with open("frontend/src/pages/community/FpoCooperativeSuite.jsx", "w", encoding="utf-8") as f:
+    f.write(content)

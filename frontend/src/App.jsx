@@ -55,6 +55,7 @@ const InputsBrowse = lazy(() => import('./pages/marketplace/InputsBrowse.jsx'));
 const ProductDetailMachineryRental = lazy(() => import('./pages/marketplace/ProductDetailMachineryRental.jsx'));
 const HarvestSellProduce = lazy(() => import('./pages/marketplace/HarvestSellProduce.jsx'));
 const DeliveryLogisticsTracking = lazy(() => import('./pages/marketplace/DeliveryLogisticsTracking.jsx'));
+const BookDroneScreen = lazy(() => import('./pages/marketplace/BookDroneScreen.jsx'));
 const WalletTransactionLedger = lazy(() => import('./pages/finance/WalletTransactionLedger.jsx'));
 const PaymentCheckout = lazy(() => import('./pages/finance/PaymentCheckout.jsx'));
 const CreditMarketplaceInsurance = lazy(() => import('./pages/finance/CreditMarketplaceInsurance.jsx'));
@@ -87,7 +88,17 @@ export const useAuth = () => {
   if (!ctx) {
     return {
       token: localStorage.getItem('token'),
-      login: (t) => { localStorage.setItem('token', t); window.location.reload(); },
+      login: (t) => { 
+        localStorage.setItem('token', t); 
+        const redirect = localStorage.getItem('loginRedirect');
+        if (redirect) {
+          localStorage.removeItem('loginRedirect');
+          window.location.href = '/#' + redirect;
+        } else {
+          window.location.href = '/#/';
+        }
+        window.location.reload(); 
+      },
       logout: () => { localStorage.removeItem('token'); window.location.href = '/#/splash'; window.location.reload(); }
     };
   }
@@ -198,6 +209,7 @@ function App() {
             <Route path="/marketplace/machinery" element={<ProductDetailMachineryRental />} />
             <Route path="/marketplace/harvest" element={<HarvestSellProduce />} />
             <Route path="/marketplace/delivery/:orderId?" element={<DeliveryLogisticsTracking />} />
+            <Route path="/marketplace/drone-booking" element={<BookDroneScreen />} />
             
             {/* Finance */}
             <Route path="/finance/wallet" element={<WalletTransactionLedger />} />

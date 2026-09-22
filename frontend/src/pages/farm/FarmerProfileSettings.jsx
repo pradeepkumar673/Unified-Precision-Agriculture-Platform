@@ -279,9 +279,9 @@ export default function FarmerProfileSettings() {
           <div className="flex items-center justify-between py-1 cursor-pointer hover:bg-surface-container-low transition-colors rounded px-1" onClick={() => navigate('/water-soil/soil-health')}>
             <div className="flex items-center gap-space-xs text-on-surface-variant">
               <span className="material-symbols-outlined text-[18px] text-primary">science</span>
-              <span className="font-body-sm text-body-sm text-on-surface">Soil Health Card</span>
+              <span className="font-body-sm text-body-sm text-on-surface text-primary font-bold">Soil Health Heatmap</span>
             </div>
-            <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full">Report Pending</span>
+            <span className="font-label-sm text-label-sm text-on-primary-fixed font-bold bg-primary-fixed px-2 py-0.5 rounded-full">Available</span>
           </div>
           <div className="flex items-center justify-between py-1 rounded px-1">
             <div className="flex items-center gap-space-xs text-on-surface-variant">

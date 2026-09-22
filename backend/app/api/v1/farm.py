@@ -189,16 +189,35 @@ def create_farm_boundary(
         len(points),
     )
 
-    # --- synthetic per-point soil / NDVI scores -----------------------------
-    # Real per-point soil + NDVI rasters are not wired up yet (see
-    # docs/04-FEATURE-CHECKLIST.md). We generate deterministic, seeded values
-    # so the same farm_id always produces the same zones.
+    # --- Fetch live soil moisture from Open-Meteo for the farm centroid ---
+    c_lat = sum(p["lat"] for p in points) / len(points)
+    c_lng = sum(p["lng"] for p in points) / len(points)
+    
+    baseline_moisture = 50.0
+    try:
+        import httpx
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={c_lat}&longitude={c_lng}&current=soil_moisture_3_to_9cm"
+        resp = httpx.get(url, timeout=3.0)
+        if resp.status_code == 200:
+            val = resp.json().get("current", {}).get("soil_moisture_3_to_9cm")
+            if val is not None:
+                baseline_moisture = val * 100.0
+                logger.info("Open-Meteo live moisture for boundary %s: %.1f%%", farm_id, baseline_moisture)
+    except Exception as e:
+        logger.warning("Failed to fetch live Open-Meteo data for boundary: %s", e)
+
     seed = int.from_bytes(farm_id.bytes[:4], "big")
     rng = np.random.default_rng(seed)
 
     n = len(points)
-    soil_scores = rng.uniform(30.0, 95.0, size=n)      # 0-100 scale
-    ndvi_scores = rng.uniform(0.10, 0.90, size=n)      # -1..1, realistic range
+    # Generate scores normally distributed around the live baseline moisture
+    soil_scores = rng.normal(loc=baseline_moisture, scale=12.0, size=n)
+    soil_scores = np.clip(soil_scores, 5.0, 95.0)
+    
+    # Baseline NDVI is generally correlated with moisture
+    baseline_ndvi = 0.3 + (baseline_moisture / 100.0) * 0.4
+    ndvi_scores = rng.normal(loc=baseline_ndvi, scale=0.15, size=n)
+    ndvi_scores = np.clip(ndvi_scores, 0.1, 0.95)
 
     X = np.column_stack([soil_scores, ndvi_scores])
 

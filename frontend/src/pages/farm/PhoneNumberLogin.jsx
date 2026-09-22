@@ -62,12 +62,13 @@ export default function PhoneNumberLogin() {
     try {
       const digits = phone.replace(/\D/g, '');
       const res = await api.post('/auth/verify-otp', { phone: `+91${digits}`, otp });
-      login(res.data.access_token);
-      
       // Fix: Ensure we save the user's primary farm ID so the app loads correctly
       if (res.data.farms && res.data.farms.length > 0) {
         localStorage.setItem('farmId', res.data.farms[0].id);
+        localStorage.setItem('activeFarmId', res.data.farms[0].id);
       }
+      
+      login(res.data.access_token);
       
       if (res.data.is_new_user) {
         navigate('/onboarding/role');

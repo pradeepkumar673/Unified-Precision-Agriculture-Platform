@@ -194,20 +194,40 @@ class GrowerScore(Base):
 class FPOGroup(Base):
     __tablename__ = "fpo_groups"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    member_farm_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    pooled_purchases: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    pooled_sales: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    scheme_compliance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    registration_no: Mapped[str] = mapped_column(String(100), nullable=True)
+    hubs: Mapped[str] = mapped_column(String(255), nullable=True)
+    wallet_balance: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+
+
+class FPOMember(Base):
+    __tablename__ = "fpo_members"
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fpo_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("fpo_groups.id", ondelete="CASCADE"), nullable=False, index=True)
+    farm_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("farms.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    pooled_quantity: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    crop_type: Mapped[str] = mapped_column(String(100), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="Active", nullable=False)
+    tag: Mapped[str] = mapped_column(String(100), nullable=True)
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class FPOTender(Base):
+    __tablename__ = "fpo_tenders"
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    fpo_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("fpo_groups.id", ondelete="CASCADE"), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    crop_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_pooled: Mapped[float] = mapped_column(Float, nullable=False)
+    current_pooled: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    target_price: Mapped[float] = mapped_column(Float, nullable=False)
+    buyer_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    closes_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="Open", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

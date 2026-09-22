@@ -108,27 +108,49 @@ class GrowerScoreRead(BaseModel):
 # --------------------------------------------------------------------------- #
 # FPO (#53 FPO Suite)
 # --------------------------------------------------------------------------- #
-class FPOGroupCreate(BaseModel):
-    name: str
-    member_farm_ids: List[str]
-
-
-class FPOGroupRead(BaseModel):
+class FPOMemberRead(BaseModel):
     id: UUID
-    name: str
-    member_farm_ids: List[str]
-    pooled_purchases: List[Dict[str, Any]]
-    pooled_sales: List[Dict[str, Any]]
-    scheme_compliance: Dict[str, Any]
+    fpo_id: UUID
+    farm_id: UUID
+    member_name: Optional[str] = None
+    pooled_quantity: float
+    crop_type: Optional[str] = None
+    status: str
+    tag: Optional[str] = None
+    joined_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FPOTenderRead(BaseModel):
+    id: UUID
+    fpo_id: UUID
+    title: str
+    crop_name: str
+    target_pooled: float
+    current_pooled: float
+    target_price: float
+    buyer_name: Optional[str] = None
+    closes_at: Optional[datetime] = None
+    status: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class FPOPoolItemCreate(BaseModel):
-    item: str
-    qty_kg: Optional[float] = None
-    amount: Optional[float] = None
-    vendor: Optional[str] = None
-    buyer: Optional[str] = None
-    notes: Optional[str] = None
+class FPOGroupDetailedRead(BaseModel):
+    id: UUID
+    name: str
+    registration_no: Optional[str] = None
+    hubs: Optional[str] = None
+    wallet_balance: float
+    members: List[FPOMemberRead] = Field(default_factory=list)
+    tenders: List[FPOTenderRead] = Field(default_factory=list)
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JoinTenderRequest(BaseModel):
+    farm_id: UUID
+    quantity_qtl: float
