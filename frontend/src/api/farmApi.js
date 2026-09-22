@@ -21,5 +21,7 @@ export const updateFarmProfile = (farmId, data) => api.put(`/farm/profile/${farm
 // Farm Boundary & Zones
 export const saveFarmBoundary = (farmId, data) => api.post(`/farm/${farmId}/boundary`, data);
 export const getFarmZones = (farmId) => api.get(`/farm/${farmId}/zones`);
+export const getFarmBoundary = (farmId) => api.get(`/farm/${farmId}/boundary`);
+export const getSoilAnalysis = (farmId) => api.get(`/farm/${farmId}/soil-analysis`);
 
 export default api;

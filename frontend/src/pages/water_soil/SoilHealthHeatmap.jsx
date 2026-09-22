@@ -1,10 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getSoilAnalysis } from '../../api/farmApi';
+
+// Classify a value into status + color based on metric thresholds
+function classify(metric, val) {
+  const thresholds = {
+    'Nitrogen (N)':   { optimal: 220, adequate: 170, moderate: 130 },
+    'Phosphorus (P)': { optimal: 25,  adequate: 16,  moderate: 10  },
+    'Potassium (K)':  { optimal: 150, adequate: 110, moderate: 80  },
+    'Moisture':       { optimal: 65,  adequate: 50,  moderate: 35  },
+    'pH Level':       { optimal: 7.2, adequate: 6.2, moderate: 5.5 },
+  };
+  const t = thresholds[metric];
+  if (val >= t.optimal) return { status: 'Optimal',   color: 'bg-[#1b5e20] text-white' };
+  if (val >= t.adequate) return { status: 'Adequate',  color: 'bg-[#388e3c] text-white' };
+  if (val >= t.moderate) return { status: 'Moderate',  color: 'bg-[#f57f17] text-white' };
+  return                       { status: 'Deficient', color: 'bg-[#b71c1c] text-white' };
+}
+
+const METRIC_KEY = {
+  'Nitrogen (N)': 'nitrogen', 'Phosphorus (P)': 'phosphorus',
+  'Potassium (K)': 'potassium', 'Moisture': 'moisture', 'pH Level': 'ph',
+};
+const UNIT = {
+  'Nitrogen (N)': 'kg/ha', 'Phosphorus (P)': 'kg/ha',
+  'Potassium (K)': 'kg/ha', 'Moisture': '%', 'pH Level': 'pH',
+};
 
 export default function SoilHealthHeatmap() {
   const navigate = useNavigate();
   const [activeMetric, setActiveMetric] = useState('Nitrogen (N)');
   const [activeCell, setActiveCell] = useState('B2');
+  const [rawGrid, setRawGrid] = useState(null);   // API data
+  const [dataSource, setDataSource] = useState(null);
+  const [fetchedAt, setFetchedAt] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const farmId = localStorage.getItem('farmId');
+
+  useEffect(() => {
+    if (!farmId) { setLoading(false); return; }
+    getSoilAnalysis(farmId)
+      .then(r => {
+        setRawGrid(r.data.grid);
+        setDataSource(r.data.source);
+        setFetchedAt(r.data.fetched_at);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [farmId]);
 
   const metrics = [
     { name: 'Nitrogen (N)', icon: 'eco' },
@@ -14,40 +58,56 @@ export default function SoilHealthHeatmap() {
     { name: 'pH Level', icon: 'thermostat' },
   ];
 
-  // Dummy 4x4 grid data matching HTML
-  const gridData = [
-    { zone: 'A1', val: 265, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'A2', val: 248, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'A3', val: 195, status: 'Adequate', color: 'bg-primary-fixed-dim text-on-primary-fixed-variant' },
-    { zone: 'A4', val: 155, status: 'Moderate', color: 'bg-secondary-fixed text-on-secondary-fixed' },
-    { zone: 'B1', val: 252, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'B2', val: 142, status: 'Deficient', color: 'bg-secondary text-on-secondary' }, // Target
-    { zone: 'B3', val: 138, status: 'Deficient', color: 'bg-secondary text-on-secondary' },
-    { zone: 'B4', val: 210, status: 'Adequate', color: 'bg-primary-fixed-dim text-on-primary-fixed-variant' },
-    { zone: 'C1', val: 241, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'C2', val: 176, status: 'Moderate', color: 'bg-secondary-fixed text-on-secondary-fixed' },
-    { zone: 'C3', val: 228, status: 'Adequate', color: 'bg-primary-fixed-dim text-on-primary-fixed-variant' },
-    { zone: 'C4', val: 250, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'D1', val: 255, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'D2', val: 205, status: 'Adequate', color: 'bg-primary-fixed-dim text-on-primary-fixed-variant' },
-    { zone: 'D3', val: 260, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-    { zone: 'D4', val: 240, status: 'Optimal', color: 'bg-primary-container text-on-primary' },
-  ];
+  // Build display grid from API data
+  const gridData = rawGrid
+    ? rawGrid.map(z => ({
+        zone: z.zone,
+        val: z[METRIC_KEY[activeMetric]],
+        ...classify(activeMetric, z[METRIC_KEY[activeMetric]]),
+      }))
+    : [];
 
   const activeCellData = gridData.find(c => c.zone === activeCell);
+  const unit = UNIT[activeMetric];
+
+  const optimal   = gridData.filter(c => c.status === 'Optimal').length;
+  const adequate  = gridData.filter(c => c.status === 'Adequate').length;
+  const moderate  = gridData.filter(c => c.status === 'Moderate').length;
+  const deficient = gridData.filter(c => c.status === 'Deficient').length;
+  const uniformityPct = gridData.length ? Math.round(((optimal + adequate) / 16) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
-      
 
-      <main className="flex flex-col relative w-full pt-28 pb-24 bg-surface flex-1">
+      <main className="flex flex-col relative w-full pt-20 pb-24 bg-surface flex-1">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center flex-1 gap-space-md pt-20">
+            <span className="material-symbols-outlined text-[48px] text-primary animate-spin">progress_activity</span>
+            <p className="font-body-md text-body-md text-on-surface-variant">Fetching satellite data...</p>
+          </div>
+        ) : (
         <div className="flex flex-col w-full px-gutter gap-space-md py-space-sm">
           {/* Header text */}
           <div className="flex flex-col gap-space-sm">
             <div className="flex items-center justify-between">
               <h1 className="font-headline-md text-headline-md text-on-surface tracking-tight">Soil Health Insights</h1>
-              <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Plot 1 • 4.5 Ac</span>
+              {/* Live data source badge */}
+              {dataSource === 'open-meteo' ? (
+                <span className="font-label-sm text-label-sm text-white bg-[#1b5e20] px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse inline-block"></span>
+                  Live · Open-Meteo
+                </span>
+              ) : (
+                <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
+                  Synthetic data
+                </span>
+              )}
             </div>
+            {fetchedAt && (
+              <p className="font-label-sm text-label-sm text-on-surface-variant">
+                Last updated: {new Date(fetchedAt).toLocaleTimeString()} · Moisture anchored to real satellite reading
+              </p>
+            )}
             
             {/* Horizontal scrolling tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-gutter px-gutter no-scrollbar">
@@ -134,7 +194,7 @@ export default function SoilHealthHeatmap() {
                     <span>{activeCellData.status}</span>
                   </span>
                   <span className={`font-label-md text-label-md font-bold block mt-1 ${activeCellData.status === 'Optimal' ? 'text-primary' : 'text-secondary'}`}>
-                    {activeCellData.val} kg/ha
+                    {activeCellData.val} {unit}
                   </span>
                 </div>
               </div>
@@ -147,15 +207,15 @@ export default function SoilHealthHeatmap() {
                 <span className="material-symbols-outlined text-primary-container text-[24px]">psychiatry</span>
                 <span className="font-headline-sm text-headline-sm text-on-surface">Field Uniformity Index</span>
               </div>
-              <span className="font-label-lg text-label-lg font-bold text-primary">78% Balanced</span>
+              <span className="font-label-lg text-label-lg font-bold text-primary">{uniformityPct}% Balanced</span>
             </div>
             <div className="w-full bg-surface-container-high rounded-full h-3 overflow-hidden flex">
-              <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: '78%' }}></div>
+              <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${uniformityPct}%` }}></div>
             </div>
             <div className="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
-              <span>12 Zones Optimal</span>
-              <span>2 Moderate</span>
-              <span className="text-secondary font-bold">2 Underfed</span>
+              <span>{optimal} Zones Optimal</span>
+              <span>{adequate} Adequate</span>
+              <span className="text-secondary font-bold">{moderate + deficient} Need Attention</span>
             </div>
             <div className="bg-surface-container-low rounded-xl p-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0">
@@ -173,10 +233,9 @@ export default function SoilHealthHeatmap() {
             </button>
           </div>
         </div>
+        )} {/* end loading ternary */}
       </main>
-      
-      {/* Bottom Nav */}
-      
+
     </div>
   );
 }

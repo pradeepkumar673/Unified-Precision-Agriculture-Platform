@@ -1,13 +1,10 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../App';
 import { useTranslation } from 'react-i18next';
-import { getFarmProfile, getFarmZones, updateFarmProfile } from '../../api/farmApi';
-
-// Lazy load map components to avoid SSR issues
-const MapContainer = lazy(() => import('react-leaflet').then(m => ({ default: m.MapContainer })));
-const TileLayer = lazy(() => import('react-leaflet').then(m => ({ default: m.TileLayer })));
-const Polygon = lazy(() => import('react-leaflet').then(m => ({ default: m.Polygon })));
+import { getFarmProfile, getFarmZones, updateFarmProfile, getFarmBoundary } from '../../api/farmApi';
+import { MapContainer, TileLayer, Polygon } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const SOIL_TYPES = [
   { key: 'clay_loam', label: 'Clay Loam' },
@@ -33,11 +30,13 @@ export default function FarmerProfileSettings() {
   const farmId = localStorage.getItem('farmId');
   const [farm, setFarm] = useState(null);
   const [zones, setZones] = useState([]);
+  const [boundaryPoints, setBoundaryPoints] = useState([]);
 
   // --- Modals ---
   const [isModulesSheetOpen, setIsModulesSheetOpen] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [mapKey, setMapKey] = useState(0); // increments each open to force Leaflet remount
 
   // --- Edit form state ---
   const [editName, setEditName] = useState('');
@@ -55,6 +54,10 @@ export default function FarmerProfileSettings() {
     if (!farmId) return;
     getFarmProfile(farmId).then(r => setFarm(r.data)).catch(() => {});
     getFarmZones(farmId).then(r => setZones(r.data || [])).catch(() => {});
+    getFarmBoundary(farmId).then(r => {
+      const pts = r.data?.boundary_points || [];
+      setBoundaryPoints(pts.map(p => [p.lat, p.lng]));
+    }).catch(() => {});
   };
 
   useEffect(() => {
@@ -67,13 +70,20 @@ export default function FarmerProfileSettings() {
   const totalArea = farm?.land_size_acres || 0;
   const areaHa = (totalArea * 0.404686).toFixed(2);
 
+  // Profile completion check (no fake KYC — based on real data)
+  const profileChecks = [
+    !!farm?.owner_name,
+    !!farm?.village || !!farm?.district,
+    boundaryPoints.length > 0,
+    !!farm?.current_crop,
+  ];
+  const completedCount = profileChecks.filter(Boolean).length;
+  const profilePct = Math.round((completedCount / profileChecks.length) * 100);
+  const profileComplete = completedCount === profileChecks.length;
+
   const plot1 = zones.length > 0 ? zones[0] : null;
   const plot2 = zones.length > 1 ? zones[1] : null;
 
-  // Get boundary waypoints from first zone
-  const boundaryPoints = plot1?.gps_points
-    ? plot1.gps_points.map(p => [p.lat, p.lng])
-    : [];
   const mapCenter = boundaryPoints.length > 0
     ? [
         boundaryPoints.reduce((s, p) => s + p[0], 0) / boundaryPoints.length,
@@ -180,13 +190,28 @@ export default function FarmerProfileSettings() {
           </div>
         </div>
 
-        {/* KYC Badge */}
+        {/* Profile Completion Strip */}
         <div className="bg-surface-container-low px-space-sm py-2 rounded-lg flex items-center justify-between gap-space-xs mt-space-sm">
           <div className="flex items-center gap-space-xs min-w-0">
-            <span className="material-symbols-outlined text-primary text-[18px] shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-            <span className="font-label-sm text-label-sm text-on-surface font-semibold truncate">KYC Verified</span>
+            <span
+              className={`material-symbols-outlined text-[18px] shrink-0 ${profileComplete ? 'text-primary' : 'text-secondary'}`}
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              {profileComplete ? 'verified' : 'pending'}
+            </span>
+            <span className="font-label-sm text-label-sm text-on-surface font-semibold truncate">
+              {profileComplete ? 'Profile Complete' : `Profile ${profilePct}% complete`}
+            </span>
           </div>
-          <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full shrink-0">Active</span>
+          {profileComplete ? (
+            <span className="font-label-sm text-label-sm text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full shrink-0">Active</span>
+          ) : (
+            <button
+              onClick={openEditSheet}
+              className="font-label-sm text-label-sm text-secondary font-bold bg-secondary-fixed px-2 py-0.5 rounded-full shrink-0 active:scale-95 transition-transform"
+              type="button"
+            >Fill Details</button>
+          )}
         </div>
       </div>
 
@@ -210,7 +235,7 @@ export default function FarmerProfileSettings() {
           </div>
           {/* EXPAND BUTTON → opens map modal showing saved boundary */}
           <button
-            onClick={() => setIsMapOpen(true)}
+            onClick={() => { setMapKey(k => k + 1); setIsMapOpen(true); }}
             className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0 active:scale-95 transition-transform"
             type="button"
             aria-label="View Farm Boundary Map"
@@ -381,7 +406,7 @@ export default function FarmerProfileSettings() {
           ════════════════════════════════════ */}
       {isEditSheetOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex flex-col justify-end"
+          className="fixed inset-0 z-[200] bg-black/50 flex flex-col justify-end"
           onClick={() => setIsEditSheetOpen(false)}
         >
           <div
@@ -574,12 +599,8 @@ export default function FarmerProfileSettings() {
             {/* Map */}
             <div className="flex-1 relative" style={{ minHeight: 0 }}>
               {boundaryPoints.length > 0 ? (
-                <Suspense fallback={
-                  <div className="w-full h-full bg-surface-container flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[48px] text-primary animate-pulse">satellite_alt</span>
-                  </div>
-                }>
                   <MapContainer
+                    key={mapKey}
                     center={mapCenter}
                     zoom={16}
                     scrollWheelZoom={true}
@@ -595,7 +616,6 @@ export default function FarmerProfileSettings() {
                       pathOptions={{ color: '#1b5e20', fillColor: '#4caf50', fillOpacity: 0.35, weight: 2 }}
                     />
                   </MapContainer>
-                </Suspense>
               ) : (
                 <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center gap-space-md p-space-lg">
                   <span className="material-symbols-outlined text-[64px] text-on-surface-variant">map</span>

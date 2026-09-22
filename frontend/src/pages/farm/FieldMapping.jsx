@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import AppShell from '../../layouts/AppShell';
 import { useNavigate } from 'react-router-dom';
-import { saveFarmBoundary, getFarmZones } from '../../api/farmApi';
+import { saveFarmBoundary, getFarmZones, updateFarmProfile } from '../../api/farmApi';
 import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import area from '@turf/area';
@@ -109,6 +109,28 @@ export default function FieldMapping() {
       await saveFarmBoundary(farmId, {
         gps_points: waypoints.map(p => ({ lat: p[0], lng: p[1] }))
       });
+
+      // Reverse geocode the centroid to auto-fill the farm's location
+      const centLat = waypoints.reduce((s, p) => s + p[0], 0) / waypoints.length;
+      const centLng = waypoints.reduce((s, p) => s + p[1], 0) / waypoints.length;
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${centLat}&lon=${centLng}&format=json`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const geoData = await geoRes.json();
+        if (geoData && geoData.address && farmId) {
+          const addr = geoData.address;
+          await updateFarmProfile(farmId, {
+            village: addr.village || addr.town || addr.suburb || addr.hamlet || '',
+            district: addr.county || addr.district || addr.city || '',
+            state: addr.state || '',
+          });
+        }
+      } catch (geoErr) {
+        console.warn('Reverse geocoding failed, location not auto-filled', geoErr);
+      }
+
       navigate('/farm/profile');
     } catch {
       setSaving(false);
