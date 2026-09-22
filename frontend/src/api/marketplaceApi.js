@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1/marketplace'
+  baseURL: `${API_BASE}/marketplace`
 });
 
 export const getEquipmentListings = () => api.get('/equipment');

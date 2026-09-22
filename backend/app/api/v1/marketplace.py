@@ -128,6 +128,18 @@ def create_order(
 # --------------------------------------------------------------------------- #
 # #7 Machinery Rental & #24 Dynamic Routing
 # --------------------------------------------------------------------------- #
+@router.get(
+    "/equipment",
+    response_model=list[EquipmentListingRead],
+    status_code=status.HTTP_200_OK,
+)
+def get_equipment(db: Session = Depends(get_db)):
+    """List all available equipment listings."""
+    listings = db.execute(
+        select(EquipmentListing).where(EquipmentListing.available == True)
+    ).scalars().all()
+    return listings
+
 @router.post(
     "/equipment/book",
     response_model=EquipmentBookingRead,

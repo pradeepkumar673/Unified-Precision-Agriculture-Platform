@@ -1,8 +1,12 @@
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1/finance'
+  baseURL: `${API_BASE}/finance`
 });
+
+export const getCreditProfile = (farmId) => api.get(`/credit-profile/${farmId}`);
 
 export const initiatePayment = (data) => api.post('/payment/initiate', data);
 export const paymentWebhook = (data) => api.post('/payment/webhook', data);

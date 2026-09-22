@@ -113,6 +113,24 @@ class LoanRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LoanOffer(BaseModel):
+    lender: str
+    title: str
+    subtitle: str
+    max_amount: float
+    interest_rate: float
+    tenure_months: int
+    processing_fee: float
+    benefits: List[str]
+
+
+class CreditProfileRead(BaseModel):
+    farm_id: UUID
+    credit_score: int
+    top_factors: List[Dict[str, Any]]
+    offers: List[LoanOffer]
+
+
 # --------------------------------------------------------------------------- #
 # Insurance Claims (#54 Insurance Claims)
 # --------------------------------------------------------------------------- #

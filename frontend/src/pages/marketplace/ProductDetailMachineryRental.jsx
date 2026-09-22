@@ -56,7 +56,7 @@ export default function ProductDetailMachineryRental() {
 
       <main className="flex flex-col w-full pb-32 flex-1">
         <div className="w-full aspect-[4/3] relative bg-surface-variant overflow-hidden">
-          <img alt="Harvester" className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1592982537447-6f2a6a0c5983?q=80&w=800&auto=format&fit=crop" />
+          <img alt="Harvester" className="w-full h-full object-cover" src="/images/harvester.jpg" />
           <div className="absolute bottom-3 left-3 bg-tertiary-container text-on-tertiary-container px-2.5 py-1 rounded-full font-label-sm text-label-sm shadow-sm flex items-center gap-1 font-bold">
             <span className="material-symbols-outlined text-[14px]">agriculture</span>
             <span>Heavy Machinery</span>

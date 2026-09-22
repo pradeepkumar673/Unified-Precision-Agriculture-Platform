@@ -37,6 +37,7 @@ from app.schemas.finance import (
     TransactionRead,
     WarehouseBookingCreate,
     WarehouseBookingRead,
+    CreditProfileRead,
 )
 from app.services.finance import (
     detect_transaction_anomaly,
@@ -271,6 +272,76 @@ def generate_enwr(
 # --------------------------------------------------------------------------- #
 # #50 Credit Marketplace & Scoring
 # --------------------------------------------------------------------------- #
+@router.get(
+    "/credit-profile/{farm_id}",
+    response_model=CreditProfileRead,
+    status_code=status.HTTP_200_OK,
+)
+def get_credit_profile(farm_id: UUID, db: Session = Depends(get_db)):
+    """Bank Simulator API: Generates the digital score and eligible bank loans."""
+    farm = db.execute(select(Farm).where(Farm.id == farm_id)).scalars().first()
+    if not farm:
+        # Fallback to demo logic if farm not found
+        score = 785
+        top_factors = [
+            {"factor": "4 Consecutive High-Yield Cycles", "impact": 65},
+            {"factor": "Verified Mandi Trade Invoices", "impact": 40},
+            {"factor": "Regular Soil Testing & Water Log", "impact": 30}
+        ]
+    else:
+        # Call the real AI credit scoring engine
+        score, approved, top_factors, terms = evaluate_loan_application(db, farm, 100000)
+
+    # Simulate Institutional Banking APIs matching the score
+    offers = []
+    if score >= 750:
+        offers.append(
+            {
+                "lender": "State Bank of India",
+                "title": "SBI Kisan Gold Card",
+                "subtitle": "Crop Cycle Line",
+                "max_amount": 1350000,
+                "interest_rate": 4.0,
+                "tenure_months": 12,
+                "processing_fee": 10.0,
+                "benefits": ["No Collateral up to ₹11.6L", "Direct DBT Transfer", "Govt Subsidized"]
+            }
+        )
+    if score >= 600:
+        offers.append(
+            {
+                "lender": "NABARD",
+                "title": "NABARD Agri-Infra Fund",
+                "subtitle": "Solar Pump & Micro-Drip Irrigation",
+                "max_amount": 500000,
+                "interest_rate": 5.5,
+                "tenure_months": 36,
+                "processing_fee": 0.0,
+                "benefits": ["Customized seasonal EMIs", "Bi-annual harvest windows"]
+            }
+        )
+    if score >= 500:
+        offers.append(
+            {
+                "lender": "Mahindra Agri-Finance",
+                "title": "Mahindra Agri-Finance",
+                "subtitle": "Tractor & Rotavator Financing",
+                "max_amount": 800000,
+                "interest_rate": 8.2,
+                "tenure_months": 60,
+                "processing_fee": 500.0,
+                "benefits": ["Explore Machinery Specs", "Flexible Terms"]
+            }
+        )
+
+    return {
+        "farm_id": farm_id,
+        "credit_score": score,
+        "top_factors": top_factors,
+        "offers": offers
+    }
+
+
 @router.post(
     "/loan/apply",
     response_model=LoanApplyResponse,

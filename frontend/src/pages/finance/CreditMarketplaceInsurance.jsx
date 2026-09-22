@@ -1,12 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applyLoan, fileInsuranceClaim } from '../../api/financeApi';
+import { applyLoan, fileInsuranceClaim, getCreditProfile } from '../../api/financeApi';
 
 export default function CreditMarketplaceInsurance() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('credit');
   const [isApplying, setIsApplying] = useState(false);
   const [isFiling, setIsFiling] = useState(false);
+  const [creditProfile, setCreditProfile] = useState(null);
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+        const res = await getCreditProfile(farmId);
+        setCreditProfile(res.data);
+      } catch (err) {
+        console.error('Failed to load credit profile', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleApplyLoan = async (amount) => {
     if (isApplying) return;
@@ -80,25 +94,29 @@ export default function CreditMarketplaceInsurance() {
         {activeTab === 'credit' && (
           <div className="flex flex-col gap-space-lg animate-fade-in" id="panel-credit">
             
-            <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
+              <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-md">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Kisan Digital Score</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-headline-lg text-headline-lg text-primary font-bold">785</span>
+                    <span className="font-headline-lg text-headline-lg text-primary font-bold">
+                      {creditProfile ? creditProfile.credit_score : '...'}
+                    </span>
                     <span className="font-label-sm text-label-sm text-on-surface-variant">/ 900</span>
                   </div>
                 </div>
                 <div className="bg-primary-fixed px-3 py-1.5 rounded-full flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                  <span className="font-label-sm text-label-sm text-on-primary-fixed font-bold">Tier-1 Pre-Approved</span>
+                  <span className="font-label-sm text-label-sm text-on-primary-fixed font-bold">
+                    {creditProfile && creditProfile.credit_score >= 700 ? 'Tier-1 Pre-Approved' : 'Evaluating...'}
+                  </span>
                 </div>
               </div>
               
               <div className="relative flex flex-col items-center justify-center py-2">
                 <svg className="w-48 h-24 overflow-visible" viewBox="0 0 160 85">
                   <path className="text-surface-container-highest" d="M 20 80 A 60 60 0 0 1 140 80" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="14"></path>
-                  <path className="text-primary" d="M 20 80 A 60 60 0 0 1 140 80" fill="none" stroke="currentColor" strokeDasharray="188.5" strokeDashoffset="36.2" strokeLinecap="round" strokeWidth="14"></path>
+                  <path className="text-primary" d="M 20 80 A 60 60 0 0 1 140 80" fill="none" stroke="currentColor" strokeDasharray="188.5" strokeDashoffset={creditProfile ? 188.5 - (188.5 * (Math.max(0, creditProfile.credit_score - 300) / 600)) : 188.5} strokeLinecap="round" strokeWidth="14"></path>
                 </svg>
                 <div className="flex justify-between w-48 px-1 text-on-surface-variant font-label-sm text-label-sm mt-1">
                   <span>300 (Fair)</span>
@@ -108,33 +126,21 @@ export default function CreditMarketplaceInsurance() {
               </div>
               
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Score updated yesterday via automated APMC mandi receipts, Sentinel-2 vegetation index, and spotless loan repayments.
+                Score updated dynamically via AI risk assessment of your climate, harvest logs, and transactions.
               </p>
               
               <div className="flex flex-col gap-2 pt-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Top Contributing Boosters</span>
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between bg-surface p-2.5 rounded-lg shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-[20px]">psychiatry</span>
-                      <span className="font-label-sm text-label-sm text-on-surface">4 Consecutive High-Yield Cycles</span>
+                  {creditProfile?.top_factors?.map((factor, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-surface p-2.5 rounded-lg shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-[20px]">verified</span>
+                        <span className="font-label-sm text-label-sm text-on-surface">{factor.factor}</span>
+                      </div>
+                      <span className="font-label-sm text-label-sm text-primary font-bold">+{factor.impact} pts</span>
                     </div>
-                    <span className="font-label-sm text-label-sm text-primary font-bold">+65 pts</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-surface p-2.5 rounded-lg shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
-                      <span className="font-label-sm text-label-sm text-on-surface">Verified Mandi Trade Invoices</span>
-                    </div>
-                    <span className="font-label-sm text-label-sm text-primary font-bold">+40 pts</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-surface p-2.5 rounded-lg shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-[20px]">water_drop</span>
-                      <span className="font-label-sm text-label-sm text-on-surface">Regular Soil Testing &amp; Water Log</span>
-                    </div>
-                    <span className="font-label-sm text-label-sm text-primary font-bold">+30 pts</span>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -142,87 +148,64 @@ export default function CreditMarketplaceInsurance() {
             <div className="flex flex-col gap-space-md">
               <div className="flex items-center justify-between">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Curated Institutional Loans</h2>
-                <span className="bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm px-2.5 py-0.5 rounded-full font-bold">3 Available</span>
+                <span className="bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm px-2.5 py-0.5 rounded-full font-bold">
+                  {creditProfile?.offers?.length || 0} Available
+                </span>
               </div>
               
-              <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex flex-col">
-                    <span className="font-label-sm text-label-sm text-secondary font-bold uppercase">Top Recommended Offer</span>
-                    <span className="font-headline-sm text-headline-sm text-on-surface font-bold">SBI Kisan Gold Card</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">State Bank of India • Crop Cycle Line</span>
+              {creditProfile?.offers?.map((offer, idx) => (
+                <div key={idx} className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col">
+                      {idx === 0 && <span className="font-label-sm text-label-sm text-secondary font-bold uppercase">Top Recommended Offer</span>}
+                      <span className="font-headline-sm text-headline-sm text-on-surface font-bold">{offer.title}</span>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">{offer.lender} • {offer.subtitle}</span>
+                    </div>
+                    <span className="material-symbols-outlined text-primary text-[26px]">
+                      {offer.lender.includes("SBI") ? "account_balance" : offer.lender.includes("NABARD") ? "solar_power" : "agriculture"}
+                    </span>
                   </div>
-                  <span className="material-symbols-outlined text-secondary-container text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance</span>
-                </div>
-                <div className="flex items-baseline gap-2 py-1">
-                  <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">₹13,50,000</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Pre-Approved Limit</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 bg-surface p-2.5 rounded-lg">
-                  <div className="flex flex-col">
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Interest</span>
-                    <span className="font-label-md text-label-md text-primary font-bold">4.0% p.a.*</span>
+                  <div className="flex items-baseline gap-2 py-1">
+                    <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">₹{(offer.max_amount).toLocaleString()}</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Pre-Approved Limit</span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Tenure</span>
-                    <span className="font-label-md text-label-md text-on-surface font-semibold">12 Mos</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Processing</span>
-                    <span className="font-label-md text-label-md text-on-surface font-semibold">₹10 Fee</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded">No Collateral up to ₹11.6L</span>
-                  <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded">Direct DBT Transfer</span>
-                  <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded">Govt Subsidized</span>
-                </div>
-                <button 
-                  disabled={isApplying}
-                  onClick={() => handleApplyLoan(1350000)}
-                  className="w-full mt-2 h-14 bg-secondary-container text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:opacity-95 shadow-sm disabled:opacity-70"
-                >
-                  <span>{isApplying ? 'Applying...' : 'Apply in 2 Mins'}</span>
-                  {!isApplying && <span className="material-symbols-outlined text-[20px]">arrow_forward</span>}
-                </button>
-              </div>
+                  
+                  {idx === 0 ? (
+                    <div className="grid grid-cols-3 gap-2 bg-surface p-2.5 rounded-lg">
+                      <div className="flex flex-col">
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">Interest</span>
+                        <span className="font-label-md text-label-md text-primary font-bold">{offer.interest_rate}% p.a.</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">Tenure</span>
+                        <span className="font-label-md text-label-md text-on-surface font-semibold">{offer.tenure_months} Mos</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">Processing</span>
+                        <span className="font-label-md text-label-md text-on-surface font-semibold">₹{offer.processing_fee} Fee</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">@ {offer.interest_rate}% p.a. • {Math.round(offer.tenure_months/12)} Years Term</span>
+                    </div>
+                  )}
 
-              <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex flex-col">
-                    <span className="font-headline-sm text-headline-sm text-on-surface font-bold">NABARD Agri-Infra Fund</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Solar Pump &amp; Micro-Drip Irrigation</span>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {offer.benefits.map((b, i) => (
+                       <span key={i} className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-2 py-0.5 rounded">{b}</span>
+                    ))}
                   </div>
-                  <span className="material-symbols-outlined text-primary text-[26px]">solar_power</span>
+                  <button 
+                    disabled={isApplying}
+                    onClick={() => handleApplyLoan(offer.max_amount)}
+                    className={`w-full mt-2 h-12 rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 transition-all ${idx === 0 ? 'bg-secondary-container text-on-secondary shadow-sm' : 'bg-surface text-primary shadow-sm active:bg-surface-container'} disabled:opacity-70`}
+                  >
+                    <span>{isApplying ? 'Applying...' : idx === 0 ? 'Apply in 2 Mins' : 'Check Eligibility'}</span>
+                    {!isApplying && <span className="material-symbols-outlined text-[18px]">chevron_right</span>}
+                  </button>
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-headline-sm text-headline-sm text-primary font-bold">Up to ₹5,00,000</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">@ 5.5% p.a.</span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">36 Months duration with customized seasonal EMIs tied to your bi-annual harvest windows.</p>
-                <button className="w-full h-12 bg-surface text-primary rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 active:bg-surface-container transition-colors shadow-sm">
-                  <span>Check Plot Eligibility</span>
-                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-                </button>
-              </div>
-
-              <div className="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex flex-col">
-                    <span className="font-headline-sm text-headline-sm text-on-surface font-bold">Mahindra Agri-Finance</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Tractor &amp; Rotavator Financing</span>
-                  </div>
-                  <span className="material-symbols-outlined text-primary text-[26px]">agriculture</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹8,00,000</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">@ 8.2% p.a. • 5 Years Term</span>
-                </div>
-                <button className="w-full h-12 bg-surface text-on-surface rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 active:bg-surface-container transition-colors shadow-sm">
-                  <span>Explore Machinery Specs</span>
-                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         )}

@@ -15,7 +15,9 @@ export default function MandiPriceForecast() {
   const [error, setError] = useState(null);
   const [alertSet, setAlertSet] = useState(false);
 
-  const fetchForecast = async () => {
+  const [selectedCrop, setSelectedCrop] = useState(null);
+
+  const fetchForecast = async (cropOverride) => {
     setLoading(true);
     setError(null);
     try {
@@ -23,10 +25,12 @@ export default function MandiPriceForecast() {
       const profile = profileRes.data;
       setFarmProfile(profile);
 
-      const crop = profile.current_crop || 'Wheat';
+      const targetCrop = cropOverride || profile.current_crop || 'Wheat';
       const district = profile.district || 'Nashik';
+      
+      if (!selectedCrop) setSelectedCrop(targetCrop);
 
-      const res = await getPriceForecast({ crop, district, weeks_ahead: 4 });
+      const res = await getPriceForecast({ crop: targetCrop, district, weeks_ahead: 4 });
       setForecast(res.data);
     } catch (err) {
       setError(err);
@@ -36,12 +40,17 @@ export default function MandiPriceForecast() {
     }
   };
 
+  const handleCropSelect = (newCrop) => {
+    setSelectedCrop(newCrop);
+    fetchForecast(newCrop);
+  };
+
   useEffect(() => {
     fetchForecast();
   }, [farmId]);
 
   // Derived Values
-  const crop = farmProfile?.current_crop || 'Wheat';
+  const crop = selectedCrop || farmProfile?.current_crop || 'Wheat';
   const district = farmProfile?.district || 'Nashik';
 
   let chartData = [];
@@ -115,7 +124,7 @@ export default function MandiPriceForecast() {
         </header>
       }
     >
-      <main className="flex flex-col relative w-full pt-[72px] pb-safe bg-background">
+      <main className="flex flex-col relative w-full pt-24 pb-safe bg-background">
         <DataBoundary loading={loading} error={error} onRetry={fetchForecast}>
           <div className="flex flex-col w-full px-margin pb-space-xl gap-space-md">
             {/* Title & Voice Readout Header */}
@@ -154,23 +163,17 @@ export default function MandiPriceForecast() {
           </div>
           
           {/* Crop Filter Chips */}
-          <div className="flex gap-space-xs overflow-x-auto py-1 -mx-margin px-margin no-scrollbar">
-            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md flex-shrink-0 shadow-sm">
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <span>{crop}</span>
-            </button>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex-shrink-0 hover:bg-surface-container-high active:scale-95 transition-all">
-              <span>Chana / Chickpea</span>
-            </button>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex-shrink-0 hover:bg-surface-container-high active:scale-95 transition-all">
-              <span>Soybean</span>
-            </button>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex-shrink-0 hover:bg-surface-container-high active:scale-95 transition-all">
-              <span>Moong Dal</span>
-            </button>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex-shrink-0 hover:bg-surface-container-high active:scale-95 transition-all">
-              <span>Mustard</span>
-            </button>
+          <div className="flex gap-space-xs overflow-x-auto py-2 -mx-margin px-margin [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {['wheat', 'Chana / Chickpea', 'Soybean', 'Moong Dal', 'Mustard'].map((c) => (
+              <button 
+                key={c}
+                onClick={() => handleCropSelect(c)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full font-label-md text-label-md flex-shrink-0 transition-all ${crop.toLowerCase() === c.toLowerCase() ? 'bg-primary-container text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high active:scale-95'}`}
+              >
+                {crop.toLowerCase() === c.toLowerCase() && <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>}
+                <span className="capitalize">{c}</span>
+              </button>
+            ))}
           </div>
           
           {/* Current Price Hero Card */}
@@ -301,7 +304,7 @@ export default function MandiPriceForecast() {
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-label-lg text-label-lg text-on-surface">Niphad Mandi</span>
+                      <span className="font-label-lg text-label-lg text-on-surface">{district} Central</span>
                       <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">18 km</span>
                     </div>
                     <div className="flex items-center gap-1 text-on-surface-variant mt-0.5">
@@ -311,7 +314,7 @@ export default function MandiPriceForecast() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="font-headline-sm text-headline-sm font-bold text-on-surface">₹2,390</span>
+                  <span className="font-headline-sm text-headline-sm font-bold text-on-surface">₹{(currentPrice * 0.98).toFixed(0)}</span>
                   <span className="block font-label-sm text-label-sm text-on-surface-variant">Modal rate</span>
                 </div>
               </div>
@@ -324,7 +327,7 @@ export default function MandiPriceForecast() {
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-label-lg text-label-lg text-on-surface">Pimpalgaon APMC</span>
+                      <span className="font-label-lg text-label-lg text-on-surface">{district} South</span>
                       <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">24 km</span>
                     </div>
                     <div className="flex items-center gap-1 text-primary mt-0.5">
@@ -334,7 +337,7 @@ export default function MandiPriceForecast() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="font-headline-sm text-headline-sm font-bold text-on-surface">₹2,405</span>
+                  <span className="font-headline-sm text-headline-sm font-bold text-on-surface">₹{(currentPrice * 0.99).toFixed(0)}</span>
                   <span className="block font-label-sm text-label-sm text-on-surface-variant">Modal rate</span>
                 </div>
               </div>
