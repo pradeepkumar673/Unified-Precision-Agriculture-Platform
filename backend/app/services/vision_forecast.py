@@ -479,13 +479,22 @@ def forecast_price(crop: str, district: str, weeks_ahead: int) -> dict:
         for reg_name in getattr(model_obj, "extra_regressors", {}):
             future_df[reg_name] = 0
         forecast  = model_obj.predict(future_df)
-        last_row  = forecast.iloc[-1]
+        timeline = []
+        for i in range(weeks_ahead + 1):  # 0 to weeks_ahead
+            row = forecast.iloc[i]
+            timeline.append({
+                "week": i,
+                "predicted_price": round(float(row["yhat"]), 2),
+                "low_ci": round(float(row["yhat_lower"]), 2),
+                "high_ci": round(float(row["yhat_upper"]), 2)
+            })
 
         return {
-            "predicted_price": round(float(last_row["yhat"]), 2),
-            "low_ci":          round(float(last_row["yhat_lower"]), 2),
-            "high_ci":         round(float(last_row["yhat_upper"]), 2),
-            "model_type":      "prophet_trained",
+            "predicted_price": timeline[-1]["predicted_price"],
+            "low_ci": timeline[-1]["low_ci"],
+            "high_ci": timeline[-1]["high_ci"],
+            "timeline": timeline,
+            "model_type": "prophet_trained",
         }
 
     except Exception:
@@ -503,15 +512,26 @@ def _linear_forecast(history: list, weeks_ahead: int) -> dict:
     sin_part  = np.sin(2 * np.pi * x / 52.0)
     a = 2.0 * np.mean(residuals * cos_part)
     b = 2.0 * np.mean(residuals * sin_part)
-    tx   = len(y) - 1 + weeks_ahead
-    pred = slope * tx + intercept + a * math.cos(2*math.pi*tx/52) + b * math.sin(2*math.pi*tx/52)
     std_err  = float(np.std(residuals))
-    ci_width = 1.96 * std_err * math.sqrt(1 + weeks_ahead / len(y))
+
+    timeline = []
+    for i in range(weeks_ahead + 1):  # 0 to weeks_ahead
+        tx = len(y) - 1 + i
+        pred = slope * tx + intercept + a * math.cos(2*math.pi*tx/52) + b * math.sin(2*math.pi*tx/52)
+        ci_width = 1.96 * std_err * math.sqrt(1 + i / len(y)) if len(y) > 0 else 0
+        timeline.append({
+            "week": i,
+            "predicted_price": round(float(pred), 2),
+            "low_ci": round(float(pred - ci_width), 2),
+            "high_ci": round(float(pred + ci_width), 2)
+        })
+
     return {
-        "predicted_price": round(float(pred), 2),
-        "low_ci":          round(float(pred - ci_width), 2),
-        "high_ci":         round(float(pred + ci_width), 2),
-        "model_type":      "linear_fallback",
+        "predicted_price": timeline[-1]["predicted_price"],
+        "low_ci": timeline[-1]["low_ci"],
+        "high_ci": timeline[-1]["high_ci"],
+        "timeline": timeline,
+        "model_type": "linear_fallback",
     }
 
 

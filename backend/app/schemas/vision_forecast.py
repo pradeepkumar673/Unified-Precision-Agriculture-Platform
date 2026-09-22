@@ -36,10 +36,18 @@ class GrainQualityResponse(BaseModel):
     grade: GrainGrade
 
 
+class PriceForecastPoint(BaseModel):
+    week: int
+    predicted_price: float
+    low_ci: float
+    high_ci: float
+
+
 class PriceForecastResponse(BaseModel):
     predicted_price: float
     low_ci: float
     high_ci: float
+    timeline: list[PriceForecastPoint]
 
 
 class YieldForecastRequest(BaseModel):

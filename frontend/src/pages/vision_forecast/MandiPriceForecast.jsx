@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPriceForecast } from '../../api/visionForecastApi';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts';
+import { getFarmProfile } from '../../api/farmApi';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Line, ComposedChart, ReferenceDot } from 'recharts';
 import AppShell from '../../layouts/AppShell';
 import DataBoundary from '../../components/DataBoundary';
 
 export default function MandiPriceForecast() {
   const navigate = useNavigate();
+  const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
   const [forecast, setForecast] = useState(null);
+  const [farmProfile, setFarmProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [alertSet, setAlertSet] = useState(false);
@@ -16,7 +19,14 @@ export default function MandiPriceForecast() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getPriceForecast({ crop: 'Wheat', district: 'Nashik', weeks_ahead: 4 });
+      const profileRes = await getFarmProfile(farmId);
+      const profile = profileRes.data;
+      setFarmProfile(profile);
+
+      const crop = profile.current_crop || 'Wheat';
+      const district = profile.district || 'Nashik';
+
+      const res = await getPriceForecast({ crop, district, weeks_ahead: 4 });
       setForecast(res.data);
     } catch (err) {
       setError(err);
@@ -28,22 +38,38 @@ export default function MandiPriceForecast() {
 
   useEffect(() => {
     fetchForecast();
-  }, []);
+  }, [farmId]);
 
-  // Map API response to Recharts format if available, otherwise use mock fallback for layout matching
-  const data = forecast ? [
-    { name: 'Today', predicted: 12420, range: [12100, 12600], displayPredicted: forecast.predicted_price },
-    { name: 'Wk 1', predicted: 12470, range: [12150, 12650] },
-    { name: 'Wk 2', predicted: 12540, range: [12200, 12700] },
-    { name: 'Wk 3', predicted: 12610, range: [12250, 12750] },
-    { name: 'Wk 4', predicted: 12580, range: [12200, 12720] }
-  ] : [
-    { name: 'Today', predicted: 12420, range: [12100, 12600] },
-    { name: 'Wk 1', predicted: 12470, range: [12150, 12650] },
-    { name: 'Wk 2', predicted: 12540, range: [12200, 12700] },
-    { name: 'Wk 3', predicted: 12610, range: [12250, 12750] },
-    { name: 'Wk 4', predicted: 12580, range: [12200, 12720] }
-  ];
+  // Derived Values
+  const crop = farmProfile?.current_crop || 'Wheat';
+  const district = farmProfile?.district || 'Nashik';
+
+  let chartData = [];
+  let peakPrice = 0;
+  let peakWeek = 0;
+  let currentPrice = 0;
+  let gainPct = 0;
+
+  if (forecast && forecast.timeline) {
+    chartData = forecast.timeline.map((pt, idx) => ({
+      name: idx === 0 ? 'Today' : `Wk ${idx}`,
+      predicted: pt.predicted_price,
+      range: [pt.low_ci, pt.high_ci]
+    }));
+
+    currentPrice = forecast.timeline[0].predicted_price;
+    
+    forecast.timeline.forEach((pt, idx) => {
+      if (pt.predicted_price > peakPrice) {
+        peakPrice = pt.predicted_price;
+        peakWeek = idx;
+      }
+    });
+
+    if (currentPrice > 0) {
+      gainPct = (((peakPrice - currentPrice) / currentPrice) * 100).toFixed(1);
+    }
+  }
 
   const handlePriceAlert = () => {
     setAlertSet(true);
@@ -64,7 +90,7 @@ export default function MandiPriceForecast() {
                 </div>
                 <button className="flex items-center gap-1 text-left min-w-0 group">
                   <span className="material-symbols-outlined text-[16px] text-secondary">location_on</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant truncate group-hover:text-primary">Plot 1 • Wheat</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant truncate group-hover:text-primary">{farmProfile?.name || 'Farm'} • {crop}</span>
                   <span className="material-symbols-outlined text-[14px] text-outline">arrow_drop_down</span>
                 </button>
               </div>
@@ -102,7 +128,7 @@ export default function MandiPriceForecast() {
                 </span>
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
-                Multi-mandi modal price projection for Nashik & Lasalgaon APMC
+                Multi-mandi modal price projection for {district} APMC
               </p>
             </div>
             <button aria-label="Read forecast aloud in English" className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-full bg-surface-container-high text-primary active:scale-95 transition-transform flex-shrink-0 shadow-sm" id="voiceAssistBtn" onClick={() => {
@@ -117,7 +143,7 @@ export default function MandiPriceForecast() {
           <div id="voiceBanner" className="hidden flex items-center justify-between p-space-sm rounded-lg bg-surface-container-highest text-on-surface">
             <div className="flex items-center gap-space-xs">
               <span className="material-symbols-outlined text-[20px] text-secondary animate-pulse">graphic_eq</span>
-              <span className="font-label-sm text-label-sm text-on-surface">Speaking: "Wheat expected to peak at ₹2,610 in Week 3..."</span>
+              <span className="font-label-sm text-label-sm text-on-surface">Speaking: "{crop} expected to peak at ₹{peakPrice} in Week {peakWeek}..."</span>
             </div>
             <button className="text-on-surface-variant hover:text-on-surface" onClick={() => {
               const banner = document.getElementById('voiceBanner');
@@ -131,7 +157,7 @@ export default function MandiPriceForecast() {
           <div className="flex gap-space-xs overflow-x-auto py-1 -mx-margin px-margin no-scrollbar">
             <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md flex-shrink-0 shadow-sm">
               <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <span>Sharbati Wheat</span>
+              <span>{crop}</span>
             </button>
             <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex-shrink-0 hover:bg-surface-container-high active:scale-95 transition-all">
               <span>Chana / Chickpea</span>
@@ -157,12 +183,12 @@ export default function MandiPriceForecast() {
               </div>
             </div>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-on-surface tracking-tight">₹2,420</span>
+              <span className="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-on-surface tracking-tight">₹{currentPrice}</span>
               <span className="font-body-md text-body-md text-on-surface-variant">/ Quintal</span>
             </div>
             <div className="flex items-center gap-1.5 text-on-surface-variant">
               <span className="material-symbols-outlined text-[18px] text-secondary">store</span>
-              <span className="font-label-sm text-label-sm font-medium">Lasalgaon APMC Modal Rate (Rabi Harvest Grade A)</span>
+              <span className="font-label-sm text-label-sm font-medium">{district} APMC Modal Rate</span>
             </div>
           </div>
           
@@ -175,13 +201,13 @@ export default function MandiPriceForecast() {
               <div className="flex flex-col flex-1">
                 <div className="flex items-center justify-between">
                   <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-secondary-fixed-variant font-bold">Recommended Window</span>
-                  <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary font-bold">14 Days Left</span>
+                  <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary font-bold">{peakWeek === 0 ? 'Sell Now' : `${peakWeek * 7} Days Left`}</span>
                 </div>
                 <h2 className="font-headline-sm text-headline-sm text-on-secondary-fixed font-bold mt-0.5">
-                  Best Time to Sell: Week 3 (18–24 March)
+                  Best Time to Sell: {peakWeek === 0 ? 'This Week' : `Week ${peakWeek}`}
                 </h2>
                 <p className="font-body-sm text-body-sm text-on-secondary-fixed-variant mt-1.5 leading-relaxed">
-                  Projected peak at <strong className="text-on-secondary-fixed font-bold">₹2,610/Qtl (+7.8% gain)</strong> driven by bulk flour mill procurement before MP arrivals flood regional markets. Holding for 14 days strongly recommended.
+                  Projected peak at <strong className="text-on-secondary-fixed font-bold">₹{peakPrice}/Qtl (+{gainPct}% gain)</strong> driven by AI demand forecasting in {district}. {peakWeek === 0 ? 'Current prices are favorable.' : `Holding for ${peakWeek * 7} days strongly recommended.`}
                 </p>
               </div>
             </div>
@@ -200,41 +226,30 @@ export default function MandiPriceForecast() {
             </div>
             
             <div className="w-full mt-2 select-none">
-              <svg className="w-full h-48 overflow-visible" viewBox="0 0 340 160">
-                <defs>
-                  <linearGradient id="bandGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#91d78a" stopOpacity="0.45"></stop>
-                    <stop offset="100%" stopColor="#acf4a4" stopOpacity="0.08"></stop>
-                  </linearGradient>
-                  <filter height="140%" id="softGlow" width="140%" x="-20%" y="-20%">
-                    <feDropShadow dx="0" dy="2" floodColor="#00450d" floodOpacity="0.25" stdDeviation="3"></feDropShadow>
-                  </filter>
-                </defs>
-                <line stroke="#f0eded" strokeWidth="1" x1="20" x2="320" y1="30" y2="30"></line>
-                <line stroke="#f0eded" strokeWidth="1" x1="20" x2="320" y1="70" y2="70"></line>
-                <line stroke="#f0eded" strokeWidth="1" x1="20" x2="320" y1="110" y2="110"></line>
-                <rect fill="#ffdbcf" height="120" opacity="0.4" rx="6" width="50" x="220" y="10"></rect>
-                <line stroke="#fc6018" strokeDasharray="3,3" strokeWidth="1.5" x1="245" x2="245" y1="12" y2="130"></line>
-                <rect fill="#fc6018" height="18" rx="4" width="60" x="215" y="6"></rect>
-                <text fill="#ffffff" fontFamily="Inter" fontSize="9" fontWeight="700" textAnchor="middle" x="245" y="19">Peak Window</text>
-                <polygon fill="url(#bandGradient)" points="25,105 95,88 170,62 245,28 315,48 315,80 245,60 170,94 95,112 25,125"></polygon>
-                <path d="M 25,115 Q 60,108 95,100 T 170,78 T 245,44 T 315,64" fill="none" filter="url(#softGlow)" stroke="#00450d" strokeLinecap="round" strokeWidth="3"></path>
-                <circle cx="25" cy="115" fill="#ffffff" r="4.5" stroke="#00450d" strokeWidth="2.5"></circle>
-                <text fill="#41493e" fontFamily="Inter" fontSize="9" fontWeight="600" textAnchor="middle" x="25" y="132">₹2,420</text>
-                <text fill="#717a6d" fontFamily="Inter" fontSize="9" textAnchor="middle" x="25" y="145">Today</text>
-                <circle cx="95" cy="100" fill="#ffffff" r="4" stroke="#00450d" strokeWidth="2"></circle>
-                <text fill="#41493e" fontFamily="Inter" fontSize="9" fontWeight="600" textAnchor="middle" x="95" y="90">₹2,470</text>
-                <text fill="#717a6d" fontFamily="Inter" fontSize="9" textAnchor="middle" x="95" y="145">Wk 1</text>
-                <circle cx="170" cy="78" fill="#ffffff" r="4" stroke="#00450d" strokeWidth="2"></circle>
-                <text fill="#41493e" fontFamily="Inter" fontSize="9" fontWeight="600" textAnchor="middle" x="170" y="68">₹2,540</text>
-                <text fill="#717a6d" fontFamily="Inter" fontSize="9" textAnchor="middle" x="170" y="145">Wk 2</text>
-                <circle cx="245" cy="44" fill="#fc6018" r="6" stroke="#ffffff" strokeWidth="2.5"></circle>
-                <text fill="#531800" fontFamily="Inter" fontSize="10" fontWeight="800" textAnchor="middle" x="245" y="38">₹2,610 ★</text>
-                <text fill="#a83900" fontFamily="Inter" fontSize="9" fontWeight="700" textAnchor="middle" x="245" y="145">Wk 3</text>
-                <circle cx="315" cy="64" fill="#ffffff" r="4" stroke="#00450d" strokeWidth="2"></circle>
-                <text fill="#41493e" fontFamily="Inter" fontSize="9" fontWeight="600" textAnchor="middle" x="315" y="55">₹2,580</text>
-                <text fill="#717a6d" fontFamily="Inter" fontSize="9" textAnchor="middle" x="315" y="145">Wk 4</text>
-              </svg>
+              {chartData.length > 0 && (
+                <div className="w-full h-48 -ml-3">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="bandGradientReal" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#91d78a" stopOpacity="0.45" />
+                          <stop offset="100%" stopColor="#acf4a4" stopOpacity="0.08" />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#717a6d', fontSize: 11, fontFamily: 'Inter' }} dy={10} />
+                      <YAxis domain={['dataMin - 100', 'dataMax + 100']} hide={true} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        labelStyle={{ color: '#41493e', fontWeight: 'bold' }}
+                        itemStyle={{ color: '#00450d' }}
+                      />
+                      <Area type="monotone" dataKey="range" stroke="none" fill="url(#bandGradientReal)" />
+                      <Line type="monotone" dataKey="predicted" stroke="#00450d" strokeWidth={3} dot={{ r: 4, fill: '#ffffff', stroke: '#00450d', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      <ReferenceDot x={`Wk ${peakWeek}`} y={peakPrice} r={6} fill="#fc6018" stroke="#ffffff" strokeWidth={2.5} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
             
             <div className="flex items-center justify-center gap-space-md pt-2 border-t border-surface-container">
@@ -263,7 +278,7 @@ export default function MandiPriceForecast() {
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-label-lg text-label-lg text-on-surface">Lasalgaon APMC</span>
+                      <span className="font-label-lg text-label-lg text-on-surface">{district} APMC</span>
                       <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">12 km</span>
                     </div>
                     <div className="flex items-center gap-1 text-primary mt-0.5">
@@ -273,7 +288,7 @@ export default function MandiPriceForecast() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="font-headline-sm text-headline-sm font-bold text-on-surface">₹2,420</span>
+                  <span className="font-headline-sm text-headline-sm font-bold text-on-surface">₹{currentPrice}</span>
                   <span className="block font-label-sm text-label-sm text-on-surface-variant">Modal rate</span>
                 </div>
               </div>
@@ -340,7 +355,7 @@ export default function MandiPriceForecast() {
               ) : (
                 <>
                   <span className="material-symbols-outlined text-[24px]">notification_add</span>
-                  <span className="font-headline-sm text-headline-sm font-bold">Set Mandi Price Alert (at ₹2,600)</span>
+                  <span className="font-headline-sm text-headline-sm font-bold">Set Mandi Price Alert (at ₹{peakPrice})</span>
                   <span className="material-symbols-outlined text-[22px]">arrow_forward</span>
                 </>
               )}
@@ -353,7 +368,7 @@ export default function MandiPriceForecast() {
                 banner.innerHTML = `
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-[20px] text-primary">verified</span>
-                    <span class="font-label-sm text-label-sm text-on-surface">3 Warehouses with subsidy available near Lasalgaon. Opening slots...</span>
+                    <span class="font-label-sm text-label-sm text-on-surface">3 Warehouses with subsidy available near ${district}. Opening slots...</span>
                   </div>
                   <button onclick="this.parentElement.classList.add('hidden')" class="text-on-surface-variant">
                     <span class="material-symbols-outlined text-[18px]">close</span>

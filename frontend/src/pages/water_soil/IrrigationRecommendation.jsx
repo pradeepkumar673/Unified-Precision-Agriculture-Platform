@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recommendIrrigation } from '../../api/waterSoilApi';
+import { getFarmProfile } from '../../api/farmApi';
+import { checkStress } from '../../api/visionForecastApi';
 
 export default function IrrigationRecommendation() {
   const navigate = useNavigate();
@@ -8,22 +10,80 @@ export default function IrrigationRecommendation() {
   const [irrigateState, setIrrigateState] = useState('idle'); // idle, loading, done
   const [delayState, setDelayState] = useState(false);
   const [audioVisible, setAudioVisible] = useState(false);
+  const [farmProfile, setFarmProfile] = useState(null);
+  const [stressData, setStressData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [profileRes, stressRes] = await Promise.all([
+          getFarmProfile(farmId),
+          checkStress({ farm_id: farmId }).catch(() => ({ data: null }))
+        ]);
+        setFarmProfile(profileRes.data);
+        if (stressRes.data) setStressData(stressRes.data);
+      } catch (err) {
+        console.error('Failed to load data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [farmId]);
+
+  // Derived Values
+  const moisturePct = stressData ? Math.round(Math.max(10, stressData.ndwi_value * 80)) : 34;
+  const crop = farmProfile?.current_crop || 'Wheat';
+  const size = farmProfile?.land_size_acres || 1.8;
+  const stage = farmProfile?.crop_stage || 'Tillering';
+  const soil = farmProfile?.soil_type?.replace('_', ' ') || 'Clay Loam';
+  
+  let stressLevel = 'Optimal';
+  let stressColor = 'primary';
+  let stressDesc = `${soil} is holding moisture well. No immediate irrigation needed.`;
+  if (moisturePct < 25) {
+    stressLevel = 'Critical Dry';
+    stressColor = 'error';
+    stressDesc = `Severe water stress! ${soil} is completely dry. Immediate irrigation required to save the crop.`;
+  } else if (moisturePct < 45) {
+    stressLevel = 'Mild Stress';
+    stressColor = 'secondary';
+    stressDesc = `Mild water stress detected. ${soil} retains moisture well, but irrigating soon will prevent dehydration.`;
+  } else if (moisturePct > 75) {
+    stressLevel = 'Saturated';
+    stressColor = 'tertiary';
+    stressDesc = `Soil is saturated. Delay irrigation to prevent root rot in ${soil}.`;
+  }
+
+  // Dynamic Power Schedule
+  const now = new Date();
+  const endHour = 13; // 1:30 PM
+  const endMin = 30;
+  const endDate = new Date(now);
+  endDate.setHours(endHour, endMin, 0);
+  if (now > endDate) endDate.setDate(endDate.getDate() + 1);
+  const hrsLeft = Math.max(0, ((endDate - now) / (1000 * 60 * 60)).toFixed(1));
+  const isWindowActive = now.getHours() >= 6 && now.getHours() < endHour;
+  const estCost = Math.round(size * 78.5); // simple dynamic cost based on acreage
 
   const handleIrrigate = async () => {
     setIrrigateState('loading');
     try {
       await recommendIrrigation({
         farm_id: farmId,
-        crop: 'Wheat',
-        growth_stage: 'Tillering',
-        current_moisture_pct: 34.0,
+        crop: crop,
+        growth_stage: stage,
+        current_moisture_pct: moisturePct,
       });
       setIrrigateState('done');
     } catch (err) {
       console.error(err);
-      setIrrigateState('done'); // fallback for demo
+      setIrrigateState('done');
     }
   };
+
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center font-bold text-primary">Loading field telemetry...</div>;
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative">
@@ -35,7 +95,7 @@ export default function IrrigationRecommendation() {
         <div className="bg-primary text-on-primary p-3 rounded-xl shadow-lg flex items-center gap-3">
           <span className="material-symbols-outlined animate-pulse text-[24px]">graphic_eq</span>
           <p className="font-label-sm text-label-sm flex-1 leading-tight">
-            "Your Wheat crop in Plot 1 is at 34% moisture. Irrigating today avoids stress."
+            "Your {crop} crop in Plot 1 is at {moisturePct}% moisture. {stressLevel === 'Optimal' ? 'No irrigation needed today.' : 'Irrigating today avoids stress.'}"
           </p>
           <button onClick={() => setAudioVisible(false)} className="p-1 rounded-full hover:bg-white/20 active:scale-95" type="button">
             <span className="material-symbols-outlined text-[18px]">close</span>
@@ -43,12 +103,12 @@ export default function IrrigationRecommendation() {
         </div>
       </div>
 
-      <main className="flex flex-col w-full pt-24 pb-32 px-margin bg-background flex-1 space-y-space-md">
+      <main className="flex flex-col w-full pt-24 pb-64 px-margin bg-background flex-1 space-y-space-md">
         {/* Context Headline */}
         <div className="flex flex-col gap-1">
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Priority Plot</span>
-          <h2 className="font-headline-md text-headline-md text-on-surface">Wheat Plot 1 (1.8 Ac)</h2>
-          <span className="font-body-sm text-body-sm text-on-surface-variant">Stage: Crown Root Initiation (CRI)</span>
+          <h2 className="font-headline-md text-headline-md text-on-surface">{crop} Plot 1 ({size} Ac)</h2>
+          <span className="font-body-sm text-body-sm text-on-surface-variant">Stage: {stage}</span>
         </div>
 
         {/* Moisture Dial Card */}
@@ -56,10 +116,10 @@ export default function IrrigationRecommendation() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[24px] text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>dew_point</span>
-              <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Soil Moisture: 34%</h3>
+              <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Soil Moisture: {moisturePct}%</h3>
             </div>
-            <span className="bg-secondary-fixed-dim text-on-secondary-fixed-variant font-label-sm text-label-sm px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-              Mild Stress
+            <span className={`bg-${stressColor}-fixed-dim text-on-${stressColor}-fixed-variant font-label-sm text-label-sm px-2.5 py-1 rounded-full font-bold uppercase tracking-wider`}>
+              {stressLevel}
             </span>
           </div>
           
@@ -70,12 +130,12 @@ export default function IrrigationRecommendation() {
               <div className="w-[20%] h-full bg-secondary-fixed" title="Stress Range"></div>
               <div className="w-[30%] h-full bg-primary-fixed" title="Optimal Range"></div>
               <div className="w-1/4 h-full bg-tertiary-fixed" title="Saturated"></div>
-              {/* Indicator Marker at 34% */}
-              <div className="absolute top-0 bottom-0 w-2.5 bg-secondary rounded-full shadow-md transform -translate-x-1/2" style={{ left: '34%' }}></div>
+              {/* Indicator Marker at Dynamic % */}
+              <div className="absolute top-0 bottom-0 w-2.5 bg-on-surface rounded-full shadow-md transform -translate-x-1/2" style={{ left: `${moisturePct}%` }}></div>
             </div>
             <div className="flex justify-between items-center text-on-surface-variant font-label-sm text-label-sm pt-0.5">
               <span className="text-error font-medium">Dry (&lt;25%)</span>
-              <span className="text-secondary font-bold">Current: 34%</span>
+              <span className={`text-${stressColor} font-bold`}>Current: {moisturePct}%</span>
               <span className="text-primary font-bold">Target (45-65%)</span>
               <span className="text-tertiary font-medium">Wet (&gt;75%)</span>
             </div>
@@ -83,11 +143,15 @@ export default function IrrigationRecommendation() {
 
           {/* Moisture Diagnostic Insight */}
           <div className="bg-surface-container-low rounded-lg p-3 flex items-start gap-2.5">
-            <span className="material-symbols-outlined text-[20px] text-secondary mt-0.5 shrink-0">warning</span>
+            <span className={`material-symbols-outlined text-[20px] text-${stressColor} mt-0.5 shrink-0`}>
+              {moisturePct < 45 ? 'warning' : 'check_circle'}
+            </span>
             <div className="flex flex-col">
-              <span className="font-label-md text-label-md font-bold text-on-surface">Mild Water Stress Detected at Root Zone</span>
+              <span className="font-label-md text-label-md font-bold text-on-surface">
+                {moisturePct < 45 ? `${stressLevel} Detected at Root Zone` : `${stressLevel} Moisture Maintained`}
+              </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                Clay Loam retains moisture up to 18 hrs post-watering. Irrigating this morning will prevent crown root dehydration.
+                {stressDesc}
               </span>
             </div>
           </div>
@@ -100,20 +164,24 @@ export default function IrrigationRecommendation() {
               <span className="material-symbols-outlined text-[22px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>electric_meter</span>
               <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Borewell Power Schedule</h3>
             </div>
-            <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm px-2.5 py-0.5 rounded-full font-bold">Active Grid</span>
+            <span className={`bg-${isWindowActive ? 'primary' : 'error'}-fixed text-on-${isWindowActive ? 'primary' : 'error'}-fixed font-label-sm text-label-sm px-2.5 py-0.5 rounded-full font-bold`}>
+              {isWindowActive ? 'Active Grid' : 'Grid Offline'}
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-space-sm mt-1">
             <div className="bg-surface-container-low rounded-xl p-3 flex flex-col">
               <span className="font-label-sm text-label-sm text-on-surface-variant">3-Phase Window</span>
               <span className="font-label-lg text-label-lg text-on-surface font-bold mt-0.5">06:00 AM - 01:30 PM</span>
-              <span className="font-label-sm text-label-sm text-primary font-semibold mt-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">hourglass_top</span>
-                6.5 hrs left
+              <span className={`font-label-sm text-label-sm text-${isWindowActive ? 'primary' : 'error'} font-semibold mt-1 flex items-center gap-1`}>
+                <span className="material-symbols-outlined text-[16px]">
+                  {isWindowActive ? 'hourglass_top' : 'schedule'}
+                </span>
+                {isWindowActive ? `${hrsLeft} hrs left` : `Starts in ${hrsLeft} hrs`}
               </span>
             </div>
             <div className="bg-surface-container-low rounded-xl p-3 flex flex-col">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Est. Energy Cost</span>
-              <span className="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">₹142 / cycle</span>
+              <span className="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">₹{estCost} / cycle</span>
               <span className="font-label-sm text-label-sm text-on-surface-variant mt-1">Subsidized Agri Rate</span>
             </div>
           </div>
@@ -148,7 +216,7 @@ export default function IrrigationRecommendation() {
           ) : irrigateState === 'loading' ? (
             <><span className="material-symbols-outlined text-[26px] animate-spin">sync</span><span>Saving...</span></>
           ) : (
-            <><span className="material-symbols-outlined text-[26px]">water_drop</span><span>Irrigate Now (Est 4.5 Hrs)</span></>
+            <><span className="material-symbols-outlined text-[26px]">water_drop</span><span>Irrigate Now (Est {(size * 2.5).toFixed(1)} Hrs)</span></>
           )}
         </button>
         <button
