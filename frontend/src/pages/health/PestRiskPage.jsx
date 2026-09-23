@@ -1,219 +1,294 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer 
-} from 'recharts';
-import { Bug, AlertTriangle, ShieldAlert, Map, RefreshCw } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { useNavigate } from 'react-router-dom';
+import { getFarmProfile } from '../../api/farmApi';
+import { getPestRiskMap, getSurveillanceMap, getPublicDiseaseReports } from '../../api/healthApi';
 
 export default function PestRiskPage() {
-  const [district, setDistrict] = useState('Pune');
-  const [riskData, setRiskData] = useState([]);
-  const [surveillanceData, setSurveillanceData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const farmId = localStorage.getItem('farmId');
 
-  const fetchData = async () => {
-    if (!district) return;
+  const [farm, setFarm] = useState(null);
+  const [district, setDistrict] = useState('');
+  const [riskData, setRiskData] = useState([]);
+  const [publicReports, setPublicReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('risk'); // 'risk' | 'reports'
+
+  // Load farm profile first, then use its district
+  useEffect(() => {
+    if (!farmId) { setLoading(false); return; }
+    getFarmProfile(farmId)
+      .then(res => {
+        const f = res.data;
+        setFarm(f);
+        const d = f?.district || 'Ambur';
+        setDistrict(d);
+        return fetchData(d);
+      })
+      .catch(() => setLoading(false));
+  }, [farmId]);
+
+  const fetchData = async (d) => {
     setLoading(true);
-    setError('');
-    
+    setError(null);
     try {
-      const [riskRes, survRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/v1/health/pest-risk-map?district=${district}`),
-        axios.get(`${API_BASE}/api/v1/health/surveillance-map?district=${district}`)
+      const [riskRes, reportsRes] = await Promise.all([
+        getPestRiskMap(d),
+        getPublicDiseaseReports(d).catch(() => ({ data: [] })),
       ]);
-      setRiskData(riskRes.data);
-      setSurveillanceData(survRes.data);
+      setRiskData(riskRes.data || []);
+      setPublicReports(reportsRes.data || []);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch pest surveillance data');
+      setError(err.response?.data?.detail || 'Failed to load pest data');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [district]);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (district.trim()) fetchData(district.trim());
+  };
 
-  // Format data for Radar Chart (Risk Scores)
-  const radarData = riskData.map(d => ({
-    village: d.village_name,
-    risk: Math.round(d.risk_score * 100),
-    fullMark: 100
-  }));
+  const highRisk = riskData.filter(d => d.risk_score >= 0.7);
+  const medRisk = riskData.filter(d => d.risk_score >= 0.4 && d.risk_score < 0.7);
 
-  // Format data for Bar Chart (Surveillance Counts)
-  const barData = surveillanceData.length > 0 
-    ? surveillanceData.map(d => ({ name: d.village || d.village_name || 'Unknown', cases: d.case_count ?? d.count ?? 0 }))
-    : riskData.map(d => ({ name: d.village_name, cases: d.contributing_reports_count }));
+  const getRiskColor = (score) => {
+    if (score >= 0.7) return { bg: 'bg-error-container', fg: 'text-error', bar: 'bg-error', label: 'Critical', labelStyle: 'bg-error-container text-error' };
+    if (score >= 0.4) return { bg: 'bg-tertiary-fixed', fg: 'text-tertiary', bar: 'bg-tertiary', label: 'Monitor', labelStyle: 'bg-tertiary-fixed text-tertiary' };
+    return { bg: 'bg-primary-fixed', fg: 'text-primary', bar: 'bg-primary', label: 'Safe', labelStyle: 'bg-primary-fixed text-primary' };
+  };
 
-  const highRiskVillages = riskData.filter(d => d.risk_score >= 0.7);
+  const getSeverityStyle = (sev) => {
+    if (!sev) return 'bg-surface-container text-on-surface-variant';
+    const s = sev.toLowerCase();
+    if (s === 'high') return 'bg-error-container text-error';
+    if (s === 'medium') return 'bg-tertiary-fixed text-tertiary';
+    return 'bg-primary-fixed text-primary';
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500">
-            Pest & Disease Surveillance
-          </h1>
-          <p className="text-slate-400 mt-1">Regional risk heatmaps and community reporting data</p>
-        </div>
-        <div className="flex items-center space-x-2 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700/50">
-          <input
-            value={district}
-            onChange={e => setDistrict(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 w-48 text-white"
-            placeholder="District Name"
-          />
-          <button 
-            onClick={fetchData}
-            aria-label="Refresh data"
-            className="w-11 h-11 flex items-center justify-center bg-orange-500/20 text-orange-400 rounded-md hover:bg-orange-500/30 transition-colors"
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b border-outline-variant">
+        <div className="flex items-center gap-3 px-margin py-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low active:scale-95 transition-all"
+            aria-label="Go back"
           >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            <span className="material-symbols-outlined text-on-surface text-[24px]">arrow_back</span>
+          </button>
+          <div className="flex-1">
+            <h1 className="font-title-md text-title-md text-on-surface">Pest & Disease Risk</h1>
+            <p className="font-label-sm text-label-sm text-on-surface-variant">{district || 'Loading…'} District</p>
+          </div>
+          <button
+            onClick={() => fetchData(district)}
+            disabled={loading}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low active:scale-95 transition-all"
+            aria-label="Refresh"
+          >
+            <span className={`material-symbols-outlined text-primary text-[22px] ${loading ? 'animate-spin' : ''}`}>refresh</span>
           </button>
         </div>
+
+        {/* District search bar */}
+        <form onSubmit={handleSearch} className="px-margin pb-3">
+          <div className="flex items-center gap-2 bg-surface-container rounded-xl px-space-md h-12 border border-outline-variant focus-within:border-primary transition-colors">
+            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">location_on</span>
+            <input
+              value={district}
+              onChange={e => setDistrict(e.target.value)}
+              placeholder="Search district…"
+              className="flex-1 bg-transparent font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:outline-none"
+            />
+            <button type="submit" className="text-primary font-label-md text-label-md">Search</button>
+          </div>
+        </form>
       </div>
 
-      {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
+      <main className="flex-1 px-margin pb-28 pt-4 flex flex-col gap-space-md">
 
-      {/* Alert Banner */}
-      {highRiskVillages.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-4">
-          <div className="bg-red-500/20 p-2 rounded-full shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-400" />
+        {/* Farm context chip */}
+        {farm && (
+          <div className="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-sm rounded-xl">
+            <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>landscape</span>
+            <span className="font-label-md text-label-md text-on-surface truncate">
+              {farm.name} · {farm.district}, {farm.state}
+            </span>
           </div>
-          <div>
-            <h3 className="text-red-400 font-bold text-lg">High Risk Alert</h3>
-            <p className="text-slate-300 text-sm mt-1">
-              Elevated pest activity detected in <span className="font-semibold text-white">{highRiskVillages.map(v => v.village_name).join(', ')}</span>. 
-              Preventive spraying recommended.
-            </p>
-          </div>
-        </div>
-      )}
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Radar Chart */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <Bug className="w-5 h-5 text-orange-400" /> Village Risk Radar
-          </h2>
-          <div className="h-[350px] w-full">
-            {radarData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                  <PolarGrid stroke="#334155" />
-                  <PolarAngleAxis dataKey="village" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#64748b' }} />
-                  <Radar name="Risk Score" dataKey="risk" stroke="#f97316" fill="#f97316" fillOpacity={0.4} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', color: '#f8fafc' }} />
-                </RadarChart>
-              </ResponsiveContainer>
+        {error && (
+          <div className="flex items-center gap-space-sm bg-error-container text-error font-label-md text-label-md px-space-md py-space-sm rounded-xl">
+            <span className="material-symbols-outlined text-[18px]">error</span>
+            {error}
+          </div>
+        )}
+
+        {/* Alert banner for high risk villages */}
+        {!loading && highRisk.length > 0 && (
+          <div className="bg-error-container rounded-2xl p-space-md flex items-start gap-space-sm">
+            <div className="w-10 h-10 rounded-full bg-error flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="material-symbols-outlined text-on-error text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+            </div>
+            <div>
+              <p className="font-label-lg text-label-lg text-error font-bold">High Risk Alert!</p>
+              <p className="font-body-sm text-body-sm text-on-error-container mt-0.5">
+                Elevated pest pressure in <span className="font-semibold">{highRisk.map(v => v.village_name).join(', ')}</span>. Preventive spraying recommended immediately.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Summary stat cards */}
+        {!loading && riskData.length > 0 && (
+          <div className="grid grid-cols-3 gap-space-sm">
+            {[
+              { icon: 'crisis_alert', label: 'Critical', count: highRisk.length, style: 'text-error', bg: 'bg-error-container' },
+              { icon: 'visibility', label: 'Monitor', count: medRisk.length, style: 'text-tertiary', bg: 'bg-tertiary-fixed' },
+              { icon: 'check_circle', label: 'Safe', count: riskData.length - highRisk.length - medRisk.length, style: 'text-primary', bg: 'bg-primary-fixed' },
+            ].map(s => (
+              <div key={s.label} className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col items-center gap-1">
+                <div className={`w-9 h-9 rounded-full ${s.bg} ${s.style} flex items-center justify-center`}>
+                  <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>{s.icon}</span>
+                </div>
+                <span className={`font-headline-sm text-headline-sm ${s.style} font-bold`}>{s.count}</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tab Switch */}
+        <div className="flex bg-surface-container rounded-xl p-1 gap-1">
+          {[
+            { id: 'risk', label: 'Village Risk Map', icon: 'pest_control' },
+            { id: 'reports', label: 'Community Reports', icon: 'groups' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-label-md text-label-md transition-all ${
+                activeTab === tab.id
+                  ? 'bg-surface-container-lowest text-primary shadow-sm font-bold'
+                  : 'text-on-surface-variant'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Loading state */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="w-12 h-12 rounded-full border-4 border-surface-container-high border-t-primary animate-spin" />
+            <p className="font-body-md text-body-md text-on-surface-variant">Loading pest data for {district}…</p>
+          </div>
+        )}
+
+        {/* RISK TAB */}
+        {!loading && activeTab === 'risk' && (
+          <div className="flex flex-col gap-space-sm">
+            {riskData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 bg-surface-container-lowest rounded-2xl">
+                <span className="material-symbols-outlined text-[48px] text-on-surface-variant">pest_control</span>
+                <p className="font-body-md text-body-md text-on-surface-variant">No risk data for {district}</p>
+              </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-500">No data available</div>
-            )}
-          </div>
-        </div>
-
-        {/* Bar Chart */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-red-400" /> Community Surveillance Cases
-          </h2>
-          <div className="h-[350px] w-full">
-            {barData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" tick={{fill: '#94a3b8'}} axisLine={false} tickLine={false} />
-                  <YAxis stroke="#f87171" axisLine={false} tickLine={false} />
-                  <RechartsTooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', color: '#f8fafc' }}
-                    cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                  />
-                  <Bar dataKey="cases" name="Reported Cases" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-500">No data available</div>
-            )}
-          </div>
-        </div>
-
-        {/* Heatmap Table */}
-        <div className="lg:col-span-2 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl">
-          <div className="px-6 py-4 border-b border-slate-700/50 bg-slate-900/40 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Map className="w-5 h-5 text-blue-400" /> District Heatmap Data
-            </h2>
-            {riskData.length > 0 && (
-              <span className="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-400 border border-slate-700">
-                Model: {riskData[0].model_type || 'heuristic'}
-              </span>
-            )}
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-400 uppercase bg-slate-900/60 border-b border-slate-700">
-                <tr>
-                  <th className="px-6 py-3">Village</th>
-                  <th className="px-6 py-3">District</th>
-                  <th className="px-6 py-3">Week Of</th>
-                  <th className="px-6 py-3">Community Reports</th>
-                  <th className="px-6 py-3">Risk Score</th>
-                  <th className="px-6 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {riskData.length === 0 ? (
-                  <tr><td colSpan="6" className="px-6 py-4 text-center text-slate-500">No records found.</td></tr>
-                ) : riskData.map((row, idx) => (
-                  <tr key={idx} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
-                    <td className="px-6 py-4 font-medium text-white">{row.village_name}</td>
-                    <td className="px-6 py-4 text-slate-400">{row.district}</td>
-                    <td className="px-6 py-4 text-slate-400">{row.week_of}</td>
-                    <td className="px-6 py-4">
-                      <span className="bg-slate-800 text-slate-300 py-1 px-2 rounded font-mono">{row.contributing_reports_count}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full bg-slate-700 rounded-full h-1.5 max-w-[80px]">
-                          <div 
-                            className={`h-1.5 rounded-full ${row.risk_score >= 0.7 ? 'bg-red-500' : row.risk_score >= 0.4 ? 'bg-orange-500' : 'bg-emerald-500'}`} 
-                            style={{ width: `${row.risk_score * 100}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs font-mono text-slate-300">{(row.risk_score).toFixed(2)}</span>
+              riskData.map((row, idx) => {
+                const style = getRiskColor(row.risk_score);
+                const pct = Math.round(row.risk_score * 100);
+                return (
+                  <div key={idx} className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-center gap-space-md">
+                    <div className={`w-12 h-12 rounded-full ${style.bg} ${style.fg} flex items-center justify-center flex-shrink-0`}>
+                      <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>pest_control</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <p className="font-label-lg text-label-lg text-on-surface font-bold truncate">{row.village_name}</p>
+                        <span className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm font-bold ${style.labelStyle} flex-shrink-0`}>{style.label}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {row.risk_score >= 0.7 ? (
-                        <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded uppercase">Critical</span>
-                      ) : row.risk_score >= 0.4 ? (
-                        <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs font-bold rounded uppercase">Monitor</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded uppercase">Safe</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      {/* Risk progress bar */}
+                      <div className="w-full bg-surface-container-high rounded-full h-2 mb-1">
+                        <div
+                          className={`h-2 rounded-full ${style.bar} transition-all`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">{row.contributing_reports_count} community reports</p>
+                        <p className="font-label-sm text-label-sm text-on-surface-variant font-mono">{pct}% risk</p>
+                      </div>
+                      <p className="font-label-xs text-label-xs text-on-surface-variant mt-0.5">Week of {new Date(row.week_of).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-        </div>
+        )}
 
-      </div>
+        {/* REPORTS TAB */}
+        {!loading && activeTab === 'reports' && (
+          <div className="flex flex-col gap-space-sm">
+            {publicReports.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 bg-surface-container-lowest rounded-2xl">
+                <span className="material-symbols-outlined text-[48px] text-on-surface-variant">groups</span>
+                <p className="font-body-md text-body-md text-on-surface-variant">No community reports for {district}</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant text-center px-8">Be the first to report a disease sighting to help your community.</p>
+              </div>
+            ) : (
+              publicReports.slice(0, 20).map((report, idx) => (
+                <div key={idx} className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-start gap-space-sm">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getSeverityStyle(report.severity)}`}>
+                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>coronavirus</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-label-lg text-label-lg text-on-surface font-bold truncate capitalize">{report.predicted_disease}</p>
+                      <span className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm font-bold capitalize ${getSeverityStyle(report.severity)} flex-shrink-0`}>
+                        {report.severity || 'Unknown'}
+                      </span>
+                    </div>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant capitalize mt-0.5">Crop: {report.crop || 'Unknown'}</p>
+                    <p className="font-label-xs text-label-xs text-on-surface-variant mt-0.5">
+                      {new Date(report.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Advisory card */}
+        {!loading && riskData.length > 0 && (
+          <div className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-outline-variant mt-2">
+            <div className="flex items-center gap-space-sm mb-space-sm">
+              <span className="material-symbols-outlined text-secondary text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>tips_and_updates</span>
+              <p className="font-label-lg text-label-lg text-on-surface font-bold">Pest Advisory</p>
+            </div>
+            <ul className="flex flex-col gap-2">
+              {highRisk.length > 0 && <li className="flex items-start gap-2 font-body-sm text-body-sm text-on-surface"><span className="material-symbols-outlined text-error text-[16px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>circle</span>Apply recommended pesticide in {highRisk.map(v => v.village_name).join(', ')} immediately.</li>}
+              <li className="flex items-start gap-2 font-body-sm text-body-sm text-on-surface"><span className="material-symbols-outlined text-primary text-[16px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>circle</span>Scout fields every 3–4 days during active pest pressure.</li>
+              <li className="flex items-start gap-2 font-body-sm text-body-sm text-on-surface"><span className="material-symbols-outlined text-primary text-[16px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>circle</span>Use pheromone traps to monitor pest population trends.</li>
+              <li className="flex items-start gap-2 font-body-sm text-body-sm text-on-surface"><span className="material-symbols-outlined text-primary text-[16px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>circle</span>Report sightings via the Leaf Disease Scanner to help community surveillance.</li>
+            </ul>
+            <button
+              onClick={() => navigate('/health/leaf-scanner')}
+              className="mt-space-md w-full h-12 bg-primary-container text-on-primary rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm active:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-[20px]">camera_alt</span>
+              Scan a Leaf Now
+            </button>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
-

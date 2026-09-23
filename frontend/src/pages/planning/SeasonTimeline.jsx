@@ -10,6 +10,17 @@ export default function SeasonTimeline() {
   const farmId = localStorage.getItem('farmId');
   const [timelineData, setTimelineData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showActivities, setShowActivities] = useState(false);
+
+  const CROP_ACTIVITIES = {
+    sugarcane:  ['Soil preparation', 'Planting setts', 'Irrigation #1', 'Basal fertilizer', 'Earthing up', 'Weeding', 'Nitrogen top-dress', 'Irrigation #2', 'Irrigation #3', 'Pest scouting', 'De-trashing', 'Harvesting'],
+    wheat:      ['Soil tillage', 'Seed treatment', 'Sowing', 'Irrigation (CRI)', 'Basal fertilizer', 'Weeding', 'Nitrogen top-dress', 'Irrigation (tillering)', 'Irrigation (boot)', 'Pest spray', 'Harvesting'],
+    rice:       ['Nursery prep', 'Transplanting', 'Irrigation', 'Basal fertilizer', 'Weeding', 'Nitrogen split', 'Pest scouting', 'Irrigation #2', 'Harvesting'],
+    maize:      ['Soil prep', 'Sowing', 'Basal fertilizer', 'Irrigation', 'Weeding', 'Nitrogen top-dress', 'Pest spray', 'Harvesting'],
+    cotton:     ['Land prep', 'Seed sowing', 'Gap filling', 'Irrigation', 'Fertilizer basal', 'Boll weevil spray', 'Nitrogen split', 'Irrigation #2', 'Defoliation', 'Picking'],
+    soybean:    ['Land prep', 'Seed treatment', 'Sowing', 'Basal fertilizer', 'Weeding', 'Irrigation', 'Pest scouting', 'Harvesting'],
+    default:    ['Land preparation', 'Sowing', 'Irrigation', 'Fertilizer application', 'Weeding', 'Pest management', 'Harvesting'],
+  };
 
   useEffect(() => {
     console.log('[Timeline] farmId from localStorage:', farmId);
@@ -19,19 +30,22 @@ export default function SeasonTimeline() {
       return;
     }
 
-    // First get the farm profile for soil data
-    getFarmProfile(farmId)
-      .then(farmRes => {
+    // Fetch farm profile and latest crop plan concurrently
+    Promise.all([getFarmProfile(farmId), getCropPlan(farmId).catch(() => ({ data: [] }))])
+      .then(([farmRes, planRes]) => {
         const farm = farmRes.data;
+        const latestPlan = planRes.data?.[0];
         console.log('[Timeline] Farm profile:', farm);
 
         const soilN = farm?.soil_nitrogen ?? 35.5;
         const soilOC = farm?.soil_organic_carbon ?? 0.8;
 
-        // crop_history may be empty [] — use current_crop as fallback
+        const activeCrop = latestPlan?.recommended_crop || farm?.current_crop || 'fallow';
+
+        // crop_history may be empty [] — use activeCrop as fallback
         const historyItems = Array.isArray(farm?.crop_history) && farm.crop_history.length > 0
           ? farm.crop_history.map(h => (typeof h === 'string' ? h : h.crop))
-          : [farm?.current_crop || 'wheat', 'rice', 'fallow'];
+          : ['wheat', 'rice', activeCrop];
         const lastCrops = historyItems.slice(0, 3);
         console.log('[Timeline] lastCrops:', lastCrops);
 
@@ -134,8 +148,33 @@ export default function SeasonTimeline() {
                           <p className="font-body-sm text-body-sm text-on-surface">{card.taskLabel}</p>
                         </div>
                       </div>
+                      <button onClick={() => setShowActivities(!showActivities)} className="w-full mt-space-md h-12 border border-primary text-primary font-label-md text-label-md rounded-xl flex items-center justify-center gap-space-xs active:bg-primary/10 transition-colors" type="button">
+                        <span>{showActivities ? 'Hide' : 'Show'} Scheduled Activities</span>
+                        <span className="material-symbols-outlined text-[18px]">{showActivities ? 'expand_less' : 'expand_more'}</span>
+                      </button>
+
+                      {showActivities && (
+                        <div className="mt-space-md flex flex-col gap-3 relative">
+                          <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-surface-container-highest"></div>
+                          {(CROP_ACTIVITIES[card.crop.toLowerCase()] || CROP_ACTIVITIES.default).map((act, i, arr) => {
+                            const isCompleted = (i / arr.length) < (card.progressPct / 100);
+                            const isCurrent = (i / arr.length) >= (card.progressPct / 100) && (i - 1 < 0 || ((i - 1) / arr.length) < (card.progressPct / 100));
+                            return (
+                              <div key={i} className="flex items-center gap-3 relative z-10">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isCompleted ? 'bg-primary text-on-primary' : isCurrent ? 'bg-secondary-container text-secondary border-2 border-secondary' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                                  {isCompleted ? <span className="material-symbols-outlined text-[16px]">check</span> : <span className="text-[12px] font-bold">{i + 1}</span>}
+                                </div>
+                                <div className={`flex-1 ${isCompleted ? 'text-on-surface-variant line-through' : isCurrent ? 'text-on-surface font-bold' : 'text-on-surface-variant'}`}>
+                                  {act}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <button onClick={() => navigate('/planning/crop-plan')} className="w-full mt-space-md h-14 bg-secondary-container text-on-secondary-container font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-space-sm shadow-md active:scale-[0.98] transition-transform" type="button">
-                        <span>View Rabi Advisory &amp; Tasks</span>
+                        <span>View {card.crop} Advisory & Tasks</span>
                         <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                       </button>
                     </>
@@ -163,7 +202,7 @@ export default function SeasonTimeline() {
                         </div>
                       </div>
                       <button onClick={() => navigate('/planning/crop-plan')} className="w-full mt-space-md h-12 bg-surface-container-high text-primary font-label-md text-label-md rounded-xl flex items-center justify-center gap-space-xs active:bg-surface-container-highest transition-colors" type="button">
-                        <span>Plan Zaid Crop</span>
+                        <span>Plan {card.crop} Now</span>
                         <span className="material-symbols-outlined text-[18px]">add_task</span>
                       </button>
                     </>

@@ -455,10 +455,10 @@ def get_insurance_profile(farm_id: UUID, db: Session = Depends(get_db)):
     year_str = f"{now.year}-{now.year+1}" if season == "Rabi" else str(now.year)
     
     # Fake plot details based on farm
-    acres = round(farm.total_area_hectares * 2.47105, 1) if farm.total_area_hectares else 4.5
+    acres = round(farm.land_size_acres, 1) if farm.land_size_acres else 4.5
     
     active_policy = {
-        "policy_id": f"PMFBY-{farm.state_or_province[:2].upper() if farm.state_or_province else 'IN'}-{now.year}-99{now.month}{now.day}",
+        "policy_id": f"PMFBY-{farm.state[:2].upper() if farm.state else 'IN'}-{now.year}-99{now.month}{now.day}",
         "name": f"PM Fasal Bima Yojana ({season} {year_str})",
         "crop_details": f"Plot 1 ({acres} Acres Farm Coverage)",
         "sum_insured": round(acres * 40000, 2),

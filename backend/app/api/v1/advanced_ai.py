@@ -13,6 +13,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -36,6 +37,7 @@ from app.services.advanced_ai import (
     run_federated_learning_round,
     run_whatif_simulation,
     transcribe_and_respond,
+    text_query_with_groq,
 )
 
 router = APIRouter(prefix="/api/v1/advanced_ai", tags=["advanced_ai"])
@@ -89,6 +91,44 @@ async def voice_query(
         language=record.language,
         response_text=record.response_text,
         created_at=record.created_at,
+    )
+
+
+# ---------------------------------------------------------------------------
+# #55b Text Query (browser speech recognition → Groq answer)
+# ---------------------------------------------------------------------------
+class TextQueryRequest(BaseModel):
+    farm_id: UUID
+    question: str
+    language: str = "en"
+
+
+class TextQueryResponse(BaseModel):
+    question: str
+    response_text: str
+    language: str
+
+
+@router.post("/text-query", response_model=TextQueryResponse)
+def text_query(
+    payload: "TextQueryRequest",
+    db: Session = Depends(get_db),
+):
+    """Answer a text question (from browser speech recognition) using Groq LLM."""
+    farm = db.execute(select(Farm).where(Farm.id == payload.farm_id)).scalars().first()
+    if not farm:
+        raise HTTPException(status_code=404, detail="Farm not found")
+
+    farm_context = (
+        f"Farmer grows {farm.current_crop or 'mixed crops'} on {farm.land_size_acres or 4.5} acres "
+        f"of {farm.soil_type.value if hasattr(farm.soil_type, 'value') else str(farm.soil_type)} soil "
+        f"in {farm.district or ''}, {farm.state or 'India'}."
+    )
+    answer = text_query_with_groq(payload.question, farm_context)
+    return TextQueryResponse(
+        question=payload.question,
+        response_text=answer,
+        language=payload.language,
     )
 
 

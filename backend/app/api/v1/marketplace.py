@@ -6,11 +6,12 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, WebSocket, WebSocketDisconnect
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.api.websockets import manager
 from app.models.farm import Farm
 from app.models.marketplace import (
     B2BStandingOrder,
@@ -40,6 +41,8 @@ from app.schemas.marketplace import (
     OrderCreate,
     OrderRead,
     ProductRead,
+    ProductCreate,
+    EquipmentListingCreate,
 )
 from app.services.marketplace import (
     calculate_equipment_eta,
@@ -50,12 +53,45 @@ from app.services.marketplace import (
 router = APIRouter(prefix="/api/v1/marketplace", tags=["marketplace"])
 
 
+@router.websocket("/ws/{farm_id}")
+async def websocket_endpoint(websocket: WebSocket, farm_id: str):
+    """WebSocket endpoint for real-time marketplace updates."""
+    await manager.connect(websocket, farm_id)
+    try:
+        while True:
+            # We just keep the connection open and listen for disconnects
+            # Clients primarily receive data, but we can accept messages if needed
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, farm_id)
+
+
 @router.get("/equipment", response_model=List[EquipmentListingRead])
 def get_equipment_listings(db: Session = Depends(get_db)):
     """Return currently available equipment listings for the rental UI."""
     return db.execute(
         select(EquipmentListing).where(EquipmentListing.available.is_(True))
     ).scalars().all()
+
+@router.post("/equipment", response_model=EquipmentListingRead, status_code=status.HTTP_201_CREATED)
+async def create_equipment_listing(
+    payload: EquipmentListingCreate,
+    db: Session = Depends(get_db),
+):
+    """Create a new equipment rental listing and broadcast to connected farmers."""
+    listing = EquipmentListing(**payload.model_dump())
+    db.add(listing)
+    db.commit()
+    db.refresh(listing)
+    
+    # Broadcast to all connected clients
+    listing_data = EquipmentListingRead.model_validate(listing).model_dump(mode="json")
+    await manager.broadcast({
+        "type": "NEW_EQUIPMENT",
+        "data": listing_data
+    })
+    
+    return listing
 
 
 @router.get("/labor", response_model=List[LaborListingRead])
@@ -87,6 +123,27 @@ def get_products(
     products = db.execute(stmt).scalars().all()
     ranked = rank_products(products, farm)
     return ranked
+
+
+@router.post("/products", response_model=ProductRead, status_code=status.HTTP_201_CREATED)
+async def create_product(
+    payload: ProductCreate,
+    db: Session = Depends(get_db),
+):
+    """Create a new product listing and broadcast to connected farmers."""
+    product = Product(**payload.model_dump())
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    
+    # Broadcast to all connected clients
+    product_data = ProductRead.model_validate(product).model_dump(mode="json")
+    await manager.broadcast({
+        "type": "NEW_PRODUCT",
+        "data": product_data
+    })
+    
+    return product
 
 
 @router.post("/order", response_model=OrderRead, status_code=status.HTTP_201_CREATED)

@@ -201,13 +201,64 @@ def analyze_weed_image(image_path: str) -> dict:
         }
 
 
-# --------------------------------------------------------------------------- #
-# #20 Pest Spread - synthetic seed data
-# --------------------------------------------------------------------------- #
-VILLAGE_NAME_POOL = [
-    "Rampur", "Keshavpur", "Ganeshpur", "Lakshmipuram", "Chandanpur",
-    "Sundarpur", "Mahadevpur", "Anandnagar", "Shivpuri", "Krishnanagar",
+# District → real villages lookup.
+# When live surveillance data is absent we seed synthetic scores using
+# actual panchayat / revenue-village names for the requested district.
+DISTRICT_VILLAGES: dict[str, list[str]] = {
+    # Vellore / Ambur belt – Tamil Nadu
+    "ambur":       ["Ambur Town", "Natrampalli", "Vaniyambadi", "Jolarpettai", "Pernambut",
+                    "Gudiyatham", "Vellore", "Katpadi", "Arcot", "Arakkonam"],
+    "vellore":     ["Vellore City", "Katpadi", "Arcot", "Arakkonam", "Ranipet",
+                    "Sholinghur", "Walajah", "Kaveripakkam", "Timiri", "Nemili"],
+    # Common TN districts
+    "chennai":     ["Ambattur", "Avadi", "Tambaram", "Sholinganallur", "Pallavaram",
+                    "Poonamallee", "Perungalathur", "Selaiyur", "Maduravoyal", "Kolathur"],
+    "coimbatore":  ["Pollachi", "Mettupalayam", "Tiruppur", "Udumalpet", "Palladam",
+                    "Annur", "Sulur", "Kinathukadavu", "Valparai", "Perur"],
+    "madurai":     ["Melur", "Usilampatti", "Natham", "Vadipatti", "Thirumangalam",
+                    "Peraiyur", "Kallupatti", "Chellampatti", "Alanganallur", "Sholavandan"],
+    "salem":       ["Mettur", "Omalur", "Attur", "Sankari", "Rasipuram",
+                    "Edappadi", "Namakkal", "Tiruchengode", "Paramathi", "Velur"],
+    "trichy":      ["Srirangam", "Lalgudi", "Musiri", "Manapparai", "Thuraiyur",
+                    "Karur", "Kulithalai", "Ariyalur", "Perambalur", "Jayamkondam"],
+    # Maharashtra
+    "pune":        ["Hadapsar", "Kharadi", "Wagholi", "Uruli Kanchan", "Jejuri",
+                    "Baramati", "Indapur", "Daund", "Shikrapur", "Ranjangaon"],
+    "nashik":      ["Sinnar", "Igatpuri", "Niphad", "Dindori", "Yeola",
+                    "Manmad", "Chandwad", "Malegaon", "Deola", "Kalwan"],
+    "nagpur":      ["Kamptee", "Hingna", "Kalmeshwar", "Ramtek", "Umred",
+                    "Katol", "Narkhed", "Parseoni", "Bhiwapur", "Savner"],
+    # Punjab / Haryana
+    "ludhiana":    ["Jagraon", "Raikot", "Samrala", "Khanna", "Machhiwara",
+                    "Payal", "Sidhwan Bet", "Doraha", "Malerkotla", "Sahnewal"],
+    "amritsar":    ["Ajnala", "Lopoke", "Mehta", "Ramdass", "Baba Bakala",
+                    "Jandiala", "Tarn Taran", "Patti", "Khadur Sahib", "Fatehabad"],
+    "hisar":       ["Barwala", "Hansi", "Narnaund", "Uklana", "Agroha",
+                    "Adampur", "Fatehabad", "Tohana", "Bhuna", "Ratia"],
+    # UP
+    "varanasi":    ["Chiraigaon", "Rajatalab", "Cholapur", "Harhua", "Kashi Vidyapeeth",
+                    "Arajiline", "Pindra", "Baragaon", "Sevapuri", "Kaithi"],
+    "lucknow":     ["Malihabad", "Bakshi Ka Talab", "Mohanlalganj", "Gosainganj",
+                    "Chinhat", "Kakori", "Sarojini Nagar", "Itaunja", "Bijnaur", "Malhour"],
+}
+
+# Generic fallback pool used when district is unknown
+_GENERIC_VILLAGES = [
+    "Keshavpur", "Ganeshpur", "Anandnagar", "Krishnanagar", "Sundarpur",
+    "Mahadevpur", "Chandanpur", "Lakshmipuram", "Shivpuri", "Rampur",
 ]
+
+
+def _villages_for_district(district: str) -> list[str]:
+    """Return village names appropriate for the given district."""
+    key = district.strip().lower()
+    if key in DISTRICT_VILLAGES:
+        return DISTRICT_VILLAGES[key]
+    # Partial-match fallback (e.g. "Vellore District" → "vellore")
+    for k, v in DISTRICT_VILLAGES.items():
+        if k in key or key in k:
+            return v
+    return _GENERIC_VILLAGES
 
 
 def generate_synthetic_pest_risk(district: str,
@@ -236,8 +287,9 @@ def generate_synthetic_pest_risk(district: str,
         week_of = date.today() - timedelta(days=date.today().weekday())
 
         results = []
+        pool = _villages_for_district(district)
         for i, (vkey, vdata) in enumerate(list(villages_dict.items())[:5]):
-            village = VILLAGE_NAME_POOL[i % len(VILLAGE_NAME_POOL)]
+            village = pool[i % len(pool)]
             score   = float(vdata.get("risk_score", 0.1))
             results.append({
                 "village_name":               village,
@@ -245,15 +297,15 @@ def generate_synthetic_pest_risk(district: str,
                 "risk_score":                 round(score, 3),
                 "week_of":                    week_of,
                 "contributing_reports_count": max(1, int(score * 40)),
-                "model_type":                 "sir_simulation",
             })
         return results
 
     except Exception:
-        # Original deterministic fallback
+        # Deterministic fallback — use district-appropriate village names
         seed = sum(ord(c) for c in district)
         rng  = random.Random(seed)
-        villages = rng.sample(VILLAGE_NAME_POOL, k=5)
+        pool = _villages_for_district(district)
+        villages = rng.sample(pool, k=min(5, len(pool)))
         week_of  = date.today() - timedelta(days=date.today().weekday())
         return [
             {
@@ -262,10 +314,11 @@ def generate_synthetic_pest_risk(district: str,
                 "risk_score":                 round(rng.uniform(0.15, 0.85), 2),
                 "week_of":                    week_of,
                 "contributing_reports_count": rng.randint(1, 40),
-                "model_type":                 "synthetic_fallback",
             }
             for village in villages
         ]
+
+
 
 
 # --------------------------------------------------------------------------- #

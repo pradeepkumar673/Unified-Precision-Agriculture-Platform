@@ -1,318 +1,358 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppShell from '../../layouts/AppShell';
-import { submitVoiceQuery } from '../../api/advancedAiApi';
+import { submitTextQuery } from '../../api/advancedAiApi';
+import { getFarmProfile } from '../../api/farmApi';
+
+const SUGGESTED_QUERIES = [
+  { icon: 'water_drop', text: 'When should I irrigate my field?', color: 'text-primary' },
+  { icon: 'pest_control', text: 'How to control aphids on my crop?', color: 'text-error' },
+  { icon: 'currency_rupee', text: 'What is the current mandi price for sugarcane?', color: 'text-tertiary' },
+  { icon: 'vaccines', text: 'Which fertilizer to apply at tillering stage?', color: 'text-secondary' },
+  { icon: 'cloud', text: 'Is this a good week to spray pesticide?', color: 'text-on-surface-variant' },
+  { icon: 'account_balance', text: 'How do I apply for PM-KISAN?', color: 'text-primary' },
+];
 
 export default function VoiceAssistantPage() {
   const navigate = useNavigate();
-  
-  const [isRecording, setIsRecording] = useState(false);
+  const farmId = localStorage.getItem('farmId');
+
+  const [farm, setFarm] = useState(null);
+  const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [transcription, setTranscription] = useState('...');
-  const [responseHtml, setResponseHtml] = useState(null);
-  
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const audioPlaybackRef = useRef(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [textInput, setTextInput] = useState('');
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [messages, setMessages] = useState([]); // [{role, text}]
+  const [lang, setLang] = useState('en-IN'); // en-IN | hi-IN | ta-IN
+  const [error, setError] = useState('');
 
-  // Playback state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const recognitionRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
-
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
-
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        const url = URL.createObjectURL(audioBlob);
-        setAudioUrl(url);
-        
-        await handleSubmission(audioBlob);
-        
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setTranscription('Listening...');
-    } catch (err) {
-      console.error('Error accessing microphone', err);
-      alert('Could not access microphone.');
+  useEffect(() => {
+    if (farmId) {
+      getFarmProfile(farmId).then(r => setFarm(r.data)).catch(() => {});
     }
+  }, [farmId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Detect if Web Speech API is supported
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const speechSupported = !!SpeechRecognition;
+
+  const startListening = () => {
+    if (!SpeechRecognition) {
+      setError('Voice recognition not supported in this browser. Use Chrome for best results.');
+      setShowTextInput(true);
+      return;
+    }
+    setError('');
+    const recognition = new SpeechRecognition();
+    recognition.lang = lang;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (e) => {
+      const interim = Array.from(e.results).map(r => r[0].transcript).join('');
+      setTranscript(interim);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      if (transcript.trim()) {
+        askQuestion(transcript.trim());
+      }
+    };
+    recognition.onerror = (e) => {
+      setIsListening(false);
+      if (e.error === 'not-allowed') {
+        setError('Microphone access denied. Please allow microphone access in your browser.');
+        setShowTextInput(true);
+      }
+    };
+    recognition.start();
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
   };
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+  const speakResponse = (text) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = 0.9;
+    utter.onstart = () => setIsSpeaking(true);
+    utter.onend = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utter);
   };
 
-  const handleSubmission = async (audioBlob) => {
+  const stopSpeaking = () => {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+  };
+
+  const askQuestion = async (question) => {
+    if (!question.trim()) return;
+    setTranscript('');
+    setTextInput('');
     setIsProcessing(true);
-    setTranscription('Processing...');
-    
+    setMessages(prev => [...prev, { role: 'user', text: question }]);
+
     try {
-      // In a real app we'd convert Blob to File
-      const audioFile = new File([audioBlob], 'voice_query.wav', { type: 'audio/wav' });
-      const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
-      
-      const response = await submitVoiceQuery(farmId, audioFile);
-      
-      setTranscription(`"${response.transcribed_text}"`);
-      
-      // Parse the response to simulate the UI
-      // In a real scenario, the backend might return structured JSON. Here we just show the text.
-      setResponseHtml(
-        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
-          <div className="flex items-center justify-between pb-space-xs mb-space-xs">
-            <div className="flex items-center gap-space-sm">
-              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm">
-                <span className="material-symbols-outlined text-[20px]">psychology</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h2 className="font-label-lg text-on-surface font-semibold text-[15px]">KhetSaathi Agronomist AI</h2>
-                  <span className="material-symbols-outlined text-[16px] text-primary-container" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                </div>
-                <p className="font-label-sm text-on-surface-variant text-[11px]">Just now</p>
-              </div>
-            </div>
-            <div className="px-2 py-0.5 rounded bg-surface-container font-label-sm text-on-surface-variant text-[11px]">
-              AI Answer
-            </div>
-          </div>
-          <p className="font-body-md text-on-surface text-[15px] leading-relaxed">
-            {response.response_text}
-          </p>
-          <div className="mt-space-md pt-space-xs flex flex-col gap-2">
-            <div className="flex items-center justify-between text-on-surface-variant">
-              <div className="flex items-center gap-1.5">
-                <span className={`material-symbols-outlined text-[18px] text-primary ${isPlaying ? 'animate-pulse' : ''}`}>volume_up</span>
-                <span className="font-label-sm text-on-surface text-[12px] font-medium">{isPlaying ? 'Playing audio' : 'Audio ready'}</span>
-              </div>
-              <button 
-                onClick={togglePlayback}
-                className="flex items-center gap-1 text-primary hover:text-primary-container transition-colors py-1 px-2 rounded hover:bg-surface-container" 
-              >
-                <span className="material-symbols-outlined text-[16px]">{isPlaying ? 'pause' : 'play_arrow'}</span>
-                <span className="font-label-sm text-[12px]">{isPlaying ? 'Pause' : 'Play Voice'}</span>
-              </button>
-            </div>
-            <div className="w-full bg-surface-container rounded-full h-2 overflow-hidden flex items-center">
-              <div className="bg-primary h-full rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
-            </div>
-          </div>
-        </div>
-      );
-      
+      const res = await submitTextQuery(farmId, question, lang.split('-')[0]);
+      const answer = res.response_text || 'I could not get an answer right now.';
+      setMessages(prev => [...prev, { role: 'assistant', text: answer }]);
+      speakResponse(answer);
     } catch (err) {
-      console.error(err);
-      setTranscription('Error processing voice query.');
+      const fallback = 'Sorry, I could not connect right now. Please try again.';
+      setMessages(prev => [...prev, { role: 'assistant', text: fallback }]);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const togglePlayback = () => {
-    if (!audioPlaybackRef.current && audioUrl) {
-      audioPlaybackRef.current = new Audio(audioUrl);
-      audioPlaybackRef.current.ontimeupdate = () => {
-        setProgress((audioPlaybackRef.current.currentTime / audioPlaybackRef.current.duration) * 100);
-      };
-      audioPlaybackRef.current.onended = () => {
-        setIsPlaying(false);
-        setProgress(0);
-      };
-    }
-    
-    if (audioPlaybackRef.current) {
-      if (isPlaying) {
-        audioPlaybackRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioPlaybackRef.current.play();
-        setIsPlaying(true);
-      }
-    }
+  const handleTextSubmit = (e) => {
+    e.preventDefault();
+    if (textInput.trim()) askQuestion(textInput.trim());
   };
 
-  useEffect(() => {
-    return () => {
-      if (mediaRecorderRef.current && isRecording) {
-        mediaRecorderRef.current.stop();
-      }
-      if (audioPlaybackRef.current) {
-        audioPlaybackRef.current.pause();
-      }
-    };
-  }, [isRecording]);
-
-  const handleQueryClick = (text) => {
-    setTranscription(`"${text} ..."`);
-    setIsProcessing(true);
-    // Simulate backend response for canned query since we don't have audio
-    setTimeout(() => {
-      setIsProcessing(false);
-      setResponseHtml(
-        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm mt-4">
-          <p className="font-body-md text-on-surface">You asked: {text}. This is a simulated response for keyboard/canned input.</p>
-        </div>
-      );
-    }, 1500);
+  const toggleMic = () => {
+    if (isListening) stopListening();
+    else startListening();
   };
+
+  const LANG_OPTIONS = [
+    { code: 'en-IN', label: 'EN', full: 'English' },
+    { code: 'hi-IN', label: 'हिं', full: 'Hindi' },
+    { code: 'ta-IN', label: 'த', full: 'Tamil' },
+    { code: 'mr-IN', label: 'म', full: 'Marathi' },
+  ];
 
   return (
-      <AppShell 
-        variant="detail" 
-        hideBottomNav={true}
-        rootClassName="bg-surface selection:bg-primary-fixed"
-        title="Voice Assistant"
-        headerPaddingClass="px-gutter"
-        headerLeftSlot={<img alt="Simple modern agricultural leaf sprout emblem for KhetSaathi, green and gold theme, minimal flat vector style. Brand logo. - Primary color: #1b5e20" className="h-7 w-auto object-contain hidden xs:block" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8" />}
-        headerRightSlot={
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b border-outline-variant">
+        <div className="flex items-center gap-3 px-margin py-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-on-surface text-[24px]">arrow_back</span>
+          </button>
+          <div className="flex-1">
+            <h1 className="font-title-md text-title-md text-on-surface">KhetSaathi Bol</h1>
+            <p className="font-label-sm text-label-sm text-on-surface-variant">AI Voice Assistant</p>
+          </div>
+          {/* Language switcher */}
+          <div className="flex items-center gap-1">
+            {LANG_OPTIONS.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                title={l.full}
+                className={`w-9 h-9 rounded-full font-label-sm text-label-sm font-bold transition-all ${
+                  lang === l.code
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Farm context */}
+      {farm && (
+        <div className="px-margin pt-3">
+          <div className="flex items-center gap-2 bg-surface-container-low px-space-md py-space-sm rounded-xl">
+            <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>landscape</span>
+            <span className="font-label-md text-label-md text-on-surface truncate capitalize">
+              {farm.name} · {farm.current_crop || 'Unknown crop'} · {farm.district}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Messages feed */}
+      <div className="flex-1 overflow-y-auto px-margin py-3 flex flex-col gap-space-sm">
+        {messages.length === 0 && (
           <>
-            <button className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface active:bg-surface-container-high">
-              <span className="material-symbols-outlined text-[20px]">volume_up</span>
-            </button>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+            {/* Welcome state */}
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <div className="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
+                <span className="material-symbols-outlined text-on-primary text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
+              </div>
+              <p className="font-body-md text-body-md text-on-surface-variant text-center">
+                Tap the mic and ask anything about<br />your crops, weather, prices, or schemes.
+              </p>
+            </div>
+
+            {/* Suggested questions */}
+            <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Try asking…</p>
+            <div className="flex flex-col gap-2">
+              {SUGGESTED_QUERIES.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => askQuestion(q.text)}
+                  className="flex items-center gap-space-sm bg-surface-container-lowest rounded-xl px-space-md py-space-sm shadow-sm text-left hover:bg-surface-container active:scale-[0.98] transition-all"
+                >
+                  <span className={`material-symbols-outlined text-[20px] ${q.color} flex-shrink-0`}>{q.icon}</span>
+                  <span className="font-body-md text-body-md text-on-surface">{q.text}</span>
+                </button>
+              ))}
             </div>
           </>
-        }
-      >
-        <div className="flex flex-col w-full pb-32 relative pt-16 min-h-screen">
-        
-        <div className="px-gutter my-space-xs">
-          <div className="w-full bg-surface-container-low p-space-sm rounded-xl flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
-                <span className="material-symbols-outlined text-[24px]">potted_plant</span>
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-label-sm text-primary uppercase tracking-wider">Active Field Context</span>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-                  <span className="font-label-sm text-on-surface-variant">Sensor Online</span>
-                </div>
-                <p className="font-headline-sm text-on-surface truncate text-[16px] leading-tight mt-0.5">Plot 1 • Sharbati Wheat (Day 42 • Tillering)</p>
-              </div>
-            </div>
-            <button aria-label="Change active plot" className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant shrink-0">
-              <span className="material-symbols-outlined text-[20px]">swap_horiz</span>
-            </button>
-          </div>
-        </div>
+        )}
 
-        <div className="px-gutter mt-space-sm">
-          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm relative overflow-hidden min-h-[100px]">
-            <div className="flex items-center justify-between mb-2">
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed">
-                <span className="material-symbols-outlined text-[14px]">graphic_eq</span>
-                <span className="font-label-sm text-[11px]">{isRecording ? 'Listening live...' : (isProcessing ? 'Processing AI...' : 'Ready')}</span>
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {msg.role === 'assistant' && (
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 mt-1 flex-shrink-0">
+                <span className="material-symbols-outlined text-on-primary text-[16px]">psychology</span>
               </div>
-              <span className="font-label-sm text-on-surface-variant">Field Audio</span>
-            </div>
-            <p className="font-body-lg text-on-surface font-medium leading-snug">
-              {transcription}
-            </p>
-          </div>
-        </div>
-
-        <div className="px-gutter my-space-md flex flex-col items-center justify-center relative">
-          <div className="relative flex items-center justify-center w-48 h-48 my-1">
-            {isRecording && (
-              <>
-                <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-60 pointer-events-none"></div>
-                <div className="absolute -inset-3 rounded-full bg-primary/15 animate-pulse pointer-events-none"></div>
-              </>
             )}
-            <button 
-              onClick={toggleRecording}
-              aria-label={isRecording ? "Stop Listening" : "Start Listening"} 
-              className={`relative z-10 w-28 h-28 rounded-full shadow-lg flex flex-col items-center justify-center active:scale-95 transition-all duration-200 ${isRecording ? 'bg-primary-container hover:bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface border-2 border-outline'}`}
-            >
-              <div className="w-12 h-12 rounded-full bg-surface-tint/30 flex items-center justify-center mb-1">
-                <span className={`material-symbols-outlined text-[32px] ${isRecording ? 'text-primary-fixed' : 'text-on-surface'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {isRecording ? 'mic' : 'mic_none'}
-                </span>
+            <div className={`max-w-[85%] rounded-2xl px-space-md py-space-sm shadow-sm ${
+              msg.role === 'user'
+                ? 'bg-primary text-on-primary rounded-br-sm'
+                : 'bg-surface-container-lowest text-on-surface rounded-bl-sm'
+            }`}>
+              <p className="font-body-md text-body-md leading-relaxed">{msg.text}</p>
+            </div>
+            {msg.role === 'user' && (
+              <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center ml-2 mt-1 flex-shrink-0">
+                <span className="material-symbols-outlined text-on-surface-variant text-[16px]">person</span>
               </div>
-              <span className={`font-label-sm text-[11px] font-semibold ${isRecording ? 'text-primary-fixed' : 'text-on-surface'}`}>
-                {isRecording ? 'Tap to Pause' : 'Tap to Speak'}
-              </span>
-            </button>
+            )}
           </div>
-          
-          <div aria-hidden="true" className={`flex items-end justify-center gap-1 h-8 w-56 mt-2 transition-opacity duration-300 ${isRecording ? 'opacity-100' : 'opacity-30'}`}>
-            <div className="w-1.5 bg-primary rounded-full animate-bounce h-3" style={{ animationDuration: '450ms', animationDelay: '50ms' }}></div>
-            <div className="w-1.5 bg-primary-container rounded-full animate-bounce h-5" style={{ animationDuration: '520ms', animationDelay: '150ms' }}></div>
-            <div className="w-1.5 bg-primary rounded-full animate-bounce h-7" style={{ animationDuration: '380ms', animationDelay: '300ms' }}></div>
-            <div className="w-1.5 bg-surface-tint rounded-full animate-bounce h-8" style={{ animationDuration: '600ms', animationDelay: '80ms' }}></div>
-            <div className="w-1.5 bg-primary rounded-full animate-bounce h-6" style={{ animationDuration: '490ms', animationDelay: '220ms' }}></div>
-            <div className="w-1.5 bg-primary-container rounded-full animate-bounce h-7" style={{ animationDuration: '410ms', animationDelay: '100ms' }}></div>
-            <div className="w-1.5 bg-primary rounded-full animate-bounce h-4" style={{ animationDuration: '560ms', animationDelay: '190ms' }}></div>
-            <div className="w-1.5 bg-surface-tint rounded-full animate-bounce h-6" style={{ animationDuration: '430ms', animationDelay: '260ms' }}></div>
-            <div className="w-1.5 bg-primary rounded-full animate-bounce h-3" style={{ animationDuration: '480ms', animationDelay: '70ms' }}></div>
-          </div>
-        </div>
+        ))}
 
-        <div className="px-gutter mb-space-sm min-h-[150px]">
-          {responseHtml}
-        </div>
-
-        <div className="px-gutter mb-space-md">
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="material-symbols-outlined text-[16px] text-on-surface-variant">tips_and_updates</span>
-            <h3 className="font-label-sm uppercase tracking-wider text-on-surface-variant text-[11px]">Recommended Voice Questions</h3>
+        {isProcessing && (
+          <div className="flex justify-start">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 flex-shrink-0">
+              <span className="material-symbols-outlined text-on-primary text-[16px]">psychology</span>
+            </div>
+            <div className="bg-surface-container-lowest rounded-2xl rounded-bl-sm px-space-md py-space-sm shadow-sm flex items-center gap-2">
+              <div className="flex gap-1">
+                {[0, 1, 2].map(j => (
+                  <div key={j} className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${j * 150}ms` }} />
+                ))}
+              </div>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Thinking…</span>
+            </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            <button onClick={() => handleQueryClick('Check mandi wheat price')} className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-sm font-label-md flex items-center gap-2 active:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-[18px] text-primary">currency_rupee</span>
-              <span>Check mandi wheat price</span>
-            </button>
-            <button onClick={() => handleQueryClick('Next spray schedule')} className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-sm font-label-md flex items-center gap-2 active:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-[18px] text-primary">calendar_clock</span>
-              <span>Next spray schedule</span>
-            </button>
-            <button onClick={() => handleQueryClick('Report yellow leaf rust')} className="shrink-0 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-sm font-label-md flex items-center gap-2 active:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-[18px] text-error">coronavirus</span>
-              <span>Report yellow leaf rust</span>
-            </button>
-          </div>
-        </div>
+        )}
 
-        <div className="px-gutter pb-space-lg">
-          <div className="grid grid-cols-2 gap-3">
-            <button aria-label="Switch to typing mode" className="min-h-[48px] bg-surface-container-lowest hover:bg-surface-container text-on-surface rounded-xl flex items-center justify-center gap-2 shadow-sm font-label-md transition-colors">
-              <span className="material-symbols-outlined text-[20px] text-on-surface-variant">keyboard</span>
-              <span>Keyboard input</span>
-            </button>
-            <button onClick={() => navigate(-1)} aria-label="End conversation" className="min-h-[48px] bg-error-container hover:opacity-90 text-on-error-container rounded-xl flex items-center justify-center gap-2 shadow-sm font-label-md transition-colors">
-              <span className="material-symbols-outlined text-[20px]">call_end</span>
-              <span>End voice session</span>
-            </button>
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="px-margin">
+          <div className="bg-error-container text-error font-label-sm text-label-sm px-space-md py-space-sm rounded-xl flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px]">error</span>
+            {error}
           </div>
         </div>
+      )}
 
+      {/* Transcript preview */}
+      {(isListening || transcript) && (
+        <div className="px-margin">
+          <div className="bg-primary-fixed rounded-xl px-space-md py-space-sm flex items-center gap-2">
+            <span className={`material-symbols-outlined text-primary text-[18px] ${isListening ? 'animate-pulse' : ''}`}>mic</span>
+            <span className="font-body-md text-body-md text-on-surface flex-1 italic">
+              {isListening && !transcript ? 'Listening…' : transcript || ''}
+            </span>
+          </div>
         </div>
-      </AppShell>
+      )}
+
+      {/* Bottom controls */}
+      <div className="sticky bottom-0 bg-background border-t border-outline-variant px-margin py-3">
+        {showTextInput ? (
+          <form onSubmit={handleTextSubmit} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={textInput}
+              onChange={e => setTextInput(e.target.value)}
+              placeholder="Type your question…"
+              className="flex-1 bg-surface-container rounded-xl px-space-md h-12 font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:outline-none border border-outline-variant focus:border-primary"
+            />
+            <button
+              type="submit"
+              disabled={!textInput.trim() || isProcessing}
+              className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-on-primary active:scale-95 transition-all disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[20px]">send</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTextInput(false)}
+              className="w-12 h-12 bg-surface-container rounded-xl flex items-center justify-center text-on-surface-variant active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[20px]">mic</span>
+            </button>
+          </form>
+        ) : (
+          <div className="flex items-center justify-center gap-4">
+            {/* Stop speaking */}
+            {isSpeaking && (
+              <button
+                onClick={stopSpeaking}
+                className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-[22px]">volume_off</span>
+              </button>
+            )}
+
+            {/* Main mic button */}
+            <div className="relative">
+              {isListening && (
+                <>
+                  <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                  <div className="absolute -inset-2 rounded-full bg-primary/10 animate-pulse" />
+                </>
+              )}
+              <button
+                onClick={toggleMic}
+                disabled={isProcessing}
+                className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all disabled:opacity-50 ${
+                  isListening ? 'bg-error text-on-error' : 'bg-primary text-on-primary'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {isListening ? 'stop' : 'mic'}
+                </span>
+              </button>
+            </div>
+
+            {/* Keyboard input toggle */}
+            <button
+              onClick={() => setShowTextInput(true)}
+              className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[22px]">keyboard</span>
+            </button>
+          </div>
+        )}
+
+        {!showTextInput && (
+          <p className="text-center font-label-sm text-label-sm text-on-surface-variant mt-2">
+            {isListening ? 'Listening… tap to stop' : isProcessing ? 'Getting answer…' : 'Tap mic to speak'}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

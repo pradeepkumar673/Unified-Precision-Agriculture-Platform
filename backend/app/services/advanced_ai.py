@@ -123,34 +123,54 @@ AGRI_RESPONSE_MAP: Dict[str, str] = {
 }
 
 
-_llm_pipeline = None
+def _groq_agri_answer(question: str, farm_context: str = "") -> str:
+    """Call Groq LLM for a smart agricultural answer. Falls back to keyword matching."""
+    try:
+        from app.services.llm import client as groq_client, DEFAULT_MODEL
+        if not groq_client:
+            raise RuntimeError("Groq client not available")
 
-def _load_llm():
-    global _llm_pipeline
-    if _llm_pipeline is None:
-        try:
-            from transformers import pipeline
-            _llm_pipeline = pipeline("text2text-generation", model="google/flan-t5-small", device=-1)
-        except Exception:
-            _llm_pipeline = "fallback"
-    return _llm_pipeline
+        system_prompt = (
+            "You are KhetSaathi, an expert AI agronomist for Indian farmers. "
+            "Answer queries about crops, irrigation, pests, diseases, weather, market prices, and government schemes. "
+            "Be concise (2-4 sentences), practical, and specific. "
+            "Use simple language a farmer can understand. "
+            "If the question is in Hindi or Tamil, reply in the same language. "
+            "Always give actionable advice."
+        )
+        user_msg = question
+        if farm_context:
+            user_msg = f"[Farm context: {farm_context}]\n\nFarmer's question: {question}"
+
+        response = groq_client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_msg},
+            ],
+            model=DEFAULT_MODEL,
+            max_tokens=300,
+            temperature=0.4,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        # Keyword fallback
+        text_lower = question.lower()
+        for keyword, response in AGRI_RESPONSE_MAP.items():
+            if keyword != "default" and keyword in text_lower:
+                return response
+        return AGRI_RESPONSE_MAP["default"]
+
 
 def _keyword_response(text: str) -> str:
-    """Return an LLM generated agri response, falling back to keywords if needed."""
-    try:
-        llm = _load_llm()
-        if llm != "fallback":
-            prompt = f"Answer this agricultural query: {text}"
-            res = llm(prompt, max_length=60)
-            return res[0]['generated_text']
-    except Exception:
-        pass
+    """Return a Groq-powered agri response, falling back to keywords if needed."""
+    return _groq_agri_answer(text)
 
-    text_lower = text.lower()
-    for keyword, response in AGRI_RESPONSE_MAP.items():
-        if keyword != "default" and keyword in text_lower:
-            return response
-    return AGRI_RESPONSE_MAP["default"]
+
+def text_query_with_groq(question: str, farm_context: str = "") -> str:
+    """Public function: answer a text question about farming using Groq LLM."""
+    return _groq_agri_answer(question, farm_context)
+
+
 
 
 # ---------------------------------------------------------------------------

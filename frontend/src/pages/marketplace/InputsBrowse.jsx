@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProducts, getEquipmentListings } from '../../api/marketplaceApi';
+import { getProducts, getEquipmentListings, createProduct, createEquipmentListing } from '../../api/marketplaceApi';
 
 export default function InputsBrowse() {
   const navigate = useNavigate();
@@ -14,10 +14,21 @@ export default function InputsBrowse() {
   const [bookedItem, setBookedItem] = useState(null);
   const [checkingOut, setCheckingOut] = useState(false);
 
+  // Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newListingType, setNewListingType] = useState('product'); // 'product' or 'equipment'
+  const [formData, setFormData] = useState({
+    name: '', category: 'seed', price: '', stock: '',
+    equipment_type: '', daily_rate: ''
+  });
+
+  const wsRef = useRef(null);
+
   useEffect(() => {
+    const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+    
     const fetchData = async () => {
       try {
-        const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
         const [prodRes, equipRes] = await Promise.all([
           getProducts(farmId),
           getEquipmentListings()
@@ -29,6 +40,37 @@ export default function InputsBrowse() {
       }
     };
     fetchData();
+
+    // WebSocket connection for real-time updates
+    const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('http', 'ws');
+    const ws = new WebSocket(`${wsUrl}/api/v1/marketplace/ws/${farmId}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connected to real-time marketplace');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log("Real-time event received:", message);
+        if (message.type === 'NEW_PRODUCT') {
+          setProducts(prev => [message.data, ...prev]);
+        } else if (message.type === 'NEW_EQUIPMENT') {
+          setEquipment(prev => [message.data, ...prev]);
+        }
+      } catch (err) {
+        console.error('Failed to parse websocket message', err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
   }, []);
 
   const handleCartAddition = (item, price) => {
@@ -36,7 +78,6 @@ export default function InputsBrowse() {
     setCartTotal(t => t + price);
     setPulsingItem(item.id);
     
-    // Bounce effect trigger handled by CSS class bindings
     setTimeout(() => {
       setPulsingItem(null);
     }, 1500);
@@ -57,9 +98,37 @@ export default function InputsBrowse() {
     }, 200);
   };
 
+  const handleCreateListing = async (e) => {
+    e.preventDefault();
+    try {
+      if (newListingType === 'product') {
+        await createProduct({
+          name: formData.name,
+          category: formData.category,
+          price: parseFloat(formData.price),
+          vendor_id: 'Farmer ' + Math.floor(Math.random()*1000), // Real identity in prod
+          stock: parseInt(formData.stock, 10)
+        });
+      } else {
+        await createEquipmentListing({
+          equipment_type: formData.equipment_type,
+          owner_id: 'Farmer ' + Math.floor(Math.random()*1000), // Real identity in prod
+          latitude: 0,
+          longitude: 0,
+          daily_rate: parseFloat(formData.daily_rate),
+          available: true
+        });
+      }
+      setShowAddModal(false);
+      setFormData({ name: '', category: 'seed', price: '', stock: '', equipment_type: '', daily_rate: '' });
+      // We do NOT manually update state here. We wait for the real-time WebSocket broadcast!
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create listing");
+    }
+  };
+
   // Combine products and equipment for curated view
-  console.log("products is:", products, "isArray:", Array.isArray(products));
-  console.log("equipment is:", equipment, "isArray:", Array.isArray(equipment));
   const allItems = [
     ...(Array.isArray(products) ? products : []).map(p => ({ ...p, type: 'product' })),
     ...(Array.isArray(equipment) ? equipment : []).map(e => ({ ...e, type: 'equipment' }))
@@ -101,11 +170,9 @@ export default function InputsBrowse() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
-      
-
       <main className="flex flex-col w-full pt-[72px] bg-surface flex-1">
-        <section className="px-margin py-2">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-margin px-margin">
+        <section className="px-margin py-2 flex justify-between items-center">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-margin px-margin flex-1">
             {tabs.map(tab => (
               <button 
                 key={tab}
@@ -116,6 +183,13 @@ export default function InputsBrowse() {
               </button>
             ))}
           </div>
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="ml-2 flex-shrink-0 bg-tertiary text-on-tertiary px-3 py-1 rounded-full font-bold shadow flex items-center gap-1 hover:bg-tertiary-container hover:text-on-tertiary-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            List
+          </button>
         </section>
 
         <div className="px-margin flex flex-col gap-space-md mt-1">
@@ -132,19 +206,13 @@ export default function InputsBrowse() {
                 <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
                   Tailored to your <span className="font-semibold text-on-surface">Sharbati Wheat</span> calendar (Day 42/120, tillering) &amp; current Yellow Rust advisory.
                 </p>
-                <div className="mt-space-xs flex items-center gap-space-xs">
-                  <a className="font-label-sm text-label-sm text-secondary font-bold flex items-center gap-0.5 hover:underline" href="#">
-                    View Crop Schedule Plan
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </a>
-                </div>
               </div>
             </div>
           </section>
 
           <div className="flex items-center justify-between px-space-xs pt-1">
             <span className="font-headline-sm text-headline-sm text-on-surface">{activeTab === 'All' ? 'Curated for You' : activeTab}</span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant">Showing {filteredItems.length} of {allItems.length} items</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant">Showing {filteredItems.length} items</span>
           </div>
 
           <section className="grid grid-cols-2 gap-space-sm pb-16">
@@ -161,12 +229,6 @@ export default function InputsBrowse() {
                         <span>AI Pick</span>
                       </div>
                     )}
-                    {item.category.includes('cide') && (
-                      <div className="absolute top-2 left-2 bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm flex items-center gap-1 font-bold">
-                        <span className="material-symbols-outlined text-[12px]">shield</span>
-                        <span className="capitalize">{item.category}</span>
-                      </div>
-                    )}
                   </div>
                   <div className="p-space-sm flex flex-col flex-1 justify-between gap-space-xs">
                     <div>
@@ -176,10 +238,6 @@ export default function InputsBrowse() {
                       <p className="font-label-sm text-label-sm text-on-surface-variant truncate mt-0.5">
                         {item.vendor_id} • <span className="text-secondary font-bold">4.9 ★</span>
                       </p>
-                      <div className="inline-flex items-center gap-1 bg-surface-container px-1.5 py-0.5 rounded mt-1.5 text-on-primary-fixed-variant">
-                        <span className="material-symbols-outlined text-[14px] text-secondary">bolt</span>
-                        <span className="font-label-sm text-[11px] leading-tight font-semibold">Fast Delivery</span>
-                      </div>
                     </div>
                     <div className="pt-space-xs">
                       <div className="flex items-baseline gap-1.5">
@@ -224,10 +282,6 @@ export default function InputsBrowse() {
                       <p className="font-label-sm text-label-sm text-on-surface-variant truncate mt-0.5">
                         {item.owner_id} • <span className="text-secondary font-bold">4.7 ★</span>
                       </p>
-                      <div className="inline-flex items-center gap-1 bg-surface-container px-1.5 py-0.5 rounded mt-1.5 text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[14px]">near_me</span>
-                        <span className="font-label-sm text-[11px] leading-tight font-semibold">Local</span>
-                      </div>
                     </div>
                     <div className="pt-space-xs">
                       <div className="flex items-baseline gap-1">
@@ -282,7 +336,52 @@ export default function InputsBrowse() {
         </button>
       </aside>
 
-      
+      {/* Add Listing Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl w-full max-w-sm p-space-md shadow-xl">
+            <h2 className="text-title-lg font-bold mb-4">List an Item</h2>
+            <div className="flex gap-2 mb-4">
+              <button 
+                className={`flex-1 py-2 rounded-lg font-bold ${newListingType === 'product' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface'}`}
+                onClick={() => setNewListingType('product')}
+              >
+                Product
+              </button>
+              <button 
+                className={`flex-1 py-2 rounded-lg font-bold ${newListingType === 'equipment' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface'}`}
+                onClick={() => setNewListingType('equipment')}
+              >
+                Equipment
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateListing} className="flex flex-col gap-3">
+              {newListingType === 'product' ? (
+                <>
+                  <input required placeholder="Product Name (e.g., Sharbati Wheat Seeds)" className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <select required className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                    <option value="seed">Seed</option>
+                    <option value="fertilizer">Fertilizer</option>
+                    <option value="pesticide">Pesticide</option>
+                  </select>
+                  <input required type="number" placeholder="Price (₹)" className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  <input required type="number" placeholder="Stock Available" className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                </>
+              ) : (
+                <>
+                  <input required placeholder="Equipment Type (e.g., John Deere Tractor)" className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant" value={formData.equipment_type} onChange={e => setFormData({...formData, equipment_type: e.target.value})} />
+                  <input required type="number" placeholder="Daily Rate (₹)" className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant" value={formData.daily_rate} onChange={e => setFormData({...formData, daily_rate: e.target.value})} />
+                </>
+              )}
+              <div className="flex gap-2 mt-4">
+                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 rounded-xl font-bold bg-surface-variant text-on-surface-variant">Cancel</button>
+                <button type="submit" className="flex-1 py-3 rounded-xl font-bold bg-primary text-on-primary shadow-md">Post Listing</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

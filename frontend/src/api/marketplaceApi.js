@@ -16,3 +16,6 @@ export const createBuyerRequirement = (data) => api.post('/buyer-requirement', d
 export const matchExchange = (data) => api.post('/exchange-match', data);
 export const getDeliveryStatus = (orderId) => api.get(`/delivery-status/${orderId}`);
 export const createStandingOrder = (data) => api.post('/b2b/standing-order', data);
+
+export const createProduct = (data) => api.post('/products', data);
+export const createEquipmentListing = (data) => api.post('/equipment', data);

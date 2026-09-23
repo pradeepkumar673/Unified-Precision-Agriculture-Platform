@@ -51,7 +51,7 @@ export default function AppShell({
     { path: '/planning/crop-plan', id: 'plan', icon: 'calendar_month', label: t('nav.plan', 'Plan') },
     { path: '/marketplace/inputs', id: 'marketplace', icon: 'storefront', label: t('nav.marketplace', 'Marketplace') },
     { path: '/community/alerts', id: 'alerts', icon: 'notifications', label: t('nav.alerts', 'Alerts') },
-    { path: '/farm/profile', id: 'profile', icon: 'account_circle', label: t('nav.profile', 'Profile') }
+    { path: '/more', id: 'more', icon: 'grid_view', label: t('nav.more', 'More') }
   ];
 
   const getPageTitle = (path) => {

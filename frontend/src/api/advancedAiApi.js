@@ -15,6 +15,15 @@ export const submitVoiceQuery = async (farmId, audioFile) => {
   return response.data;
 };
 
+export const submitTextQuery = async (farmId, question, language = 'en') => {
+  const response = await axios.post(`${API_BASE_URL}/api/v1/advanced_ai/text-query`, {
+    farm_id: farmId,
+    question,
+    language,
+  });
+  return response.data;
+};
+
 export const submitMultimodalQuery = async (farmId, inputText, imageFile) => {
   const formData = new FormData();
   formData.append('farm_id', farmId);
