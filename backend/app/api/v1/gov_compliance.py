@@ -144,3 +144,31 @@ def autofill_form(
         scheme_id=scheme.id,
         autofilled_fields=autofilled,
     )
+
+@router.get("/documents/{farm_id}", response_model=List[DocumentUploadResponse])
+def get_documents(
+    farm_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Return a list of uploaded documents for a farm."""
+    farm = db.execute(select(Farm).where(Farm.id == farm_id)).scalars().first()
+    if not farm:
+        # Fallback to first farm if dummy ID used
+        farm = db.execute(select(Farm)).scalars().first()
+        if not farm:
+            raise HTTPException(status_code=404, detail="Farm not found")
+
+    docs = db.execute(select(Document).where(Document.farm_id == farm.id).order_by(Document.created_at.desc())).scalars().all()
+    
+    return [
+        DocumentUploadResponse(
+            document_id=doc.id,
+            ocr_extracted=doc.ocr_extracted,
+            doc_type=doc.doc_type,
+            farm_id=doc.farm_id,
+            file_path=doc.file_path,
+            verified=doc.verified,
+            created_at=doc.created_at,
+        )
+        for doc in docs
+    ]

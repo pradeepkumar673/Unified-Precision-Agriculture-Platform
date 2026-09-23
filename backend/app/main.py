@@ -6,6 +6,7 @@ from collections import defaultdict
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 # Setup structured logging
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +99,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Dev convenience so uvicorn boots straight into a working DB.
 Base.metadata.create_all(bind=engine)
+
+os.makedirs("backend/media", exist_ok=True)
+app.mount("/media", StaticFiles(directory="backend/media"), name="media")
 
 app.include_router(auth_router)
 app.include_router(farm_router)

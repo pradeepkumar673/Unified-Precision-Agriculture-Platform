@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getFarmProfile, getFarmZones } from '../../api/farmApi';
+import { getCreditProfile } from '../../api/financeApi';
 
 const NAV_ITEMS = [
   { path: 'home', icon: 'home', label: 'Home', to: '/' },
@@ -17,12 +18,19 @@ export default function MainHomeDashboard() {
   const [zones, setZones] = useState([]);
   const [activeNav, setActiveNav] = useState('home');
   const [showModules, setShowModules] = useState(false);
+  const [creditProfile, setCreditProfile] = useState(null);
 
   useEffect(() => {
     if (!farmId) return;
     getFarmProfile(farmId).then(r => setFarm(r.data)).catch(() => {});
     getFarmZones(farmId).then(r => setZones(r.data || [])).catch(() => {});
+    getCreditProfile(farmId).then(r => setCreditProfile(r.data)).catch(() => {});
   }, [farmId]);
+
+  const creditScore = creditProfile ? creditProfile.credit_score : '...';
+  const maxLimit = creditProfile?.offers?.[0]?.max_amount || 0;
+  const strokeDasharray = 100;
+  const strokeDashoffset = creditProfile ? 100 - (100 * (Math.max(0, creditProfile.credit_score - 300) / 600)) : 100;
 
   const farmerName = farm?.owner_name || 'Ramesh Patil';
   const cropLabel = farm?.current_crop || 'Wheat (Sharbati Gold)';
@@ -82,22 +90,24 @@ export default function MainHomeDashboard() {
                 <span className="material-symbols-outlined text-[18px]">info</span>
               </button>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold">Green Tier</span>
+            <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold">
+              {creditScore >= 700 ? 'Green Tier' : 'Evaluating'}
+            </span>
           </div>
           <div className="flex items-center gap-4 py-1">
             <div className="relative w-20 h-20 flex items-center justify-center flex-shrink-0">
               <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
                 <path className="text-surface-container-highest" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.5" />
-                <path className="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray="85, 100" strokeLinecap="round" strokeWidth="3.5" />
+                <path className="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray={`${strokeDasharray}, 100`} strokeDashoffset={strokeDashoffset} strokeLinecap="round" strokeWidth="3.5" />
               </svg>
               <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="font-headline-sm text-headline-sm text-on-surface leading-none font-bold">765</span>
+                <span className="font-headline-sm text-headline-sm text-on-surface leading-none font-bold">{creditScore}</span>
                 <span className="font-label-sm text-[10px] text-outline">/ 900</span>
               </div>
             </div>
             <div className="flex flex-col min-w-0 justify-center">
               <p className="font-body-sm text-body-sm text-on-surface">
-                Timely irrigation and verified bio-fertilizers qualify you for low-interest KCC credit up to <strong className="text-primary font-bold">₹11,50,000</strong>.
+                Timely irrigation and verified bio-fertilizers qualify you for low-interest credit up to <strong className="text-primary font-bold">₹{maxLimit.toLocaleString()}</strong>.
               </p>
             </div>
           </div>

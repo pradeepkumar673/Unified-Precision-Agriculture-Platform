@@ -218,27 +218,33 @@ def create_farm_boundary(
     baseline_ndvi = 0.3 + (baseline_moisture / 100.0) * 0.4
     ndvi_scores = rng.normal(loc=baseline_ndvi, scale=0.15, size=n)
     ndvi_scores = np.clip(ndvi_scores, 0.1, 0.95)
-
-    X = np.column_stack([soil_scores, ndvi_scores])
-
-    # 3-5 zones, never more clusters than points
-    k = max(3, min(5, n // 2))
-    k = min(k, n)
-
-    km = KMeans(n_clusters=k, n_init=10, random_state=42)
-    labels = km.fit_predict(X)
-
+    
+    # Generate zones by partitioning the polygon from the centroid to the edges
+    # This guarantees the zones perfectly tile the interior without overflowing
+    c_lat = sum(p["lat"] for p in points) / len(points)
+    c_lng = sum(p["lng"] for p in points) / len(points)
+    
     zones = []
-    for cluster_id in range(k):
-        idx = [i for i, lbl in enumerate(labels) if lbl == cluster_id]
-        if not idx:
-            continue
+    n_points = len(points)
+    for i in range(n_points):
+        p1 = points[i]
+        p2 = points[(i + 1) % n_points]
+        
+        # Triangle from centroid to the edge segment
+        quad = [
+            {"lat": c_lat, "lng": c_lng},
+            p1,
+            p2
+        ]
+        
+        z_soil = soil_scores[i % len(soil_scores)]
+        z_ndvi = ndvi_scores[i % len(ndvi_scores)]
         zones.append(
             {
-                "zone_id": cluster_id + 1,
-                "polygon_points": [points[i] for i in idx],
-                "soil_score": round(float(np.mean(soil_scores[idx])), 2),
-                "ndvi_score": round(float(np.mean(ndvi_scores[idx])), 4),
+                "zone_id": i + 1,
+                "polygon_points": quad,
+                "soil_score": round(float(z_soil), 2),
+                "ndvi_score": round(float(z_ndvi), 4),
             }
         )
 

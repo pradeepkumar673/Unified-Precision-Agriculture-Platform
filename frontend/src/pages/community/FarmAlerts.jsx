@@ -107,7 +107,7 @@ export default function FarmAlerts() {
 
   const filteredAlerts = alerts.filter(a => {
     if (activeFilter === 'All') return true;
-    const type = (a.alert_type || '').toLowerCase();
+    const type = (a.type || '').toLowerCase();
     if (activeFilter === 'Weather' && type === 'weather') return true;
     if (activeFilter === 'Pest & Disease' && type === 'pest') return true;
     if (activeFilter === 'Market' && type === 'market') return true;
@@ -115,21 +115,29 @@ export default function FarmAlerts() {
     return false;
   });
 
+  const getAlertTitle = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t === 'pest') return 'Pest & Disease Alert';
+    if (t === 'irrigation' || t === 'weather' || t === 'spray_window') return 'Weather & Irrigation';
+    if (t === 'market') return 'Market Insight';
+    return 'Farm Alert';
+  };
+
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
       
 
-      <main className="flex flex-col w-full pt-[64px] pb-24 px-margin bg-surface flex-1 gap-space-sm">
+      <main className="flex flex-col w-full pt-[96px] pb-24 px-margin bg-surface flex-1 gap-space-sm">
         
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex flex-wrap items-center justify-between pt-1 gap-2">
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <span className="material-symbols-outlined text-primary text-[24px]">notifications_active</span>
               <span className="absolute top-0 right-0.5 w-2.5 h-2.5 bg-error rounded-full border border-surface"></span>
             </div>
-            <span className="font-headline-md text-headline-md text-on-surface">Recent Alerts</span>
+            <span className="font-headline-md text-headline-md text-on-surface truncate">Recent Alerts</span>
           </div>
-          <button className="text-secondary font-label-md text-label-md font-bold hover:underline px-2 py-1 flex-shrink-0" type="button">
+          <button className="text-secondary font-label-md text-label-md font-bold hover:underline py-1 flex-shrink-0 whitespace-nowrap" type="button">
             Mark all as read
           </button>
         </div>
@@ -158,7 +166,8 @@ export default function FarmAlerts() {
             <div className="text-center text-on-surface-variant py-8 font-label-md">No alerts found.</div>
           ) : (
             filteredAlerts.map(alert => {
-              const style = getAlertStyle(alert.alert_type, alert.severity);
+              const typeStr = (alert.type || '').toLowerCase();
+              const style = getAlertStyle(alert.type, alert.severity);
               const isExpanded = !!expandedAlerts[alert.id];
               
               return (
@@ -184,7 +193,7 @@ export default function FarmAlerts() {
                   
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h2 className="font-headline-sm text-headline-sm text-on-surface leading-snug">{alert.title}</h2>
+                      <h2 className="font-headline-sm text-headline-sm text-on-surface leading-snug">{getAlertTitle(alert.type)}</h2>
                       <div className="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm mt-1">
                         <span className="material-symbols-outlined text-[15px]">schedule</span>
                         <span>{timeAgo(alert.created_at)}</span>
@@ -212,12 +221,26 @@ export default function FarmAlerts() {
                       </p>
                       
                       <div className="flex items-center gap-2 pt-1">
-                        <button className={`flex-1 min-h-[48px] px-3 font-label-md text-label-md rounded-lg flex items-center justify-center gap-1.5 shadow-sm active:opacity-90 ${style.actionBtnClass}`} type="button">
+                        <button 
+                          className={`flex-1 min-h-[48px] px-3 font-label-md text-label-md rounded-lg flex items-center justify-center gap-1.5 shadow-sm active:opacity-90 ${style.actionBtnClass}`} 
+                          type="button"
+                          onClick={() => {
+                            const t = (alert.type || '').toLowerCase();
+                            if (t === 'pest') navigate('/health/disease-scanner');
+                            else if (t === 'weather' || t === 'irrigation') navigate('/water-soil/irrigation');
+                            else if (t === 'market') navigate('/marketplace/inputs');
+                            else navigate('/gov/schemes');
+                          }}
+                        >
                           <span className="material-symbols-outlined text-[18px]">open_in_new</span>
                           <span>{alert.action_text || 'View Action'}</span>
                         </button>
                         {style.categoryLabel.includes('Pest') && (
-                           <button className="min-h-[48px] px-4 bg-surface-container-high text-primary font-label-md text-label-md rounded-lg flex items-center justify-center gap-1 active:bg-surface-dim" type="button">
+                           <button 
+                             className="min-h-[48px] px-4 bg-surface-container-high text-primary font-label-md text-label-md rounded-lg flex items-center justify-center gap-1 active:bg-surface-dim" 
+                             type="button"
+                             onClick={() => navigate('/community/disease-map')}
+                           >
                              <span className="material-symbols-outlined text-[18px]">location_on</span>
                              <span>Map View</span>
                            </button>

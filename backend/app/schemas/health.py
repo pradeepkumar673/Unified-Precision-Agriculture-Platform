@@ -60,6 +60,32 @@ class WeedReportRead(BaseModel):
     created_at: datetime
 
 
+class PublicDiseaseReportRead(BaseModel):
+    id: UUID
+    farm_id: UUID
+    predicted_disease: str
+    crop: str
+    severity: DiseaseSeverity
+    created_at: datetime
+    latitude: float
+    longitude: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WeedReportRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    farm_id: UUID
+    image_path: str
+    predicted_species: str
+    confidence: float
+    recommended_herbicide: str
+    dosage_ml_per_acre: float
+    created_at: datetime
+
+
 # ---------- pest risk / surveillance ----------
 
 class PestRiskEntry(BaseModel):

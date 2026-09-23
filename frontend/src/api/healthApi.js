@@ -27,6 +27,7 @@ export const detectWeed = (formData) => api.post('/health/weed-detect', formData
 // Pest & Surveillance Maps
 export const getPestRiskMap = (district) => api.get(`/health/pest-risk-map?district=${encodeURIComponent(district)}`);
 export const getSurveillanceMap = (district) => api.get(`/health/surveillance-map?district=${encodeURIComponent(district)}`);
+export const getPublicDiseaseReports = (district) => api.get(`/health/public-disease-reports?district=${encodeURIComponent(district)}`);
 export const broadcastAlert = (reportId) => api.post(`/health/broadcast-alert/${reportId}`);
 
 // Livestock

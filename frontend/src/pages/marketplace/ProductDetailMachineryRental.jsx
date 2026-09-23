@@ -13,17 +13,7 @@ export default function ProductDetailMachineryRental() {
       try {
         const res = await getEquipmentListings();
         if (res.data && res.data.length > 0) {
-          setEquipment(res.data[0]); // Default to first available equipment
-        } else {
-          setEquipment({
-            id: 'demo-123',
-            equipment_type: 'Claas Crop Harvester & Operator',
-            owner_id: 'Nashik Krishi Co-op',
-            daily_rate: 11400,
-            latitude: 20.0,
-            longitude: 73.7,
-            available: true
-          });
+          setEquipment(res.data[0]);
         }
       } catch (err) {
         console.error(err);
@@ -31,6 +21,10 @@ export default function ProductDetailMachineryRental() {
     };
     fetchEq();
   }, []);
+
+  if (!equipment) {
+    return <div className="min-h-screen bg-surface flex items-center justify-center p-4 text-on-surface">Loading equipment details...</div>;
+  }
 
   const handleBook = async () => {
     try {
@@ -76,7 +70,7 @@ export default function ProductDetailMachineryRental() {
               </div>
             </div>
             <h1 className="font-headline-md text-headline-md text-on-surface font-bold leading-tight">
-              {equipment ? equipment.equipment_type : 'Claas Crop Harvester & Operator'}
+              {equipment.equipment_type}
             </h1>
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 font-label-sm text-label-sm text-on-surface-variant">
               <div className="flex items-center gap-1">
@@ -102,7 +96,7 @@ export default function ProductDetailMachineryRental() {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-1">
-                    <h3 className="font-label-lg text-label-lg text-on-surface font-bold truncate">{equipment ? equipment.owner_id : 'Nashik Krishi Co-op'}</h3>
+                    <h3 className="font-label-lg text-label-lg text-on-surface font-bold truncate">{equipment.owner_id}</h3>
                     <span className="material-symbols-outlined text-[16px] text-primary" title="Verified Cooperative">verified</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
@@ -263,7 +257,7 @@ export default function ProductDetailMachineryRental() {
             <div className="space-y-1.5 font-body-sm text-body-sm text-on-surface-variant">
               <div className="flex justify-between">
                 <span>Machine Hiring (2 Full Days / 16 hrs)</span>
-                <span className="font-semibold text-on-surface">₹23,000</span>
+                <span className="font-semibold text-on-surface">₹{(equipment.daily_rate * 2).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Operator Allowance (Certified driver)</span>
@@ -281,7 +275,7 @@ export default function ProductDetailMachineryRental() {
             <div className="pt-2 border-t border-surface-container-high flex items-baseline justify-between mt-2">
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Estimated Payable Amount</span>
-                <span className="font-headline-md text-headline-md font-bold text-on-surface">₹23,000</span>
+                <span className="font-headline-md text-headline-md font-bold text-on-surface">₹{(equipment.daily_rate * 2).toLocaleString()}</span>
               </div>
               <span className="font-label-sm text-label-sm text-secondary font-bold bg-secondary-fixed/40 px-2 py-1 rounded">Pay after harvest completion</span>
             </div>
@@ -293,7 +287,7 @@ export default function ProductDetailMachineryRental() {
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm text-on-surface-variant">Total Rental Quote (2 Days)</span>
-            <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹23,000</span>
+            <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹{(equipment.daily_rate * 2).toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-1 text-primary font-label-sm text-label-sm">
             <span className="material-symbols-outlined text-[16px]">lock</span>
