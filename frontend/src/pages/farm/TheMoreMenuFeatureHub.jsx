@@ -5,159 +5,90 @@ export default function TheMoreMenuFeatureHub() {
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
+  // All 57 features mapped to screens
   const modules = [
-    {
-      id: 1,
-      cat: 'ai',
-      bgClass: 'bg-primary-fixed text-on-primary-fixed-variant',
-      icon: 'health_and_safety',
-      title: 'Crop Health',
-      badge: 'AI Active',
-      badgeClass: 'bg-primary text-on-primary',
-      desc: 'AI camera leaf scanner, Yellow rust diagnosis, outbreak containment zone map',
-      actionText: 'Launch Scanner',
-      actionClass: 'text-primary',
-      route: '/health/disease-scanner'
-    },
-    {
-      id: 2,
-      cat: 'field',
-      bgClass: 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
-      icon: 'opacity',
-      title: 'Irrigation & Soil',
-      badge: 'Connected',
-      badgeClass: 'bg-tertiary-container text-on-tertiary-container',
-      desc: 'Smart water demand, automated solenoid valve timer, soil N-P-K heatmap telemetry',
-      actionText: 'Manage 3 Valves',
-      actionClass: 'text-tertiary',
-      route: '/water-soil/irrigation'
-    },
-    {
-      id: 3,
-      cat: 'ai',
-      bgClass: 'bg-secondary-fixed text-on-secondary-fixed-variant',
-      icon: 'query_stats',
-      title: 'Forecasts & Vision',
-      badge: '4 Tools',
-      badgeClass: 'bg-secondary-container text-on-secondary',
-      desc: 'APMC mandi price predictor, yield estimator, NDVI satellite stress, drone counting',
-      actionText: 'View Mandi Trends',
-      actionClass: 'text-secondary',
-      route: '/vision/price-forecast'
-    },
-    {
-      id: 4,
-      cat: 'finance',
-      bgClass: 'bg-primary-fixed-dim text-on-primary-fixed',
-      icon: 'payments',
-      title: 'Finance & Credit',
-      badge: '₹1.85L Eligible',
-      badgeClass: 'bg-primary-container text-on-primary-container',
-      desc: 'KCC digital credit line, wallet ledger, instant UPI checkout, PMFBY crop insurance claim',
-      actionText: 'Instant Pre-approval',
-      actionClass: 'text-primary',
-      route: '/finance/credit-insurance'
-    },
-    {
-      id: 5,
-      cat: 'finance',
-      bgClass: 'bg-surface-container-high text-on-surface',
-      icon: 'account_balance',
-      title: 'Govt Schemes',
-      badge: '4 Matches',
-      badgeClass: 'bg-tertiary text-on-tertiary',
-      desc: 'Auto-matching subsidy finder, PM-Kisan DBT tracking, localized document vault OCR',
-      actionText: 'Claim DBT Benefits',
-      actionClass: 'text-tertiary',
-      route: '/gov/schemes'
-    },
-    {
-      id: 6,
-      cat: 'field',
-      bgClass: 'bg-secondary-fixed-dim text-on-secondary-fixed',
-      icon: 'groups',
-      title: 'Community & FPO',
-      badge: 'Active Pool',
-      badgeClass: 'bg-secondary text-on-secondary',
-      desc: 'Digital Sakhi farm visits, SHG machinery rental slots, FPO cooperative bulk price bargaining',
-      actionText: 'View Shared Harvester',
-      actionClass: 'text-secondary',
-      route: '/community/fpo-cooperative-suite'
-    },
-    {
-      id: 7,
-      cat: 'ai',
-      bgClass: 'bg-tertiary-fixed text-tertiary',
-      icon: 'record_voice_over',
-      title: 'Voice Assistant',
-      badge: 'Voice AI',
-      badgeClass: 'bg-tertiary text-on-tertiary',
-      desc: 'Hands-free conversational agronomist, dialect voice queries, natural speech farm logging',
-      actionText: 'Speak in Hindi/Marathi',
-      actionClass: 'text-tertiary',
-      actionIcon: 'mic',
-      route: '/ai/assistant'
-    },
-    {
-      id: 8,
-      cat: 'ai',
-      bgClass: 'bg-primary-fixed text-on-primary-fixed',
-      icon: 'science',
-      title: 'What-If Simulator',
-      badge: 'Predictive',
-      badgeClass: 'bg-primary-container text-on-primary-container',
-      desc: 'Counterfactual agronomic sandbox, test irrigation & hybrid seed shifts before capital outlay',
-      actionText: 'Run Scenario Model',
-      actionClass: 'text-primary',
-      route: '/ai/causal-lab'
-    },
-    {
-      id: 9,
-      cat: 'field',
-      bgClass: 'bg-surface-container-high text-primary',
-      icon: 'sensors',
-      title: 'CEA / IoT Polyhouse',
-      badge: 'High-Tech',
-      badgeClass: 'bg-surface-container-highest text-on-surface',
-      desc: 'DWC/NFT hydroponics, vertical rack monitor, automated micro-climate vapor deficit control',
-      actionText: 'Check Telemetry Feed',
-      actionClass: 'text-primary',
-      route: '/iot/hydro-climate'
-    },
-    {
-      id: 10,
-      cat: 'field',
-      bgClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
-      icon: 'share_location',
-      title: 'GPS Mapping & VRA',
-      badge: 'RTK Fix',
-      badgeClass: 'bg-tertiary-container text-on-tertiary-container',
-      desc: 'RTK perimeter boundary walk, k-means fertilizer management zones, tractor prescription export',
-      actionText: 'Boundary Calibration',
-      actionClass: 'text-tertiary',
-      route: '/farm/boundary'
-    },
-    {
-      id: 11,
-      cat: 'field',
-      bgClass: 'bg-secondary-fixed text-on-secondary-fixed-variant',
-      icon: 'qr_code_2',
-      title: 'Produce Passport',
-      badge: 'Grade AAA',
-      badgeClass: 'bg-secondary text-on-secondary',
-      desc: 'Sensor batch lifecycle log, buyer transparency QR code label export for premium market realization',
-      actionText: 'Print 120 QR Tags',
-      actionClass: 'text-secondary',
-      route: '/gov/traceability'
-    }
+    // 1. Farm Planning & Management
+    { id: '1-1', cat: 'planning', bgClass: 'bg-primary-container text-on-primary-container', icon: 'calendar_month', title: 'Crop Plan Recommendation', badge: 'AI', badgeClass: 'bg-primary text-on-primary', desc: 'AI-suggested crop schedules based on region.', actionText: 'View Plan', route: '/planning/crop-plan' },
+    { id: '1-2', cat: 'planning', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'timeline', title: 'Season Timeline', badge: 'Active', badgeClass: 'bg-secondary text-on-secondary', desc: 'Interactive calendar tracking daily farm tasks.', actionText: 'Open Calendar', route: '/planning/season-timeline' },
+    { id: '1-3', cat: 'planning', bgClass: 'bg-tertiary-container text-on-tertiary-container', icon: 'analytics', title: 'Season Performance Report', badge: 'Analytics', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Analytics on past yield vs cost.', actionText: 'View Report', route: '/planning/season-performance' },
+    { id: '1-4', cat: 'planning', bgClass: 'bg-primary-fixed text-on-primary-fixed-variant', icon: 'sync', title: 'Crop Rotation Suggestion', badge: 'AI', badgeClass: 'bg-primary text-on-primary', desc: 'AI recommendations to maintain soil nutrients.', actionText: 'Get Suggestion', route: '/planning/rotation' },
+    { id: '1-5', cat: 'planning', bgClass: 'bg-secondary-fixed text-on-secondary-fixed-variant', icon: 'compare', title: 'Variety Comparison', badge: 'Data', badgeClass: 'bg-surface text-on-surface', desc: 'Compare seed varieties side-by-side.', actionText: 'Compare', route: '/planning/variety-comparison' },
+    { id: '1-6', cat: 'planning', bgClass: 'bg-tertiary-fixed text-on-tertiary-fixed-variant', icon: 'map', title: 'Variable Rate Planning', badge: 'Precision', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Setup precision fertilizer application maps.', actionText: 'Open Map', route: '/planning/variable-rate' },
+    { id: '1-7', cat: 'planning', bgClass: 'bg-surface-container-high text-on-surface', icon: 'account_circle', title: 'Farm Profile & Settings', badge: 'Profile', badgeClass: 'bg-secondary text-on-secondary', desc: 'Manage farm size, soil type, and owner info.', actionText: 'Edit Profile', route: '/farm/profile' },
+    { id: '1-8', cat: 'planning', bgClass: 'bg-primary-container text-on-primary-container', icon: 'satellite_alt', title: 'GPS Field Mapping', badge: 'GPS', badgeClass: 'bg-primary text-on-primary', desc: 'Satellite drawing tool to measure precise acreage.', actionText: 'Map Field', route: '/farm/boundary' },
+
+    // 2. Health, Pest & Disease
+    { id: '2-1', cat: 'health', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'document_scanner', title: 'Leaf Disease Scanner', badge: 'Vision', badgeClass: 'bg-secondary text-on-secondary', desc: 'Camera interface to scan sick plants.', actionText: 'Scan Plant', route: '/health/disease-scanner' },
+    { id: '2-2', cat: 'health', bgClass: 'bg-tertiary-container text-on-tertiary-container', icon: 'medical_information', title: 'Crop Diagnosis Result', badge: 'AI', badgeClass: 'bg-primary text-on-primary', desc: 'AI output identifying the disease & cure.', actionText: 'View History', route: '/health/disease-result' },
+    { id: '2-3', cat: 'health', bgClass: 'bg-error-container text-on-error-container', icon: 'bug_report', title: 'Pest Risk Dashboard', badge: 'Alert', badgeClass: 'bg-error text-on-error', desc: 'Forecasts of pest attacks based on weather.', actionText: 'Check Risk', route: '/health/pest-risk' },
+    { id: '2-4', cat: 'health', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'cruelty_free', title: 'Livestock Health', badge: 'Dairy', badgeClass: 'bg-secondary text-on-secondary', desc: 'Track vaccination and diet for dairy/livestock.', actionText: 'Manage Livestock', route: '/health/livestock' },
+
+    // 3. Water & Soil Management
+    { id: '3-1', cat: 'water', bgClass: 'bg-primary-fixed-dim text-on-primary-fixed', icon: 'water_drop', title: 'Irrigation Recommendation', badge: 'IoT', badgeClass: 'bg-primary text-on-primary', desc: 'Daily water requirement calculations.', actionText: 'View Recs', route: '/water-soil/irrigation' },
+    { id: '3-2', cat: 'water', bgClass: 'bg-secondary-fixed-dim text-on-secondary-fixed', icon: 'waves', title: 'Water Demand Forecast', badge: 'AI', badgeClass: 'bg-primary text-on-primary', desc: 'Long-term water needs vs reservoir levels.', actionText: 'Forecast', route: '/water-soil/demand-forecast' },
+    { id: '3-3', cat: 'water', bgClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed', icon: 'grid_on', title: 'Zone Management', badge: 'Precision', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Divide farm into micro-zones for precise care.', actionText: 'Manage Zones', route: '/water-soil/zone-management' },
+    { id: '3-4', cat: 'water', bgClass: 'bg-surface-container-high text-on-surface', icon: 'landscape', title: 'Soil Health Heatmap', badge: 'Sensors', badgeClass: 'bg-secondary text-on-secondary', desc: 'Visual map of NPK and moisture levels.', actionText: 'View Map', route: '/water-soil/soil-health' },
+
+    // 4. Vision, Drone & Forecasting
+    { id: '4-1', cat: 'vision', bgClass: 'bg-primary-container text-on-primary-container', icon: 'filter_b_and_w', title: 'Satellite Crop Stress', badge: 'NDVI', badgeClass: 'bg-primary text-on-primary', desc: 'NDVI heatmaps showing plant health from space.', actionText: 'View NDVI', route: '/vision/satellite' },
+    { id: '4-2', cat: 'vision', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'grass', title: 'Yield Forecast', badge: 'AI', badgeClass: 'bg-secondary text-on-secondary', desc: 'AI predicting total tons of harvest expected.', actionText: 'Predict Yield', route: '/vision/yield-forecast' },
+    { id: '4-3', cat: 'vision', bgClass: 'bg-tertiary-container text-on-tertiary-container', icon: 'trending_up', title: 'Mandi Price Forecast', badge: 'ML', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Machine learning predicting future market rates.', actionText: 'Check Prices', route: '/vision/price-forecast' },
+    { id: '4-4', cat: 'vision', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'flight', title: 'Drone & Climate Risk', badge: 'Drone', badgeClass: 'bg-secondary text-on-secondary', desc: 'Integrate drone imagery and severe weather tracking.', actionText: 'Analyze Risk', route: '/vision/drone-climate' },
+
+    // 5. Marketplace & Logistics
+    { id: '5-1', cat: 'marketplace', bgClass: 'bg-primary-fixed text-on-primary-fixed-variant', icon: 'storefront', title: 'Inputs Marketplace', badge: 'Store', badgeClass: 'bg-primary text-on-primary', desc: 'E-commerce store to buy seeds, fertilizers, and tools.', actionText: 'Shop Inputs', route: '/marketplace/inputs' },
+    { id: '5-2', cat: 'marketplace', bgClass: 'bg-secondary-fixed text-on-secondary-fixed-variant', icon: 'agriculture', title: 'Machinery & Labor Rental', badge: 'Rent', badgeClass: 'bg-secondary text-on-secondary', desc: 'Uber-like booking for tractors and labor.', actionText: 'Book Now', route: '/marketplace/rentals' },
+    { id: '5-3', cat: 'marketplace', bgClass: 'bg-tertiary-fixed text-on-tertiary-fixed-variant', icon: 'info', title: 'Product Detail / Booking', badge: 'Info', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Detailed spec sheet for renting heavy machinery.', actionText: 'View Details', route: '/marketplace/machinery' },
+    { id: '5-4', cat: 'marketplace', bgClass: 'bg-surface-container-high text-on-surface', icon: 'handshake', title: 'Buyer Exchange', badge: 'B2B', badgeClass: 'bg-primary text-on-primary', desc: 'Connect directly with food processing companies.', actionText: 'Connect', route: '/marketplace/exchange' },
+    { id: '5-5', cat: 'marketplace', bgClass: 'bg-primary-container text-on-primary-container', icon: 'sell', title: 'Harvest & Sell Produce', badge: 'Sell', badgeClass: 'bg-secondary text-on-secondary', desc: 'List your yield for live bidding.', actionText: 'List Produce', route: '/marketplace/harvest' },
+    { id: '5-6', cat: 'marketplace', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'local_shipping', title: 'Delivery & Logistics', badge: 'Track', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Live GPS tracking of trucks moving your produce.', actionText: 'Track Delivery', route: '/marketplace/delivery' },
+
+    // 6. Finance & Insurance
+    { id: '6-1', cat: 'finance', bgClass: 'bg-primary-fixed-dim text-on-primary-fixed', icon: 'account_balance_wallet', title: 'Wallet & Ledger', badge: 'Passbook', badgeClass: 'bg-primary text-on-primary', desc: 'Digital passbook tracking all farm expenses.', actionText: 'View Wallet', route: '/finance/wallet' },
+    { id: '6-2', cat: 'finance', bgClass: 'bg-secondary-fixed-dim text-on-secondary-fixed', icon: 'payment', title: 'Payment Checkout', badge: 'UPI', badgeClass: 'bg-secondary text-on-secondary', desc: 'Secure UPI/Card gateway for buying inputs.', actionText: 'Pay Now', route: '/finance/checkout' },
+    { id: '6-3', cat: 'finance', bgClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed', icon: 'health_and_safety', title: 'Credit & Insurance Hub', badge: 'Loans', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Apply for KCC loans and crop insurance.', actionText: 'Apply KCC', route: '/finance/credit-insurance' },
+
+    // 7. Government & Compliance
+    { id: '7-1', cat: 'gov', bgClass: 'bg-primary-container text-on-primary-container', icon: 'policy', title: 'Govt Scheme Matching', badge: 'Subsidy', badgeClass: 'bg-primary text-on-primary', desc: 'AI tool that finds subsidies you are eligible for.', actionText: 'Find Schemes', route: '/gov/schemes' },
+    { id: '7-2', cat: 'gov', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'folder', title: 'Farmer Document Vault', badge: 'Secure', badgeClass: 'bg-secondary text-on-secondary', desc: 'Secure digital locker for land records (7/12), Aadhar, etc.', actionText: 'Open Locker', route: '/gov/documents' },
+    { id: '7-3', cat: 'gov', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'qr_code', title: 'Produce Traceability', badge: 'Export', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Blockchain/QR code generation for export compliance.', actionText: 'Generate QR', route: '/gov/traceability' },
+
+    // 8. Community, FPO & Social
+    { id: '8-1', cat: 'community', bgClass: 'bg-tertiary-container text-on-tertiary-container', icon: 'notifications_active', title: 'Farm Alerts Feed', badge: 'Live', badgeClass: 'bg-error text-on-error', desc: 'Real-time localized alerts (weather, pests, canal release).', actionText: 'View Alerts', route: '/community/alerts' },
+    { id: '8-2', cat: 'community', bgClass: 'bg-primary-fixed text-on-primary-fixed-variant', icon: 'stars', title: 'Grower Score', badge: 'Rank', badgeClass: 'bg-primary text-on-primary', desc: 'Gamified sustainability score compared to neighbors.', actionText: 'Check Score', route: '/community/grower-score' },
+    { id: '8-3', cat: 'community', bgClass: 'bg-surface-container-high text-on-surface', icon: 'forum', title: 'FPO Community Forum', badge: 'Chat', badgeClass: 'bg-secondary text-on-secondary', desc: 'Chat room and knowledge sharing for local farmers.', actionText: 'Join Chat', route: '/community/fpo' },
+    { id: '8-4', cat: 'community', bgClass: 'bg-secondary-fixed text-on-secondary-fixed-variant', icon: 'video_call', title: 'Digital Sakhi Support', badge: 'Video', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Direct video-call line to agricultural experts.', actionText: 'Call Expert', route: '/community/digital-sakhi' },
+    { id: '8-5', cat: 'community', bgClass: 'bg-tertiary-fixed text-on-tertiary-fixed-variant', icon: 'group_work', title: 'SHG Shared Bookings', badge: 'Wholesale', badgeClass: 'bg-primary text-on-primary', desc: 'Group buying of expensive inputs to get wholesale rates.', actionText: 'View Shared', route: '/community/shg-bookings' },
+    { id: '8-6', cat: 'community', bgClass: 'bg-error-container text-on-error-container', icon: 'warning', title: 'Community Disease Map', badge: 'Waze', badgeClass: 'bg-error text-on-error', desc: 'Waze-style map where farmers report pest outbreaks.', actionText: 'View Outbreaks', route: '/community/disease-map' },
+    { id: '8-7', cat: 'community', bgClass: 'bg-primary-container text-on-primary-container', icon: 'admin_panel_settings', title: 'FPO Cooperative Suite', badge: 'Admin', badgeClass: 'bg-secondary text-on-secondary', desc: 'Admin dashboard for FPO leaders to manage members.', actionText: 'Manage FPO', route: '/community/fpo-cooperative-suite' },
+    { id: '8-8', cat: 'community', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'share', title: 'Season Report Sharing', badge: 'Social', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Share your success metrics with the community.', actionText: 'Share Report', route: '/community/season-report' },
+
+    // 9. Advanced AI & IoT
+    { id: '9-1', cat: 'ai_iot', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'mic', title: 'Voice Assistant', badge: 'KhetSaathi Bol', badgeClass: 'bg-primary text-on-primary', desc: 'Voice-activated conversational AI in local languages.', actionText: 'Speak Now', route: '/ai/assistant' },
+    { id: '9-2', cat: 'ai_iot', bgClass: 'bg-tertiary-container text-on-tertiary-container', icon: 'image_search', title: 'Multimodal Query', badge: 'AI', badgeClass: 'bg-secondary text-on-secondary', desc: 'Upload photos + text + audio simultaneously to ask the AI.', actionText: 'Ask AI', route: '/ai/multimodal-query' },
+    { id: '9-3', cat: 'ai_iot', bgClass: 'bg-primary-fixed-dim text-on-primary-fixed', icon: 'science', title: 'Counterfactual Simulator', badge: 'What-If', badgeClass: 'bg-tertiary text-on-tertiary', desc: '"What if I plant 10 days late?" simulator.', actionText: 'Simulate', route: '/ai/causal-lab' },
+    { id: '9-4', cat: 'ai_iot', bgClass: 'bg-secondary-fixed-dim text-on-secondary-fixed', icon: 'memory', title: 'Federated Learning Status', badge: 'Privacy', badgeClass: 'bg-primary text-on-primary', desc: 'Shows how your local farm data safely trains the AI.', actionText: 'View Status', route: '/ai/federated-learning' },
+    { id: '9-5', cat: 'ai_iot', bgClass: 'bg-surface-container-high text-on-surface', icon: 'speed', title: 'Live Sensor Dashboard', badge: 'IoT', badgeClass: 'bg-secondary text-on-secondary', desc: 'Real-time dials for soil moisture, temp, and humidity hardware.', actionText: 'View Sensors', route: '/iot/dashboard' },
+    { id: '9-6', cat: 'ai_iot', bgClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed', icon: 'thermostat', title: 'Hydroponics Climate Control', badge: 'Polyhouse', badgeClass: 'bg-tertiary text-on-tertiary', desc: 'Advanced control panel for indoor/greenhouse farming.', actionText: 'Control Climate', route: '/iot/hydro-climate' },
+    { id: '9-7', cat: 'ai_iot', bgClass: 'bg-primary-container text-on-primary-container', icon: 'shelves', title: 'Vertical Farm Monitor', badge: 'Indoor', badgeClass: 'bg-primary text-on-primary', desc: 'Track plant growth on individual racks in a vertical farm.', actionText: 'View Racks', route: '/iot/shelves' },
+    { id: '9-8', cat: 'ai_iot', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'verified', title: 'IoT Traceability', badge: 'Blockchain', badgeClass: 'bg-secondary text-on-secondary', desc: 'Hardware-backed sensor logs proving crop was grown safely.', actionText: 'Verify Logs', route: '/iot/traceability' },
+
+    // 10. Core App Infrastructure
+    { id: '10-1', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'search', title: 'Global Search', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Search across all 57 features instantly.', actionText: 'Search', route: '/' },
+    { id: '10-2', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'language', title: 'Language Localization (i18n)', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Toggle between English, Hindi, Marathi, etc.', actionText: 'Change Lang', route: '/' },
+    { id: '10-3', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'cloud_off', title: 'Offline Sync Engine', badge: 'Background', badgeClass: 'bg-outline text-surface', desc: 'Ensures forms and logs work without internet.', actionText: 'Sync Status', route: '/' },
+    { id: '10-4', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'notification_important', title: 'Push Notification Manager', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Delivers time-sensitive irrigation and pest alerts.', actionText: 'Settings', route: '/' },
+    { id: '10-5', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'brightness_6', title: 'Dynamic Theming System', badge: 'UI', badgeClass: 'bg-outline text-surface', desc: 'Adapts UI for bright sunlight visibility in the field.', actionText: 'Theme Config', route: '/' },
+    { id: '10-6', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'error_outline', title: 'Global Error Boundaries', badge: 'Robust', badgeClass: 'bg-outline text-surface', desc: 'Graceful fallback UI for network failures.', actionText: 'Check Logs', route: '/' },
+    { id: '10-7', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'security', title: 'Role-Based Access Control', badge: 'Auth', badgeClass: 'bg-outline text-surface', desc: 'Modifies UI for Farmer, Buyer, or FPO Leader.', actionText: 'Access Levels', route: '/' },
   ];
 
   const filteredModules = filter === 'all' ? modules : modules.filter(m => m.cat === filter);
 
   return (
-    <div className="flex flex-col w-full px-space-md pb-space-lg space-y-space-md">
+    <div className="flex flex-col w-full px-space-md pb-space-lg space-y-space-md min-h-screen bg-surface">
       {/* Interactive Header Panel */}
-      <div className="flex flex-col w-full bg-surface-container-low rounded-xl p-space-md shadow-sm mt-space-md">
+      <div className="flex flex-col w-full bg-surface-container-low rounded-xl p-space-md shadow-sm mt-space-md pt-[72px]">
         <div className="flex items-start justify-between gap-space-sm">
           <div className="flex flex-col">
             <div className="flex items-center gap-space-xs">
@@ -165,65 +96,89 @@ export default function TheMoreMenuFeatureHub() {
               <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
               <span className="font-label-sm text-label-sm text-on-surface-variant">Live v4.2</span>
             </div>
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-0.5">More Agritech Tools</h1>
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-0.5">Feature Hub (57 Modules)</h1>
           </div>
           <button onClick={() => navigate('/')} aria-label="Close Hub" className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface active:scale-95 transition-transform" type="button">
             <span className="material-symbols-outlined text-[22px]">close</span>
           </button>
         </div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">All 11 specialized modules and advanced farm services calibrated for Plot 1</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Explore all 57 specialized tools, AI services, and infrastructure features powering KhetSaathi.</p>
         
         {/* Quick Search & Filter Pills */}
-        <div className="flex items-center gap-space-xs mt-space-sm overflow-x-auto pb-1">
+        <div className="flex items-center gap-space-xs mt-space-sm overflow-x-auto pb-1 -mx-space-md px-space-md no-scrollbar">
             <button 
               onClick={() => setFilter('all')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'all' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant'}`} 
-              type="button"
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'all' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
             >
-              All Modules
+              All 57 Tools
             </button>
             <button 
-              onClick={() => setFilter('ai')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'ai' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant'}`} 
-              type="button"
+              onClick={() => setFilter('planning')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'planning' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
             >
-              AI & Automation
+              Planning & Farm
+            </button>
+            <button 
+              onClick={() => setFilter('health')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'health' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              Health & Pest
+            </button>
+            <button 
+              onClick={() => setFilter('water')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'water' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              Water & Soil
+            </button>
+            <button 
+              onClick={() => setFilter('vision')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'vision' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              Vision & Drone
+            </button>
+            <button 
+              onClick={() => setFilter('marketplace')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'marketplace' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              Market & Logistics
             </button>
             <button 
               onClick={() => setFilter('finance')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'finance' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant'}`} 
-              type="button"
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'finance' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
             >
-              Finance & Trace
+              Finance & Insure
             </button>
             <button 
-              onClick={() => setFilter('field')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'field' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant'}`} 
-              type="button"
+              onClick={() => setFilter('gov')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'gov' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
             >
-              Field & Sensors
+              Govt & Trace
+            </button>
+            <button 
+              onClick={() => setFilter('community')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'community' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              Community & FPO
+            </button>
+            <button 
+              onClick={() => setFilter('ai_iot')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'ai_iot' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              AI & IoT
+            </button>
+            <button 
+              onClick={() => setFilter('core')} 
+              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'core' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+            >
+              Core System
             </button>
         </div>
       </div>
 
-      {/* Real-time Agro-IoT Mini Ticker */}
-      <div className="flex items-center justify-between bg-primary-fixed text-on-primary-fixed p-space-sm rounded-lg shadow-sm">
-        <div className="flex items-center gap-space-sm">
-          <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center">
-            <span className="material-symbols-outlined text-[18px]">satellite_alt</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="font-label-md text-label-md leading-tight">Sentinel-2 Sync: Healthy Canopy</span>
-            <span className="font-label-sm text-label-sm opacity-80">NDVI 0.74 • Topsoil Moisture 28%</span>
-          </div>
-        </div>
-        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/20 font-bold uppercase">Optimal</span>
-      </div>
-
-      {/* Tactical Grid Feature Cards */}
-      <div className="flex flex-col gap-space-sm">
+      {/* Grid Feature Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-sm pb-24">
         {filteredModules.map(mod => (
-          <div key={mod.id} onClick={() => navigate(mod.route)} className="module-card group bg-surface-container-lowest rounded-xl p-space-md shadow-sm active:scale-[0.99] transition-all cursor-pointer">
+          <div key={mod.id} onClick={() => navigate(mod.route)} className="module-card group bg-surface-container-lowest rounded-xl p-space-md shadow-sm active:scale-[0.99] transition-all cursor-pointer border border-transparent hover:border-outline-variant">
             <div className="flex items-start gap-space-md">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${mod.bgClass}`}>
                 <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>{mod.icon}</span>
@@ -234,32 +189,19 @@ export default function TheMoreMenuFeatureHub() {
                   <span className={`font-label-sm text-label-sm px-space-xs py-0.5 rounded-full font-bold shrink-0 ${mod.badgeClass}`}>{mod.badge}</span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">{mod.desc}</p>
-                <div className={`flex items-center gap-space-xs mt-2 font-label-md text-label-md ${mod.actionClass}`}>
+                <div className="flex items-center gap-space-xs mt-2 font-label-md text-label-md text-primary">
                   <span>{mod.actionText}</span>
-                  <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">{mod.actionIcon || 'arrow_forward'}</span>
+                  <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </div>
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Quick Agronomist Field Support Banner */}
-      <div className="w-full bg-surface-container p-space-md rounded-xl flex items-center justify-between gap-space-md shadow-sm cursor-pointer active:scale-95 transition-transform" onClick={() => navigate('/community/digital-sakhi')}>
-        <div className="flex items-center gap-space-sm min-w-0">
-          <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-surface-container-highest">
-            <img alt="Sunita Sakhi" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHDoH-JULur46WjOFAWi6ZSLiM0FHg-EWI1QdsvicJkQyVxLpszvPOAtptYJ_d0To2G2kSVFGXCxKi9M1Aua6bafwx7ywjx__TiopIsZd1LF5P06y8ptnkBr3scm6092AQnbT3HpF9gqme9GNdMxDS-3VbZOmURxcEiNHJ0q39YJ_sJg2Diepxwj21KRAbeuEAELYWKFb1fz7VWhnUmDetyGCLORNiPNePHAj7_0-p8VlH2iH95_PD" />
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-primary-container rounded-full ring-2 ring-surface-container-lowest"></span>
+        {filteredModules.length === 0 && (
+          <div className="col-span-full py-10 text-center text-on-surface-variant">
+            No features found for this category.
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-label-lg text-label-lg text-on-surface truncate">Need help navigating?</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant truncate">Talk to Sunita Sakhi (Agronomist)</span>
-          </div>
-        </div>
-        <button aria-label="Call Agronomist Sunita" className="h-12 px-space-md rounded-full bg-secondary text-on-secondary flex items-center justify-center gap-space-xs shrink-0 shadow-sm active:scale-95 transition-transform" type="button" onClick={(e) => { e.stopPropagation(); navigate('/community/digital-sakhi'); }}>
-          <span className="material-symbols-outlined text-[20px]">call</span>
-          <span className="font-label-md text-label-md font-bold">Call</span>
-        </button>
+        )}
       </div>
     </div>
   );
