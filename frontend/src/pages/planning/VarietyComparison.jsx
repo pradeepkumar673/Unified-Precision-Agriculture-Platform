@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getVarietyRecommendation } from '../../api/planningApi';
+import { getFarmProfile } from '../../api/farmApi';
 
 const FILTERS = [
   { id: 'all', label: 'All Varieties' },
@@ -9,57 +10,41 @@ const FILTERS = [
   { id: 'early', label: 'Early Maturing' },
 ];
 
-const VARIETIES = [
-  {
-    id: 'HD-2967',
-    name: 'Sharbati Gold',
-    match: 96,
-    types: ['all', 'yield'],
-    desc: 'Top choice for Clay Loam in Nashik. High market premium and excellent tillering capacity.',
-    days: '120-125',
-    yield: '21-24',
-    cost: '₹1,250',
-    traits: [
-      { text: '⭐ Premium mandi rate (Sharbati)', color: 'bg-primary-container text-on-primary-container' },
-      { text: '💧 Mod. water requirement', color: 'bg-surface-container-high text-on-surface-variant' },
-      { text: '🛡️ Rust resistant', color: 'bg-surface-container-high text-on-surface-variant' },
-    ],
-  },
-  {
-    id: 'Lok-1',
-    name: 'Lok-1',
-    match: 84,
-    types: ['all', 'early', 'drought'],
-    desc: 'Best for late sowing scenarios or if canal water release is delayed. Heat tolerant.',
-    days: '105-110',
-    yield: '17-19',
-    cost: '₹950',
-    traits: [
-      { text: '⏱️ Escapes terminal heat', color: 'bg-secondary-container text-on-secondary-container' },
-      { text: '🌡️ High temp tolerance', color: 'bg-surface-container-high text-on-surface-variant' },
-    ],
-  },
-  {
-    id: 'PBW-550',
-    name: 'PBW-550 High Grain',
-    match: 78,
-    types: ['all', 'yield'],
-    desc: 'Requires assured irrigation. Very high yield potential but susceptible to lodging if over-fertilized.',
-    days: '130-135',
-    yield: '24-26',
-    cost: '₹1,950',
-    traits: [
-      { text: '⚖️ Heavy 1000-grain weight', color: 'bg-surface-container-high text-on-surface-variant' },
-      { text: '🌾 Resistant to Lodging (strong stem)', color: 'bg-surface-container-high text-on-surface-variant' },
-      { text: '⚠️ Requires 5 timely irrigations', color: 'bg-error-container text-on-error-container' },
-    ],
-  },
-];
-
 export default function VarietyComparison() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const crop = location.state?.crop || 'wheat';
+
+  const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
   const [filter, setFilter] = useState('all');
   const [toastData, setToastData] = useState(null);
+  const [farm, setFarm] = useState(null);
+  
+  const [varietiesData, setVarietiesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (farmId) {
+      getFarmProfile(farmId).then(res => setFarm(res.data)).catch(console.error);
+      
+      // Fetch dynamic variety recommendations
+      getVarietyRecommendation({ farm_id: farmId, crop: crop })
+        .then(res => {
+          if (res.data && res.data.recommended_varieties) {
+             setVarietiesData(res.data.recommended_varieties);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [farmId, crop]);
+
+  const district = farm?.district || 'your local region';
+  const soil = farm?.soil_type?.replace('_', ' ') || 'Clay Loam';
+
+
 
   const handleSelect = async (vCode, vName) => {
     // API call could happen here
@@ -78,7 +63,7 @@ export default function VarietyComparison() {
     }
   };
 
-  const visibleVarieties = VARIETIES.filter(v => v.types.includes(filter));
+  const visibleVarieties = varietiesData.filter(v => v.types && v.types.includes(filter));
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative">
@@ -105,7 +90,17 @@ export default function VarietyComparison() {
 
       <main className="flex flex-col w-full pt-[calc(5rem+4.5rem)] pb-28 px-margin bg-background flex-1">
         <div className="flex flex-col space-y-space-md">
-          {visibleVarieties.map((v) => (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-10 space-y-4">
+              <span className="material-symbols-outlined text-[32px] text-primary animate-spin">progress_activity</span>
+              <p className="font-body-md text-on-surface-variant">Finding best varieties for {crop}...</p>
+            </div>
+          ) : visibleVarieties.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
+              <span className="material-symbols-outlined text-[32px] text-on-surface-variant">search_off</span>
+              <p className="font-body-md text-on-surface-variant">No varieties found for {crop}. Try a different filter.</p>
+            </div>
+          ) : visibleVarieties.map((v) => (
             <article key={v.id} className="rounded-xl bg-surface-container-lowest p-space-md shadow-sm border border-surface-container relative">
               {v.match >= 90 && (
                 <div className="absolute -top-3 -right-2 px-3 py-1 bg-primary text-on-primary font-label-sm text-label-sm font-bold rounded-lg shadow-md transform rotate-2">
@@ -179,12 +174,12 @@ export default function VarietyComparison() {
             <div className="flex flex-col flex-1">
               <span className="font-label-lg text-label-lg text-on-background">Need seed source?</span>
               <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
-                Verified FPO &amp; KVK seed availability near Nashik (4 hubs in 18 km).
+                Verified FPO &amp; KVK seed availability near {district} (4 hubs in 18 km).
               </p>
             </div>
           </div>
           <button
-            onClick={() => alert('Locating verified Krishi Vigyan Kendra & Seed FPOs within 25 km of Nashik...')}
+            onClick={() => alert(`Locating verified Krishi Vigyan Kendra & Seed FPOs within 25 km of ${district}...`)}
             className="mt-space-md w-full h-14 rounded-lg bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-sm shadow-md active:scale-[0.99] transition-transform"
             type="button"
           >

@@ -75,6 +75,11 @@ def create_crop_plan(payload: CropPlanRequest, db: Session = Depends(get_db)):
         status=PlanStatusEnum.planned,
     )
     db.add(plan)
+
+    # Keep farm.current_crop in sync with the latest plan
+    farm.current_crop = result["recommended_crop"]
+    db.add(farm)
+
     db.commit()
     db.refresh(plan)
 
@@ -116,11 +121,25 @@ def create_rotation_plan(
         raise HTTPException(status_code=404, detail="Farm not found")
 
     from app.services.ml_rotation import predict as ml_predict_rotation
+    from app.services import llm
 
     # Call the trained stable-baselines3 RL agent inference
     result = ml_predict_rotation(
         soil_nitrogen=payload.soil_nitrogen,
         soil_organic_carbon=payload.soil_organic_carbon,
+        last_3_crops=payload.last_3_crops,
+    )
+
+    soil_type_val = farm.soil_type.value if hasattr(farm.soil_type, "value") else str(farm.soil_type)
+    soil_str = soil_type_val.replace("_", " ").title()
+    district_str = farm.district or "your local"
+
+    # Generate rich AI-powered timeline
+    timeline = llm.generate_rich_timeline(
+        crop=payload.last_3_crops[-1] if payload.last_3_crops else "wheat",
+        soil_type=soil_str,
+        district=district_str,
+        next_crop=result["next_crop"],
         last_3_crops=payload.last_3_crops,
     )
 
@@ -135,7 +154,7 @@ def create_rotation_plan(
     db.commit()
     db.refresh(plan)
 
-    return RotationPlanResponse(**result)
+    return RotationPlanResponse(**result, timeline=timeline)
 
 
 @router.post(
@@ -150,8 +169,34 @@ def create_variety_recommendation(
     if farm is None:
         raise HTTPException(status_code=404, detail="Farm not found")
 
-    # Uses ALS collaborative filter + content-based fallback (variety_als_model.pkl).
-    varieties = planning_service.recommend_varieties(payload.crop)
+    from app.services import llm
+    
+    soil_type_val = farm.soil_type.value if hasattr(farm.soil_type, "value") else str(farm.soil_type)
+    soil_str = soil_type_val.replace('_', ' ').title()
+    district_str = farm.district or "your local"
+
+    # Use LLM to generate rich variety data
+    varieties = llm.generate_rich_varieties(
+        crop=payload.crop,
+        soil_type=soil_str,
+        district=district_str
+    )
+
+    if not varieties:
+        # Fallback if LLM fails
+        varieties = [
+            {
+                "id": "Unknown",
+                "name": "Local Variety",
+                "match": 80,
+                "types": ["all"],
+                "desc": "Standard local variety.",
+                "days": "N/A",
+                "yield": "N/A",
+                "cost": "N/A",
+                "traits": []
+            }
+        ]
 
     rec = VarietyRecommendation(
         id=uuid.uuid4(),

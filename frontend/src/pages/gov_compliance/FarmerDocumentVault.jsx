@@ -159,9 +159,20 @@ export default function FarmerDocumentVault() {
                 )}
               </div>
               
-        <div className="flex items-center justify-between font-label-sm text-label-sm pt-1">
-                <span className="text-outline">File: {doc.file_path.split('/').pop()}</span>
-                <button className="text-primary font-semibold flex items-center gap-1 hover:underline active:opacity-80" type="button">
+        <div className="flex items-center justify-between font-label-sm text-label-sm pt-1 w-full overflow-hidden">
+                <span className="text-outline truncate mr-2" title={doc.file_path.replace(/\\/g, '/').split('/').pop()}>
+                  File: {doc.file_path.replace(/\\/g, '/').split('/').pop()}
+                </span>
+                <button 
+                  className="text-primary font-semibold flex items-center gap-1 hover:underline active:opacity-80" 
+                  type="button"
+                  onClick={() => window.open(
+                    import.meta.env.VITE_API_URL 
+                      ? `${import.meta.env.VITE_API_URL.replace('/api/v1', '')}/${doc.file_path.replace(/\\/g, '/').replace('backend/', '')}`
+                      : `http://localhost:8000/${doc.file_path.replace(/\\/g, '/').replace('backend/', '')}`
+                    , '_blank'
+                  )}
+                >
                   <span>View Details</span>
                   <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                 </button>

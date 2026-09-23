@@ -288,8 +288,22 @@ def process_document_upload(
         if os.path.exists(_tess):
             pytesseract.pytesseract.tesseract_cmd = _tess
 
-        img = Image.open(io.BytesIO(file_content))
-        raw_text = pytesseract.image_to_string(img)
+        raw_text = ""
+        if filename.lower().endswith(".pdf"):
+            import fitz
+            pdf_doc = fitz.open(stream=file_content, filetype="pdf")
+            for page in pdf_doc:
+                raw_text += page.get_text()
+            
+            # If no text could be extracted directly (e.g. scanned PDF), fallback to OCR
+            if not raw_text.strip():
+                pix = pdf_doc[0].get_pixmap()
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                raw_text = pytesseract.image_to_string(img)
+        else:
+            img = Image.open(io.BytesIO(file_content))
+            raw_text = pytesseract.image_to_string(img)
+
         lines = [ln.strip() for ln in raw_text.splitlines() if ln.strip()]
 
         # Structured extraction based on doc_type

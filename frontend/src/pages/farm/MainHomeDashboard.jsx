@@ -20,11 +20,22 @@ export default function MainHomeDashboard() {
   const [showModules, setShowModules] = useState(false);
   const [creditProfile, setCreditProfile] = useState(null);
 
+  const [alerts, setAlerts] = useState([]);
+  const [cropPlan, setCropPlan] = useState(null);
+
   useEffect(() => {
     if (!farmId) return;
     getFarmProfile(farmId).then(r => setFarm(r.data)).catch(() => {});
     getFarmZones(farmId).then(r => setZones(r.data || [])).catch(() => {});
     getCreditProfile(farmId).then(r => setCreditProfile(r.data)).catch(() => {});
+    
+    // Fetch real alerts and crop plan
+    import('../../api/communityApi').then(api => {
+      api.getAlerts(farmId).then(data => setAlerts(data || [])).catch(() => {});
+    });
+    import('../../api/planningApi').then(api => {
+      api.getCropPlan(farmId).then(r => setCropPlan(r.data?.[0] || null)).catch(() => {});
+    });
   }, [farmId]);
 
   const creditScore = creditProfile ? creditProfile.credit_score : '...';
@@ -32,8 +43,9 @@ export default function MainHomeDashboard() {
   const strokeDasharray = 100;
   const strokeDashoffset = creditProfile ? 100 - (100 * (Math.max(0, creditProfile.credit_score - 300) / 600)) : 100;
 
-  const farmerName = farm?.owner_name || 'Ramesh Patil';
-  const cropLabel = farm?.current_crop || 'Wheat (Sharbati Gold)';
+  const farmerName = farm?.owner_name || 'Farmer';
+  // Use the latest crop plan's crop, fall back to farm.current_crop
+  const activeCrop = cropPlan?.recommended_crop || farm?.current_crop || 'Crop';
   const plotLabel = farm?.name || 'Plot 1';
   const acresLabel = farm?.land_size_acres ? `${farm.land_size_acres} Ac` : '4.5 Ac';
 
@@ -47,10 +59,12 @@ export default function MainHomeDashboard() {
         <div className="flex items-center justify-between bg-surface-container-low px-space-md py-space-sm rounded-xl mt-4">
           <div className="flex items-center gap-space-xs min-w-0">
             <span className="material-symbols-outlined text-primary text-[20px] flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>wb_sunny</span>
-            <span className="font-label-md text-label-md text-on-surface truncate">{plotLabel} · {acresLabel} · Clay Loam</span>
+            <span className="font-label-md text-label-md text-on-surface truncate capitalize">
+              {plotLabel} · {acresLabel} · {farm?.soil_type?.replace('_', ' ') || 'Soil Type'}
+            </span>
           </div>
           <span className="font-label-sm text-label-sm bg-surface-container-highest text-on-surface-variant px-space-xs py-0.5 rounded-md flex-shrink-0">
-            Rabi 2024-25
+            {new Date().getMonth() > 4 && new Date().getMonth() < 10 ? 'Kharif' : 'Rabi'} {new Date().getFullYear()}-{((new Date().getFullYear() + 1) % 100).toString().padStart(2, '0')}
           </span>
         </div>
 
@@ -61,14 +75,25 @@ export default function MainHomeDashboard() {
               <h2 className="font-headline-sm text-headline-sm text-on-surface">Crop Stage</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Active season advisory</p>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold">Tillering</span>
+            <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold capitalize">
+              {farm?.crop_stage || 'Unknown'}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-primary-fixed/30 flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-[28px] text-primary">eco</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-body-sm text-body-sm text-on-surface">Wheat in <strong className="text-primary">Day 42</strong> — Tillering active. Apply 2nd split of Urea (65 kg/Ac) within 5 days.</p>
+              {cropPlan ? (
+                <p className="font-body-sm text-body-sm text-on-surface">
+                  <strong className="text-primary capitalize">{activeCrop}</strong> is active. 
+                  Your current plan has {cropPlan.activities?.length || 0} activities scheduled.
+                </p>
+              ) : (
+                <p className="font-body-sm text-body-sm text-on-surface">
+                  No active crop plan found. Tap below to generate one.
+                </p>
+              )}
             </div>
           </div>
           <button 
@@ -107,7 +132,8 @@ export default function MainHomeDashboard() {
             </div>
             <div className="flex flex-col min-w-0 justify-center">
               <p className="font-body-sm text-body-sm text-on-surface">
-                Timely irrigation and verified bio-fertilizers qualify you for low-interest credit up to <strong className="text-primary font-bold">₹{maxLimit.toLocaleString()}</strong>.
+                {creditScore >= 700 ? 'Excellent management qualifies you for low-interest credit up to ' : 'Improve health metrics to unlock better rates up to '}
+                <strong className="text-primary font-bold">₹{maxLimit.toLocaleString()}</strong>.
               </p>
             </div>
           </div>
@@ -130,28 +156,42 @@ export default function MainHomeDashboard() {
               type="button"
               onClick={() => navigate('/community/alerts')}
             >
-              <span>View all (7)</span>
+              <span>View all ({alerts.length})</span>
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
           </div>
-          {[
-            { icon: 'pest_control', bg: 'bg-error-container', fg: 'text-error', title: 'Yellow Rust Alert in Nashik', time: '2h ago', body: 'Inspect leaf underside today for orange-yellow pustules.' },
-            { icon: 'water', bg: 'bg-tertiary-fixed', fg: 'text-tertiary', title: 'Canal Water Release', time: '4h ago', body: 'Sub-canal Slot 3 scheduled for Tomorrow at 6:00 AM.' },
-            { icon: 'trending_up', bg: 'bg-primary-fixed', fg: 'text-primary', title: 'Wheat Mandi Rate Up +₹185', time: 'Yesterday', body: 'Lasalgaon APMC auction closed at ₹12,420 / Quintal.' },
-          ].map(({ icon, bg, fg, title, time, body }) => (
-            <div key={title} className="w-full rounded-xl bg-surface-container-lowest p-3.5 shadow-sm flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-full ${bg} ${fg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                <span className="material-symbols-outlined text-[22px]">{icon}</span>
-              </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-1">
-                  <h4 className="font-label-lg text-label-lg text-on-surface font-bold truncate">{title}</h4>
-                  <span className="font-label-sm text-label-sm text-outline flex-shrink-0">{time}</span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{body}</p>
-              </div>
+          
+          {alerts.length === 0 ? (
+            <div className="w-full rounded-xl bg-surface-container-lowest p-3.5 shadow-sm text-center text-on-surface-variant font-body-sm">
+              No recent alerts for your farm.
             </div>
-          ))}
+          ) : (
+            alerts.slice(0, 3).map((alert) => {
+              let style = { icon: 'notifications', bg: 'bg-surface-container', fg: 'text-on-surface-variant', title: 'Notification' };
+              if (alert.type === 'irrigation') style = { icon: 'water', bg: 'bg-tertiary-fixed', fg: 'text-tertiary', title: 'Irrigation Required' };
+              if (alert.type === 'pest') style = { icon: 'pest_control', bg: 'bg-error-container', fg: 'text-error', title: 'Pest Risk Alert' };
+              if (alert.type === 'spray_window') style = { icon: 'air', bg: 'bg-primary-fixed', fg: 'text-primary', title: 'Spray Window Active' };
+              
+              const dateStr = new Date(alert.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              
+              return (
+                <div key={alert.id} className="w-full rounded-xl bg-surface-container-lowest p-3.5 shadow-sm flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-full ${style.bg} ${style.fg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                    <span className="material-symbols-outlined text-[22px]">{style.icon}</span>
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="font-label-lg text-label-lg text-on-surface font-bold truncate">{style.title}</h4>
+                      <span className="font-label-sm text-label-sm text-outline flex-shrink-0">{dateStr}</span>
+                    </div>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-2">
+                      {alert.message}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </section>
 
         {/* Voice Bot Banner */}

@@ -12,6 +12,8 @@ from datetime import date
 from pathlib import Path
 from typing import List
 
+from app.services import llm
+
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 
 # Resolve ml_models dir relative to this file's location
@@ -145,17 +147,21 @@ def recommend_crop_plan(soil_type: str, season: str, year: int) -> dict:
         except Exception:
             confidence = 0.75
 
-        # Try to get investment and reasoning from rule table first
+        # Try to get investment from rule table first
         rule_key = (soil_key, season_key)
         if rule_key in CROP_RULES:
-            _, variety, investment, reasoning = CROP_RULES[rule_key]
+            _, variety, investment, _ = CROP_RULES[rule_key]
         else:
             variety    = "Certified Local Seed"
             investment = _CROP_INVESTMENT.get(crop_name.lower().split()[0], 30000.0)
-            reasoning  = (
-                f"XGBoost crop planner recommends {crop_name} for {soil_key} soil "
-                f"in {season_key} season (confidence {confidence:.0%})."
-            )
+
+        # Generate reasoning dynamically via Groq LLM
+        reasoning = llm.generate_crop_plan_reasoning(
+            crop=crop_name,
+            soil_type=soil_key,
+            season=season_key,
+            confidence=confidence
+        )
 
         return {
             "recommended_crop":    crop_name,
@@ -232,10 +238,17 @@ def recommend_rotation(
             soil_organic_carbon=soil_organic_carbon,
             last_3_crops=last_3_crops,
         )
+        reasoning = llm.generate_rotation_reasoning(
+            next_crop=result["next_crop"],
+            soil_nitrogen=soil_nitrogen,
+            soil_organic_carbon=soil_organic_carbon,
+            last_3_crops=last_3_crops
+        )
         return {
             "next_crop":             result["next_crop"],
             "projected_profit":      result["projected_profit"],
             "projected_soil_impact": result["projected_soil_impact"],
+            "reasoning":             reasoning,
             "model_type":            "ppo_rl_agent",
         }
 
@@ -254,10 +267,18 @@ def recommend_rotation(
             soil_impact = round(min(0.6, 0.3 + soil_organic_carbon * 0.1), 2)
             profit      = round(45000.0 + soil_nitrogen * 200, 2)
 
+        reasoning = llm.generate_rotation_reasoning(
+            next_crop=next_crop,
+            soil_nitrogen=soil_nitrogen,
+            soil_organic_carbon=soil_organic_carbon,
+            last_3_crops=last_3_crops
+        )
+
         return {
             "next_crop":             next_crop,
             "projected_profit":      profit,
             "projected_soil_impact": soil_impact,
+            "reasoning":             reasoning,
             "model_type":            "heuristic_fallback",
             "_fallback_reason":      str(exc),
         }

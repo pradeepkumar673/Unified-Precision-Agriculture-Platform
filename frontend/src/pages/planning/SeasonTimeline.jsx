@@ -1,86 +1,57 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCropPlan } from '../../api/planningApi';
+import { getCropPlan, createRotationPlan } from '../../api/planningApi';
+import { getFarmProfile } from '../../api/farmApi';
 
-const SEASON_CARDS = [
-  {
-    id: 'kharif',
-    status: 'completed',
-    statusLabel: 'Completed ✓',
-    statusBg: 'bg-surface-container-high',
-    statusColor: 'text-on-surface-variant',
-    dateRange: 'Jun – Oct 2024',
-    nodeColor: 'bg-surface-container-high text-on-surface-variant',
-    cardBg: 'bg-surface-container',
-    crop: 'Fallow / Green Manure (Dhaincha)',
-    cropImg: null,
-    cropNote: 'Soil rejuvenation season. Added 2.4T organic matter/Acre.',
-    metrics: [
-      { label: 'Organic Matter Added', value: '2.4T/Acre', color: 'text-on-surface' },
-      { label: 'Soil N Boost', value: '+28 kg/Ac', color: 'text-primary' },
-    ],
-    nodeIcon: 'eco',
-  },
-  {
-    id: 'rabi',
-    status: 'active',
-    statusLabel: '● Active Season',
-    statusBg: 'bg-primary-fixed',
-    statusColor: 'text-primary',
-    dateRange: 'Nov 2024 – Mar 2025',
-    nodeColor: 'bg-primary-container text-on-primary-container',
-    cardBg: 'bg-surface-container-lowest shadow-md border border-primary-fixed/30',
-    crop: 'Sharbati Gold Wheat (HD-2967)',
-    cropImg: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDK7NVGkjzh5BQXmoyfJrI8UUIEXPLGyQanvMIPmW-gJUU9AoXzXgyG-S5-gmK0mg8wP_YVJ4qrhzlz35nQPD61JKTGKJ9y484bURcIjTmyjOvbeFfP855STHVQ8LRuBzXaf2wZh5alnk-j4oCTWhZYMBFPswUzfWxC7A04RirvKH6A3av-_xYkSJElibpYLGAm_6K5h0P1bR9bnA_L6SO-S-9WTWNLLrzTvTSJZu503EPI9zFkP1nR',
-    cropVariety: 'Sown: 18 Nov 2024 at Row 22.5cm spacing',
-    day: 42,
-    totalDays: 120,
-    progressPct: 35,
-    stage: 'Flowering stage',
-    sowDate: '12 Nov 2024',
-    harvestDate: '15 Mar 2025',
-    taskLabel: 'Irrigation scheduled in 2 days (Plot 1 moisture 38%)',
-    nodeIcon: 'grain',
-  },
-  {
-    id: 'zaid',
-    status: 'upcoming',
-    statusLabel: 'Upcoming · Planning Open',
-    statusBg: 'bg-secondary/10',
-    statusColor: 'text-secondary',
-    dateRange: 'Mar – Jun 2025',
-    nodeColor: 'bg-secondary-container/20 text-secondary',
-    cardBg: 'bg-surface-container-lowest shadow-sm',
-    crop: 'Moong Dal / Green Gram',
-    cropImg: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8gU6EBHIbRlLB4yi0RnFKTRImMrb_Wyd2llRD-2nJQy_li-v43hLj36wA1cX97qAfam6iNdyoikC7fEZhe57sQtjQg5tGMSodneFffKFL4Mum-Ah8hB9zXLae_aVAch-1BzQh-p2dKPQiefEqEtgd3717hMyYLMuQ3_0oK0BrsQ_Mz49BL4s6Wphp2q02IoYowZ8kF5ejQc8YMKWuh4179TmRrNJj2OiK2fXY1uGsvPPSTeFpbzfv',
-    cropVariety: 'Variety IPM-02-3 · Recommended',
-    cropNote: '65-day short duration catch-crop before next monsoon. Prevents soil drying and weed outbreak.',
-    profit: '+₹1,28,500 / Acre',
-    nodeIcon: 'wb_sunny',
-  },
-  {
-    id: 'kharif25',
-    status: 'future',
-    statusLabel: 'Kharif 2025 (Jun – Oct)',
-    statusBg: 'bg-surface-container-highest',
-    statusColor: 'text-on-surface-variant',
-    dateRange: '',
-    nodeColor: 'bg-surface-container-high text-on-surface-variant',
-    cardBg: 'bg-surface-container shadow-sm',
-    crop: 'Cotton or Maize rotation',
-    cropNote: 'Suggested to break the pest cycle and optimize seasonal rainfall uptake.',
-    nodeIcon: 'nest_clock_farsight_analog',
-  },
-];
+
 
 export default function SeasonTimeline() {
   const navigate = useNavigate();
   const farmId = localStorage.getItem('farmId');
-  const [plan, setPlan] = useState(null);
+  const [timelineData, setTimelineData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!farmId) return;
-    getCropPlan(farmId).then(r => setPlan(r.data)).catch(() => {});
+    console.log('[Timeline] farmId from localStorage:', farmId);
+    if (!farmId) {
+      console.warn('[Timeline] No farmId found, aborting.');
+      setLoading(false);
+      return;
+    }
+
+    // First get the farm profile for soil data
+    getFarmProfile(farmId)
+      .then(farmRes => {
+        const farm = farmRes.data;
+        console.log('[Timeline] Farm profile:', farm);
+
+        const soilN = farm?.soil_nitrogen ?? 35.5;
+        const soilOC = farm?.soil_organic_carbon ?? 0.8;
+
+        // crop_history may be empty [] — use current_crop as fallback
+        const historyItems = Array.isArray(farm?.crop_history) && farm.crop_history.length > 0
+          ? farm.crop_history.map(h => (typeof h === 'string' ? h : h.crop))
+          : [farm?.current_crop || 'wheat', 'rice', 'fallow'];
+        const lastCrops = historyItems.slice(0, 3);
+        console.log('[Timeline] lastCrops:', lastCrops);
+
+        return createRotationPlan({
+          farm_id: farmId,
+          soil_nitrogen: soilN,
+          soil_organic_carbon: soilOC,
+          last_3_crops: lastCrops,
+        });
+      })
+      .then(res => {
+        console.log('[Timeline] rotation plan response:', res?.data);
+        if (res?.data?.timeline && res.data.timeline.length > 0) {
+          setTimelineData(res.data.timeline);
+        } else {
+          console.warn('[Timeline] timeline empty or missing in response');
+        }
+      })
+      .catch(err => console.error('[Timeline] Error:', err))
+      .finally(() => setLoading(false));
   }, [farmId]);
 
   const handleVoice = () => {
@@ -106,8 +77,18 @@ export default function SeasonTimeline() {
           <div className="absolute left-6 top-6 bottom-0 w-0.5 bg-surface-container-high z-0"></div>
 
           <div className="flex flex-col space-y-space-lg">
-            {SEASON_CARDS.map((card) => (
-              <div key={card.id} className="relative flex items-start space-x-space-md z-10">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                <span className="material-symbols-outlined text-[40px] text-primary animate-spin">progress_activity</span>
+                <p className="font-body-md text-on-surface-variant text-center">AI is building your crop rotation timeline...</p>
+              </div>
+            ) : timelineData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
+                <span className="material-symbols-outlined text-[32px] text-on-surface-variant">calendar_clock</span>
+                <p className="font-body-md text-on-surface-variant">No timeline data. Please create a crop plan first.</p>
+              </div>
+            ) : timelineData.map((card) => (
+              <div key={card.id || card.crop} className="relative flex items-start space-x-space-md z-10">
                 {/* Node icon */}
                 <div className={`w-12 h-12 rounded-full ${card.nodeColor} flex items-center justify-center flex-shrink-0 shadow-sm`}>
                   <span className="material-symbols-outlined text-[24px]">{card.nodeIcon}</span>
@@ -123,8 +104,8 @@ export default function SeasonTimeline() {
                     {card.dateRange && <span className="font-label-sm text-label-sm text-on-surface-variant">{card.dateRange}</span>}
                   </div>
 
-                  {/* Active Rabi card */}
-                  {card.id === 'rabi' && (
+                  {/* Active season card */}
+                  {card.status === 'active' && (
                     <>
                       <div className="flex items-center gap-space-sm mt-space-xs">
                         {card.cropImg && <img src={card.cropImg} alt={card.crop} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />}
@@ -160,8 +141,8 @@ export default function SeasonTimeline() {
                     </>
                   )}
 
-                  {/* Zaid upcoming card */}
-                  {card.id === 'zaid' && (
+                  {/* Upcoming season card */}
+                  {card.status === 'upcoming' && (
                     <>
                       <div className="flex items-center gap-space-sm mt-space-xs">
                         {card.cropImg && <img src={card.cropImg} alt={card.crop} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />}
@@ -188,8 +169,8 @@ export default function SeasonTimeline() {
                     </>
                   )}
 
-                  {/* Kharif completed + Kharif25 future */}
-                  {(card.id === 'kharif' || card.id === 'kharif25') && (
+                  {/* Completed / Future cards */}
+                  {(card.status === 'completed' || card.status === 'future') && (
                     <>
                       <h2 className="font-headline-sm text-headline-sm text-on-surface mt-space-xs">{card.crop}</h2>
                       {card.cropNote && <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{card.cropNote}</p>}

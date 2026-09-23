@@ -22,6 +22,24 @@ export default function AppShell({
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
+  const [farm, setFarm] = React.useState(null);
+  const [unreadAlerts, setUnreadAlerts] = React.useState(0);
+  
+  React.useEffect(() => {
+    const farmId = localStorage.getItem('farmId');
+    if (!farmId) return;
+    
+    import('../api/farmApi').then(api => {
+      api.getFarmProfile(farmId).then(r => setFarm(r.data)).catch(() => {});
+    });
+    
+    import('../api/communityApi').then(api => {
+      api.getAlerts(farmId).then(data => {
+        if (data) setUnreadAlerts(data.filter(a => !a.read).length);
+      }).catch(() => {});
+    });
+  }, []);
+
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'hi' : 'en';
     i18n.changeLanguage(newLang);
@@ -106,7 +124,7 @@ export default function AppShell({
                   onClick={() => navigate('/farm/profile')}
                 >
                   <span className="material-symbols-outlined text-[18px] text-primary shrink-0">location_on</span>
-                  <span className="font-label-md text-label-md truncate max-w-[80px] sm:max-w-[150px]">Green Valley Farm</span>
+                  <span className="font-label-md text-label-md truncate max-w-[80px] sm:max-w-[150px]">{farm?.name || 'Farm Dashboard'}</span>
                   <span className="material-symbols-outlined text-[16px] shrink-0">expand_more</span>
                 </button>
                 <div className="flex items-center gap-1 shrink-0">
@@ -124,7 +142,9 @@ export default function AppShell({
                     onClick={() => navigate('/community/alerts')}
                   >
                     <span className="material-symbols-outlined text-[22px]">notifications</span>
-                    <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-secondary-container text-on-secondary font-label-sm text-[10px] rounded-full flex items-center justify-center px-1">3</span>
+                    {unreadAlerts > 0 && (
+                      <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-secondary-container text-on-secondary font-label-sm text-[10px] rounded-full flex items-center justify-center px-1">{unreadAlerts}</span>
+                    )}
                   </button>
                   <Link to="/farm/profile" className="w-11 h-11 rounded-full bg-primary flex items-center justify-center">
                     <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>

@@ -48,10 +48,51 @@ class RotationPlanRequest(BaseModel):
     last_3_crops: List[str]
 
 
+class SeasonMetric(BaseModel):
+    label: str
+    value: str
+    color: str = "text-on-surface"
+
+
+class SeasonTrait(BaseModel):
+    label: str
+    value: str
+
+
+class SeasonCard(BaseModel):
+    id: str
+    status: str                   # completed | active | upcoming | future
+    statusLabel: str
+    statusBg: str
+    statusColor: str
+    dateRange: str = ""
+    nodeColor: str
+    cardBg: str
+    crop: str
+    cropImg: Optional[str] = None
+    cropNote: Optional[str] = None
+    cropVariety: Optional[str] = None
+    nodeIcon: str = "eco"
+    # active-season fields
+    day: Optional[int] = None
+    totalDays: Optional[int] = None
+    progressPct: Optional[float] = None
+    stage: Optional[str] = None
+    sowDate: Optional[str] = None
+    harvestDate: Optional[str] = None
+    taskLabel: Optional[str] = None
+    # upcoming-season fields
+    profit: Optional[str] = None
+    # completed fields
+    metrics: Optional[List[SeasonMetric]] = None
+
+
 class RotationPlanResponse(BaseModel):
     next_crop: str
     projected_profit: float
     projected_soil_impact: float
+    reasoning: str = ""
+    timeline: List[SeasonCard] = []
 
 
 # ---------- variety recommendation ----------
@@ -61,9 +102,20 @@ class VarietyRecommendationRequest(BaseModel):
     crop: str
 
 
+class VarietyTrait(BaseModel):
+    text: str
+    color: str
+
 class VarietyItem(BaseModel):
+    id: str
     name: str
-    score: float
+    match: float
+    types: List[str]
+    desc: str
+    days: str
+    yield_range: str = Field(alias="yield")
+    cost: str
+    traits: List[VarietyTrait]
 
 
 class VarietyRecommendationResponse(BaseModel):
