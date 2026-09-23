@@ -16,6 +16,8 @@ export const bookLabor = (data) => api.post('/labor/book', data);
 export const createBuyerRequirement = (data) => api.post('/buyer-requirement', data);
 export const matchExchange = (data) => api.post('/exchange-match', data);
 export const getDeliveryStatus = (orderId) => api.get(`/delivery-status/${orderId}`);
+export const getActiveDelivery = (farmId) => api.get(`/delivery-status/active/${farmId}`);
+export const simulateDeliveryUpdate = (orderId) => api.post(`/simulate-delivery-update/${orderId}`);
 export const createStandingOrder = (data) => api.post('/b2b/standing-order', data);
 
 export const createProduct = (data) => api.post('/products', data);

@@ -369,6 +369,9 @@ def get_delivery_status(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    product = db.execute(select(Product).where(Product.id == order.product_id)).scalars().first()
+    product_name = product.name if product else "Unknown Product"
+
     now_utc = datetime.now(timezone.utc)
     # Check if delivery is delayed beyond critical window
     delayed = False
@@ -390,7 +393,56 @@ def get_delivery_status(
         critical_window_end=order.critical_window_end,
         created_at=order.created_at,
         delayed=delayed,
+        product_name=product_name,
     )
+
+
+@router.get("/delivery-status/active/{farm_id}", response_model=DeliveryStatusResponse)
+def get_active_delivery(
+    farm_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Get the most recent active order for the farmer."""
+    order = db.execute(
+        select(Order)
+        .where(Order.farm_id == farm_id)
+        .order_by(Order.created_at.desc())
+    ).scalars().first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="No active orders found for this farm")
+        
+    return get_delivery_status(order_id=order.id, db=db)
+
+
+@router.post("/simulate-delivery-update/{order_id}")
+async def simulate_delivery_update(
+    order_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Simulate a GPS ping from a truck by updating ETA and broadcasting a WS message."""
+    order = db.execute(select(Order).where(Order.id == order_id)).scalars().first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    # Simulate truck moving closer
+    order.delivery_eta = order.delivery_eta - timedelta(minutes=15)
+    db.commit()
+    db.refresh(order)
+    
+    # Broadcast WS message to the farm
+    await manager.broadcast_to(str(order.farm_id), {
+        "type": "DELIVERY_UPDATE",
+        "data": {
+            "order_id": str(order.id),
+            "status": order.status.value,
+            "delivery_eta": order.delivery_eta.isoformat(),
+            "remaining_km": round(max(0.5, 18.2 - 2.5), 1), # Simulated decreasing distance
+            "speed_kmh": 45
+        }
+    })
+    
+    return {"message": "Simulated delivery update broadcasted"}
 
 
 # --------------------------------------------------------------------------- #
