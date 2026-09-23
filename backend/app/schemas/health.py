@@ -110,6 +110,11 @@ class LivestockCreate(BaseModel):
     animal_type: AnimalType
     tag_id: str
 
+class LivestockUpdate(BaseModel):
+    vaccination_schedule: Optional[list] = None
+    breeding_cycle: Optional[dict] = None
+    milk_yield_log: Optional[list] = None
+
 
 class LivestockRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)

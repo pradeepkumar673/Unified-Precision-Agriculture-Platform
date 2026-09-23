@@ -35,6 +35,7 @@ from app.schemas.health import (
     DiseaseDetectResponse,
     DiseaseReportRead,
     LivestockCreate,
+    LivestockUpdate,
     LivestockHealthCheckResponse,
     LivestockRead,
     LivestockScheduleResponse,
@@ -334,6 +335,16 @@ def public_disease_reports(district: str = Query(None), db: Session = Depends(ge
 # --------------------------------------------------------------------------- #
 # #51 Livestock Health
 # --------------------------------------------------------------------------- #
+@router.get("/livestock", response_model=List[LivestockRead])
+def get_livestock(farm_id: UUID = Query(...), db: Session = Depends(get_db)):
+    farm = db.get(Farm, farm_id)
+    if farm is None:
+        raise HTTPException(status_code=404, detail="Farm not found")
+    
+    return db.scalars(
+        select(Livestock).where(Livestock.farm_id == farm_id).order_by(Livestock.created_at.desc())
+    ).all()
+
 @router.post("/livestock", response_model=LivestockRead, status_code=status.HTTP_201_CREATED)
 def create_livestock(payload: LivestockCreate, db: Session = Depends(get_db)):
     farm = db.get(Farm, payload.farm_id)
@@ -347,11 +358,31 @@ def create_livestock(payload: LivestockCreate, db: Session = Depends(get_db)):
         farm_id=payload.farm_id,
         animal_type=payload.animal_type,
         tag_id=payload.tag_id,
-        vaccination_schedule=health_service.generate_default_vaccination_schedule(animal_val),
+        vaccination_schedule=[],
         breeding_cycle=health_service.generate_default_breeding_cycle(animal_val),
         milk_yield_log=[],
     )
     db.add(livestock)
+    db.commit()
+    db.refresh(livestock)
+    return livestock
+
+
+@router.put("/livestock/{livestock_id}", response_model=LivestockRead)
+def update_livestock(
+    livestock_id: UUID, payload: LivestockUpdate, db: Session = Depends(get_db)
+):
+    livestock = db.get(Livestock, livestock_id)
+    if not livestock:
+        raise HTTPException(status_code=404, detail="Livestock record not found")
+
+    if payload.vaccination_schedule is not None:
+        livestock.vaccination_schedule = payload.vaccination_schedule
+    if payload.breeding_cycle is not None:
+        livestock.breeding_cycle = payload.breeding_cycle
+    if payload.milk_yield_log is not None:
+        livestock.milk_yield_log = payload.milk_yield_log
+
     db.commit()
     db.refresh(livestock)
     return livestock

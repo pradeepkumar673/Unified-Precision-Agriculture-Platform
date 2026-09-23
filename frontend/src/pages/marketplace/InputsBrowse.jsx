@@ -42,7 +42,7 @@ export default function InputsBrowse() {
     fetchData();
 
     // WebSocket connection for real-time updates
-    const wsUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('http', 'ws');
+    const wsUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace('http', 'ws');
     const ws = new WebSocket(`${wsUrl}/api/v1/marketplace/ws/${farmId}`);
     wsRef.current = ws;
 

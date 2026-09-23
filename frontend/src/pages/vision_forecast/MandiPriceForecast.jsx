@@ -90,9 +90,15 @@ export default function MandiPriceForecast() {
       headerSlot={
         <header className="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
           <div className="h-14 px-margin flex items-center justify-between gap-space-sm">
-            <div className="flex items-center gap-space-sm min-w-0 flex-1">
-              <img alt="Brand logo" className="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>
-              <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-space-xs min-w-0 flex-1">
+              <button 
+                onClick={() => navigate(-1)} 
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface"
+                aria-label="Go back">
+                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              </button>
+              <img alt="Brand logo" className="h-8 w-auto object-contain flex-shrink-0 hidden sm:block" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>
+              <div className="flex flex-col min-w-0 ml-1">
                 <div className="flex items-center gap-1">
                   <span className="font-headline-sm text-headline-sm text-primary truncate leading-tight">KhetSaathi</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant truncate hidden sm:inline">• Mandi Market</span>

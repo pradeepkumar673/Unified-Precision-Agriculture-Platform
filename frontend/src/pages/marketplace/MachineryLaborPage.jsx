@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { 
-  Tractor, Calendar, MapPin, Search, Navigation2, CheckCircle, Clock, Users, Wrench
-} from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { useNavigate } from 'react-router-dom';
+import AppShell from '../../layouts/AppShell';
 
 export default function MachineryLaborPage() {
-  const [farmId, setFarmId] = useState(localStorage.getItem('farmId') || '');
-  const [activeTab, setActiveTab] = useState('machinery'); // machinery, labor
+  const navigate = useNavigate();
+  const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+  const [activeTab, setActiveTab] = useState('machinery'); // 'machinery' or 'labor'
   
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
@@ -16,13 +16,58 @@ export default function MachineryLaborPage() {
 
   const [machineryList, setMachineryList] = useState([]);
   const [laborGangs, setLaborGangs] = useState([]);
+  const wsRef = useRef(null);
 
   useEffect(() => {
-    const endpoint = activeTab === 'machinery' ? 'equipment' : 'labor';
-    axios.get(`${API_BASE}/api/v1/marketplace/${endpoint}`)
-      .then(res => activeTab === 'machinery' ? setMachineryList(res.data) : setLaborGangs(res.data))
-      .catch(err => setError(err.response?.data?.detail || 'Unable to load rental listings.'));
-  }, [activeTab]);
+    // Initial fetch
+    const fetchListings = async () => {
+      try {
+        const endpoint = activeTab === 'machinery' ? 'equipment' : 'labor';
+        const res = await axios.get(`${API_BASE}/api/v1/marketplace/${endpoint}`);
+        if (activeTab === 'machinery') {
+          setMachineryList(res.data);
+        } else {
+          setLaborGangs(res.data);
+        }
+      } catch (err) {
+        setError(err.response?.data?.detail || 'Unable to load rental listings.');
+      }
+    };
+    fetchListings();
+  }, [activeTab, API_BASE]);
+
+  useEffect(() => {
+    // WebSocket connection for real-time updates
+    const wsUrl = API_BASE.replace('http', 'ws');
+    const ws = new WebSocket(`${wsUrl}/api/v1/marketplace/ws/${farmId}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connected to real-time marketplace (Rentals)');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log("Real-time event received:", message);
+        if (message.type === 'NEW_EQUIPMENT') {
+          setMachineryList(prev => [message.data, ...prev]);
+        } else if (message.type === 'NEW_LABOR') {
+          setLaborGangs(prev => [message.data, ...prev]);
+        }
+      } catch (err) {
+        console.error('Failed to parse websocket message', err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected (Rentals)');
+    };
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, [farmId, API_BASE]);
 
   const handleBook = async (item) => {
     setBookingLoading(item.id);
@@ -38,7 +83,7 @@ export default function MachineryLaborPage() {
       
       setBookingSuccess({
         id: item.id,
-        name: item.equipment_type || item.skill,
+        name: item.equipment_type || item.skill || 'Rental',
         eta: res.data?.assigned_route_eta || 'Confirmed'
       });
       setTimeout(() => setBookingSuccess(null), 5000);
@@ -49,129 +94,154 @@ export default function MachineryLaborPage() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Machinery & Labor Rentals</h1>
-          <p className="mt-1 text-slate-300">On-demand tractor booking and labor scheduling.</p>
-        </div>
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.substring(0, 2).toUpperCase();
+  };
 
-        <div className="flex w-max rounded-lg border border-slate-700 bg-slate-900 p-1">
+  return (
+    <AppShell 
+      headerSlot={
+        <header className="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="h-14 px-margin flex items-center justify-between gap-space-sm">
+            <div className="flex items-center gap-space-xs min-w-0 flex-1">
+              <button 
+                onClick={() => navigate(-1)} 
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface"
+                aria-label="Go back">
+                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              </button>
+              <img alt="Brand logo" className="h-8 w-auto object-contain flex-shrink-0 hidden sm:block" src="https://lh3.googleusercontent.com/aida/AEtjO1UIQkciQWmlsTRY8f9Zy0F8V6Ui5SnL-bNI1XODjLR9sQNG4BHGAMrtvwAK-8Il7hBixSfzotAqt-1yzxZ1tS8lfeStHMZMcAAazASvjFxGLljEzJwhmT37IQLEv0u0wChglbOYjrW80Tbxp2N5Gci7RSN8sqPVnTp66_kG_QHJe8HBtzy0s7YivFGLy5OK6W6ahvWh_DtV3OjnAKUT1Zgj0Ae4r9TLabB2OQOypc-WO4bS3YHevJEUIf8"/>
+              <div className="flex flex-col min-w-0 ml-1">
+                <div className="flex items-center gap-1">
+                  <span className="font-headline-sm text-headline-sm text-primary truncate leading-tight">KhetSaathi</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant truncate hidden sm:inline">• Rentals</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-space-xs flex-shrink-0">
+              <div className="flex items-center gap-1 bg-surface-container-high px-space-xs py-0.5 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Synced</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              </div>
+            </div>
+          </div>
+        </header>
+      }
+    >
+      <main className="flex flex-col w-full pt-24 pb-safe bg-background px-margin gap-space-md min-h-screen">
+        
+        {/* Toggle Tabs */}
+        <div className="flex w-full bg-surface-container-low rounded-xl p-1 shadow-inner mt-space-sm">
           <button
             onClick={() => setActiveTab('machinery')}
-            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === 'machinery' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex-1 flex justify-center items-center gap-2 py-2.5 rounded-lg font-label-md text-label-md transition-colors ${activeTab === 'machinery' ? 'bg-surface text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            <Tractor className="h-4 w-4" /> Machinery
+            <span className="material-symbols-outlined text-[20px]">agriculture</span>
+            Machinery
           </button>
           <button
             onClick={() => setActiveTab('labor')}
-            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === 'labor' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex-1 flex justify-center items-center gap-2 py-2.5 rounded-lg font-label-md text-label-md transition-colors ${activeTab === 'labor' ? 'bg-surface text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
-            <Users className="h-4 w-4" /> Labor Gangs
+            <span className="material-symbols-outlined text-[20px]">groups</span>
+            Labor Gangs
           </button>
         </div>
-      </div>
 
-      {/* Control Bar */}
-      <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
-        <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-          <span className="text-slate-500 mr-2">Farm ID:</span>
-          <input value={farmId} onChange={e=>setFarmId(e.target.value)} className="bg-transparent border-none outline-none w-24 font-mono" />
-        </div>
-        
-        <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 w-64">
-          <Calendar className="w-4 h-4 text-slate-500 mr-2" />
-          <span>Today - Tomorrow</span>
-        </div>
-
-        <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 flex-1 relative">
-          <Search className="w-4 h-4 text-slate-500 mr-2 absolute" />
-          <input placeholder={`Search ${activeTab}...`} className="bg-transparent border-none outline-none pl-6 w-full text-white" />
-        </div>
-      </div>
-
-      {bookingSuccess && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-center gap-3">
-          <CheckCircle className="w-6 h-6 text-emerald-400" />
-          <div>
-            <p className="text-emerald-400 font-bold">Booking Confirmed: {bookingSuccess.name}</p>
-            <p className="text-sm text-slate-300">Estimated Arrival: <span className="font-mono bg-emerald-500/20 px-1 rounded">{bookingSuccess.eta} mins</span> based on OR-Tools routing.</p>
+        {/* Filter Bar */}
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center bg-surface-container-low rounded-xl px-4 py-3 border border-outline-variant focus-within:border-primary transition-colors relative overflow-hidden">
+             <span className="material-symbols-outlined text-on-surface-variant absolute left-4">search</span>
+             <input type="text" placeholder={`Search ${activeTab}...`} className="bg-transparent border-none outline-none pl-8 w-full text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant" />
           </div>
         </div>
-      )}
 
-      {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">{error}</div>
-      )}
+        {error && (
+          <div className="bg-error-container text-on-error-container p-3 rounded-lg font-body-sm text-body-sm flex items-start gap-2">
+            <span className="material-symbols-outlined text-[18px] mt-0.5">error</span>
+            <p>{error}</p>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+        {bookingSuccess && (
+          <div className="bg-primary-container text-on-primary-container p-4 rounded-xl flex items-start gap-3 shadow-sm border border-primary/20 animate-fade-in">
+            <span className="material-symbols-outlined text-[24px] text-primary">check_circle</span>
+            <div>
+              <p className="font-label-lg font-bold">Booking Confirmed</p>
+              <p className="font-body-md mt-1">Your request for {bookingSuccess.name} is confirmed.</p>
+              <p className="font-body-sm mt-1 opacity-80 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">route</span>
+                ETA: {bookingSuccess.eta} mins (OR-Tools Routing)
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Listings */}
-        <div className="lg:col-span-2 space-y-4">
-          {(activeTab === 'machinery' ? machineryList : laborGangs).map(item => (
-            <div key={item.id} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-amber-500/30 transition-colors">
-              <div className="flex items-start gap-4">
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center shrink-0 border ${activeTab === 'machinery' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'}`}>
-                  {activeTab === 'machinery' ? <Wrench className="w-8 h-8" /> : <Users className="w-8 h-8" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                      {item.type || `${item.size} Workers`}
-                    </span>
-                    {activeTab === 'machinery' && <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-1"><Navigation2 className="w-3 h-3"/> ETA: {item.eta_mins}m</span>}
+        <div className="flex flex-col gap-space-sm pb-16">
+          {(activeTab === 'machinery' ? machineryList : laborGangs).map((item, idx) => (
+            <article key={item.id || idx} className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-outline-variant flex flex-col gap-space-sm">
+              <div className="flex justify-between items-start gap-space-sm">
+                <div className="flex gap-space-sm flex-1 min-w-0">
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner ${activeTab === 'machinery' ? 'bg-secondary-container text-on-secondary-container' : 'bg-tertiary-container text-on-tertiary-container'}`}>
+                    {activeTab === 'machinery' ? (
+                      <span className="material-symbols-outlined text-[28px]">agriculture</span>
+                    ) : (
+                      <span className="material-symbols-outlined text-[28px]">groups</span>
+                    )}
                   </div>
-                  <h3 className="text-white font-bold text-lg">{item.name}</h3>
-                  <p className="text-slate-400 text-sm mt-1 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5" /> {item.distance} km away • {item.owner || item.availability}
-                  </p>
-                  {activeTab === 'labor' && (
-                    <div className="flex gap-1 mt-2">
-                      {item.skills.map(s => <span key={s} className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">{s}</span>)}
+                  <div className="flex flex-col justify-center min-w-0">
+                    <h3 className="font-label-lg text-label-lg font-bold text-on-surface truncate">
+                      {activeTab === 'machinery' ? item.equipment_type : item.skill}
+                    </h3>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 truncate mt-0.5">
+                      <span className="material-symbols-outlined text-[14px]">storefront</span>
+                      {activeTab === 'machinery' ? item.owner_id : item.gang_id}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-surface-container-highest text-on-surface-variant">
+                         {item.available !== false ? 'Available' : 'Booked'}
+                       </span>
                     </div>
-                  )}
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                   <p className="font-headline-sm text-headline-sm font-bold text-primary">₹{activeTab === 'machinery' ? item.daily_rate : item.daily_wage}</p>
+                   <p className="font-label-sm text-label-sm text-on-surface-variant">{activeTab === 'machinery' ? '/ day' : '/ head'}</p>
                 </div>
               </div>
               
-              <div className="flex flex-col sm:items-end justify-between h-full min-w-[120px]">
-                <div className="mb-4">
-                  <span className="text-2xl font-bold text-white">₹{item.rate || item.daily_rate_per_head}</span>
-                  <span className="text-slate-400 text-xs ml-1">{activeTab === 'machinery' ? '/ day' : '/ head'}</span>
-                </div>
-                <button
+              <div className="flex gap-space-sm">
+                <button 
                   onClick={() => handleBook(item)}
-                  disabled={bookingLoading === item.id}
-                  className="flex items-center justify-center rounded-xl border border-slate-600 bg-slate-800 px-6 py-2 font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={bookingLoading === item.id || item.available === false}
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors shadow-sm"
                 >
-                  {bookingLoading === item.id ? <Clock className="w-4 h-4 animate-spin" /> : 'Book Now'}
+                  {bookingLoading === item.id ? (
+                     <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                  ) : (
+                     <>
+                        <span className="material-symbols-outlined text-[20px]">calendar_month</span>
+                        Book Now
+                     </>
+                  )}
                 </button>
               </div>
-            </div>
+            </article>
           ))}
+          
+          {(activeTab === 'machinery' ? machineryList : laborGangs).length === 0 && (
+             <div className="py-12 flex flex-col items-center justify-center text-on-surface-variant">
+                <span className="material-symbols-outlined text-[48px] mb-2 opacity-50">search_off</span>
+                <p className="font-body-md text-body-md">No {activeTab} listings found.</p>
+             </div>
+          )}
         </div>
-
-        {/* Availability overview */}
-        <div className="lg:col-span-1 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl min-h-[400px] relative">
-          <div className="absolute inset-0 bg-slate-900/80 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30 pointer-events-none" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-            <MapPin className="w-12 h-12 text-slate-600 mb-3" />
-            <h3 className="text-white font-semibold mb-1">Available assets</h3>
-            <p className="text-slate-400 text-sm">Listings returned by the marketplace service.</p>
-            <div className="mt-8 border border-amber-500/30 bg-amber-500/10 rounded-lg p-3 w-full max-w-xs text-left backdrop-blur-md">
-               <div className="flex justify-between items-center text-sm">
-                 <span className="text-amber-400 font-mono">My Farm</span>
-                 <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-               </div>
-               <div className="mt-2 text-xs text-slate-300">
-                 {(activeTab === 'machinery' ? machineryList : laborGangs).length} {activeTab} listings available
-               </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
+      </main>
+    </AppShell>
   );
 }
-

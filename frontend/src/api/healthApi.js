@@ -36,5 +36,6 @@ export const checkLivestockHealth = (id, formData) => api.post(`/health/livestoc
   headers: { 'Content-Type': 'multipart/form-data' }
 });
 export const getLivestockSchedule = (id) => api.get(`/health/livestock/${id}/schedule`);
+export const updateLivestock = (id, data) => api.put(`/health/livestock/${id}`, data);
 
 export default api;
