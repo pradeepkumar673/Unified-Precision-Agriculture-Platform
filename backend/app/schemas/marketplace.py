@@ -56,6 +56,7 @@ class OrderRead(BaseModel):
 
 class DeliveryStatusResponse(OrderRead):
     delayed: bool
+    product_name: str
 
 
 # --------------------------------------------------------------------------- #
@@ -198,6 +199,23 @@ class B2BStandingOrderCreate(B2BStandingOrderBase):
 class B2BStandingOrderRead(B2BStandingOrderBase):
     id: UUID
     fulfilment_status: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --------------------------------------------------------------------------- #
+# Buyer Profiles (#55 B2B Channel)
+# --------------------------------------------------------------------------- #
+class BuyerProfileRead(BaseModel):
+    id: UUID
+    name: str
+    buyer_type: str
+    district: str
+    markup_pct: float
+    tag: Optional[str] = None
+    perks: str
+    is_verified: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

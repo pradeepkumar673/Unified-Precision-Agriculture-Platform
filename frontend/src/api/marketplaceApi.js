@@ -9,6 +9,7 @@ const api = axios.create({
 export const getEquipmentListings = () => api.get('/equipment');
 export const getLaborListings = () => api.get('/labor');
 export const getProducts = (farmId) => api.get('/products', { params: { farm_id: farmId } });
+export const getBuyers = (params) => api.get('/buyers', { params });
 export const createOrder = (data) => api.post('/order', data);
 export const bookEquipment = (data) => api.post('/equipment/book', data);
 export const bookLabor = (data) => api.post('/labor/book', data);

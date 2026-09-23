@@ -1,12 +1,54 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { matchExchange } from '../../api/marketplaceApi';
+import { getFarmProfile } from '../../api/farmApi';
+import { getPriceForecast } from '../../api/visionForecastApi';
+
+import { getBuyers } from '../../api/marketplaceApi';
 
 export default function HarvestSellProduce() {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(95);
-  const [askingPrice, setAskingPrice] = useState(2580);
+  const [askingPrice, setAskingPrice] = useState(0);
   const [acceptingOffer, setAcceptingOffer] = useState(null);
+
+  const [farmData, setFarmData] = useState(null);
+  const [priceData, setPriceData] = useState(null);
+  const [buyersList, setBuyersList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const farmId = localStorage.getItem('farmId');
+        if (!farmId) return;
+
+        const farmRes = await getFarmProfile(farmId);
+        setFarmData(farmRes.data);
+
+        const cropName = farmRes.data?.crops?.[0]?.crop_name || 'Wheat';
+        const dist = farmRes.data?.district || 'Nashik';
+
+        const priceRes = await getPriceForecast({ crop: cropName, district: dist, weeks_ahead: 4 });
+        setPriceData(priceRes.data);
+        
+        const buyersRes = await getBuyers({ district: dist });
+        setBuyersList(buyersRes.data || []);
+        
+        // Initialize asking price to the predicted price
+        if (priceRes.data?.predicted_price) {
+          setAskingPrice(Math.round(priceRes.data.predicted_price));
+        } else {
+          setAskingPrice(2580);
+        }
+      } catch (err) {
+        console.error('Failed to load harvest data', err);
+        setAskingPrice(2580);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const bags = Math.round(quantity * 2);
   const totalKg = quantity * 100;
@@ -23,7 +65,6 @@ export default function HarvestSellProduce() {
   const handleAcceptOffer = async (buyerName, index) => {
     setAcceptingOffer(index);
     try {
-      // Simulate API call to matchExchange or accept offer
       setTimeout(() => {
         alert(`Offer accepted with ${buyerName}. Pickup will be scheduled shortly.`);
         setAcceptingOffer(null);
@@ -34,10 +75,49 @@ export default function HarvestSellProduce() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <span className="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>
+      </div>
+    );
+  }
+
+  const crop = farmData?.crops?.[0]?.crop_name || 'Wheat';
+  const variety = farmData?.crops?.[0]?.variety || 'Standard';
+  const area = farmData?.area_acres || 4.5;
+  const district = farmData?.district || 'Nashik';
+  
+  const currentRate = priceData?.predicted_price ? Math.round(priceData.predicted_price) : 2420;
+  const lowRate = priceData?.low_ci ? Math.round(priceData.low_ci) : currentRate - 100;
+  const highRate = priceData?.high_ci ? Math.round(priceData.high_ci) : currentRate + 150;
+  
+  let peakWeek = 1;
+  let maxPrice = currentRate;
+  if (priceData?.timeline) {
+    priceData.timeline.forEach(pt => {
+      if (pt.predicted_price > maxPrice) {
+        maxPrice = Math.round(pt.predicted_price);
+        peakWeek = pt.week;
+      }
+    });
+  }
+
+  const gainPct = Math.round(((maxPrice - currentRate) / currentRate) * 100);
+
+  // Map real backend buyers to the UI format
+  const dynamicBuyers = buyersList.map(buyer => ({
+    id: buyer.id,
+    name: buyer.name,
+    type: buyer.buyer_type,
+    price: Math.round(currentRate * buyer.markup_pct),
+    dist: buyer.perks.includes('away') ? buyer.perks : '14 km away', // Mocking distance for UI if not in perks
+    tag: buyer.tag,
+    perks: buyer.perks
+  }));
+
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
-      
-
       <main className="flex flex-col w-full pt-20 pb-24 px-margin bg-surface flex-1 gap-space-md">
         <section className="flex flex-col gap-space-xs bg-surface-container p-space-md rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
@@ -61,8 +141,8 @@ export default function HarvestSellProduce() {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="font-label-sm text-label-sm text-on-surface-variant">Crop &amp; Variety</span>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface truncate">Wheat • Sharbati Gold</h2>
-                  <span className="font-label-sm text-label-sm text-primary font-semibold">HD-2967 High Protein</span>
+                  <h2 className="font-headline-sm text-headline-sm text-on-surface truncate capitalize">{crop} • {variety}</h2>
+                  <span className="font-label-sm text-label-sm text-primary font-semibold">Premium Yield</span>
                 </div>
               </div>
               <button className="px-space-sm py-1 bg-surface-container rounded-full text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" type="button">
@@ -72,7 +152,7 @@ export default function HarvestSellProduce() {
             </div>
             <div className="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1.5 rounded-lg text-on-surface-variant">
               <span className="material-symbols-outlined text-[16px] text-primary">landscape</span>
-              <span className="font-body-sm text-body-sm">Harvested from <strong>Plot 1 (4.5 Acres)</strong></span>
+              <span className="font-body-sm text-body-sm">Harvested from <strong>Plot 1 ({area} Acres)</strong></span>
             </div>
           </div>
 
@@ -104,7 +184,7 @@ export default function HarvestSellProduce() {
             </div>
             <div className="flex items-center gap-space-xs text-on-surface-variant">
               <span className="material-symbols-outlined text-[18px] text-secondary">inventory_2</span>
-              <span className="font-body-sm text-body-sm" id="bag-count">Approx {bags.toLocaleString('en-IN')} standard 50kg jute bags</span>
+              <span className="font-body-sm text-body-sm" id="bag-count">Approx {bags.toLocaleString('en-IN')} standard 50kg bags</span>
             </div>
           </div>
 
@@ -119,7 +199,7 @@ export default function HarvestSellProduce() {
             <div className="flex items-center justify-between bg-primary-fixed/30 p-space-sm rounded-lg">
               <div className="flex flex-col">
                 <span className="font-headline-sm text-headline-sm text-primary">Grade A1 (Milling Quality)</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Suitable for premium branded flour export</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Suitable for premium bulk export</span>
               </div>
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
                 <span className="material-symbols-outlined text-[22px]">auto_awesome</span>
@@ -128,7 +208,7 @@ export default function HarvestSellProduce() {
             <div className="flex items-start gap-space-xs bg-surface-container-low p-space-sm rounded-lg text-on-surface-variant">
               <span className="material-symbols-outlined text-primary text-[18px] flex-shrink-0 mt-0.5">verified_user</span>
               <p className="font-label-sm text-label-sm leading-relaxed">
-                Auto-filled from Drone &amp; Satellite Moisture Scan (<span className="font-bold text-on-surface">11.8% grain moisture</span>, 78 test weight).
+                Auto-filled from Recent Assessment (<span className="font-bold text-on-surface">Valid for 30 days</span>).
               </p>
             </div>
           </div>
@@ -140,11 +220,16 @@ export default function HarvestSellProduce() {
                 <h3 className="font-headline-sm text-headline-sm text-on-surface">AI Price Recommendation</h3>
               </div>
               <div className="flex items-baseline gap-space-xs">
-                <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">₹12,550 – ₹12,620</span>
+                <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">₹{lowRate.toLocaleString('en-IN')} – ₹{highRate.toLocaleString('en-IN')}</span>
                 <span className="font-body-md text-body-md text-on-surface-variant">/ Qtl</span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant leading-snug">
-                Lasalgaon modal mandi rate is <span className="font-bold text-on-surface">₹12,420 today</span>. Waiting until Week 3 (18–24 March) or selling direct to bulk flour millers yields up to <span className="text-primary font-bold">+8% higher returns</span>.
+                {district} modal mandi rate is <span className="font-bold text-on-surface">₹{currentRate.toLocaleString('en-IN')} today</span>. 
+                {gainPct > 0 ? (
+                  <> Waiting until Week {peakWeek} or selling direct yields up to <span className="text-primary font-bold">+{gainPct}% higher returns</span>.</>
+                ) : (
+                  <> Current prices are at their peak. Selling now is highly recommended.</>
+                )}
               </p>
             </div>
 
@@ -175,121 +260,81 @@ export default function HarvestSellProduce() {
         <section className="flex flex-col gap-space-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-headline-sm text-headline-sm text-on-surface">3 Verified Buyers Ready</h3>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">Active purchase orders for Nashik Region</p>
+              <h3 className="font-headline-sm text-headline-sm text-on-surface">Verified Buyers Ready</h3>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">Active purchase orders for {district} Region</p>
             </div>
             <span className="material-symbols-outlined text-primary text-[22px]">handshake</span>
           </div>
 
-          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-md flex flex-col gap-space-sm relative">
-            <div className="flex items-center justify-between">
-              <span className="bg-primary text-on-primary font-label-sm text-label-sm px-space-sm py-0.5 rounded-full flex items-center gap-1 font-bold">
-                <span className="material-symbols-outlined text-[14px]">thumb_up</span> Top Matched Buyer
-              </span>
-              <span className="font-label-sm text-label-sm text-primary font-bold">Verified Gold</span>
-            </div>
-            <div className="flex items-start justify-between gap-space-sm pt-1">
-              <div className="flex flex-col min-w-0">
-                <h4 className="font-headline-sm text-headline-sm text-on-surface truncate">Patanjali / Agro Foods Milling Ltd.</h4>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Industrial Flour Processing Plant</span>
-              </div>
-              <div className="flex flex-col items-end flex-shrink-0">
-                <span className="font-headline-sm text-headline-sm text-primary font-bold">₹12,590</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">/ Qtl</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between bg-surface-container-low p-space-sm rounded-lg">
-              <div className="flex flex-col">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Total Order Value ({quantity} Qtl)</span>
-                <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹{Math.round(quantity * 12590).toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex items-center text-primary gap-1 font-label-sm text-label-sm font-semibold">
-                <span className="material-symbols-outlined text-[18px]">verified</span>
-                <span>Escrow Protected</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 text-on-surface-variant font-body-sm text-body-sm">
-              <div className="flex items-center gap-space-xs">
-                <span className="material-symbols-outlined text-[18px] text-primary">near_me</span>
-                <span>14 km away • <strong className="text-on-surface">Free farm gate pickup included</strong></span>
-              </div>
-              <div className="flex items-center gap-space-xs">
-                <span className="material-symbols-outlined text-[18px] text-secondary">flash_on</span>
-                <span>Payment: <strong>Instant UPI / NEFT</strong> on weighing receipt</span>
-              </div>
-            </div>
-            <button 
-              onClick={() => handleAcceptOffer('Patanjali / Agro Foods', 1)}
-              className={`w-full h-14 rounded-xl flex items-center justify-center gap-space-xs shadow transition-opacity active:scale-[0.99] ${acceptingOffer === 1 ? 'bg-primary text-on-primary' : 'bg-secondary-container text-on-secondary hover:opacity-95'}`} 
-              type="button"
-            >
-              {acceptingOffer === 1 ? (
-                <>
-                  <span className="material-symbols-outlined text-[20px]">check</span>
-                  <span>Offer Accepted</span>
-                </>
-              ) : (
-                <>
-                  <span>Accept Offer &amp; Schedule Pickup</span>
-                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-                </>
+          {dynamicBuyers.map((buyer, idx) => (
+            <div key={buyer.id} className="bg-surface-container-lowest p-space-md rounded-xl shadow-md flex flex-col gap-space-sm relative">
+              {buyer.tag && (
+                <div className="flex items-center justify-between">
+                  <span className="bg-primary text-on-primary font-label-sm text-label-sm px-space-sm py-0.5 rounded-full flex items-center gap-1 font-bold">
+                    <span className="material-symbols-outlined text-[14px]">thumb_up</span> {buyer.tag}
+                  </span>
+                  <span className="font-label-sm text-label-sm text-primary font-bold">Verified Gold</span>
+                </div>
               )}
-            </button>
-          </div>
-
-          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
-            <div className="flex items-start justify-between gap-space-sm">
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-space-xs">
-                  <h4 className="font-headline-sm text-headline-sm text-on-surface truncate">Nashik Grain Wholesale Trading Co.</h4>
+              <div className="flex items-start justify-between gap-space-sm pt-1">
+                <div className="flex flex-col min-w-0">
+                  <h4 className="font-headline-sm text-headline-sm text-on-surface truncate">{buyer.name}</h4>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">{buyer.type}</span>
                 </div>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Registered APMC Mandi Trader</span>
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="font-headline-sm text-headline-sm text-primary font-bold">₹{buyer.price.toLocaleString('en-IN')}</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">/ Qtl</span>
+                </div>
               </div>
-              <div className="flex flex-col items-end flex-shrink-0">
-                <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹12,520</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">/ Qtl</span>
+              
+              {idx === 0 && (
+                <div className="flex items-center justify-between bg-surface-container-low p-space-sm rounded-lg">
+                  <div className="flex flex-col">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Total Order Value ({quantity} Qtl)</span>
+                    <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹{Math.round(quantity * buyer.price).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex items-center text-primary gap-1 font-label-sm text-label-sm font-semibold">
+                    <span className="material-symbols-outlined text-[18px]">verified</span>
+                    <span>Escrow Protected</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex flex-col gap-1 text-on-surface-variant font-body-sm text-body-sm">
+                <div className="flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-[18px] text-primary">near_me</span>
+                  <span>{buyer.dist} • <strong className="text-on-surface">{buyer.perks}</strong></span>
+                </div>
+                <div className="flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-[18px] text-secondary">flash_on</span>
+                  <span>Payment: <strong>Instant UPI / NEFT</strong> on receipt</span>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
-              <span className="material-symbols-outlined text-[18px] text-primary">location_on</span>
-              <span>8 km away • Farmer brings produce to Lasalgaon Yard</span>
-            </div>
-            <div className="flex items-center justify-between pt-1">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Payment: Same-day Cheque / RTGS</span>
-              <button className="px-space-md h-11 bg-surface-container rounded-xl text-primary font-label-md text-label-md font-bold hover:bg-surface-container-high transition-colors" type="button">
-                View Details
+              
+              <button 
+                onClick={() => handleAcceptOffer(buyer.name, buyer.id)}
+                className={`w-full mt-2 h-14 rounded-xl flex items-center justify-center gap-space-xs shadow transition-opacity active:scale-[0.99] ${acceptingOffer === buyer.id ? 'bg-primary text-on-primary' : 'bg-secondary-container text-on-secondary hover:opacity-95'}`} 
+                type="button"
+              >
+                {acceptingOffer === buyer.id ? (
+                  <>
+                    <span className="material-symbols-outlined text-[20px]">check</span>
+                    <span>Offer Accepted</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Accept Offer &amp; Schedule Pickup</span>
+                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                  </>
+                )}
               </button>
             </div>
-          </div>
+          ))}
 
-          <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
-            <div className="flex items-start justify-between gap-space-sm">
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-space-xs">
-                  <h4 className="font-headline-sm text-headline-sm text-on-surface truncate">MahaAgro FPO Bulk Consortium</h4>
-                </div>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Farmer Producer Organization</span>
-              </div>
-              <div className="flex flex-col items-end flex-shrink-0">
-                <span className="font-headline-sm text-headline-sm text-on-surface font-bold">₹12,540</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">/ Qtl</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
-              <span className="material-symbols-outlined text-[18px] text-primary">local_shipping</span>
-              <span>18 km away • Subsidized bagging &amp; pooling provided</span>
-            </div>
-            <div className="flex items-center justify-between pt-1">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Payment: Direct to Bank (within 24 hrs)</span>
-              <button className="px-space-md h-11 bg-surface-container rounded-xl text-primary font-label-md text-label-md font-bold hover:bg-surface-container-high transition-colors" type="button">
-                View Details
-              </button>
-            </div>
-          </div>
         </section>
 
         <div className="rounded-xl overflow-hidden shadow-sm bg-surface-container">
-          <img className="w-full h-36 object-cover" alt="Wheat Harvest" src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop" />
+          <img className="w-full h-36 object-cover" alt="Harvest" src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop" />
         </div>
 
         <div className="pt-space-xs flex flex-col gap-space-xs">
@@ -298,12 +343,10 @@ export default function HarvestSellProduce() {
             <span className="material-symbols-outlined text-[22px]">arrow_forward</span>
           </button>
           <p className="text-center font-label-sm text-label-sm text-on-surface-variant">
-            Free listing • Instant alerts sent to 450+ verified district grain traders
+            Free listing • Instant alerts sent to 450+ verified {district} district grain traders
           </p>
         </div>
       </main>
-
-      
     </div>
   );
 }

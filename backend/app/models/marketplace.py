@@ -324,3 +324,30 @@ class B2BStandingOrder(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+# --------------------------------------------------------------------------- #
+# buyer_profiles (#55 B2B Channel)
+# --------------------------------------------------------------------------- #
+class BuyerProfile(Base):
+    __tablename__ = "buyer_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    buyer_type: Mapped[str] = mapped_column(String(255), nullable=False)
+    district: Mapped[str] = mapped_column(String(255), nullable=False)
+    markup_pct: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    tag: Mapped[str] = mapped_column(String(255), nullable=True)
+    perks: Mapped[str] = mapped_column(String(500), nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

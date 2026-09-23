@@ -23,6 +23,7 @@ from app.models.marketplace import (
     Order,
     OrderStatus,
     Product,
+    BuyerProfile,
 )
 from app.schemas.marketplace import (
     B2BStandingOrderCreate,
@@ -43,6 +44,7 @@ from app.schemas.marketplace import (
     ProductRead,
     ProductCreate,
     EquipmentListingCreate,
+    BuyerProfileRead,
 )
 from app.services.marketplace import (
     calculate_equipment_eta,
@@ -415,3 +417,15 @@ def create_standing_order(
     db.commit()
     db.refresh(standing_order)
     return standing_order
+
+
+@router.get("/buyers", response_model=List[BuyerProfileRead])
+def get_buyers(
+    district: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Return active buyers."""
+    query = select(BuyerProfile).where(BuyerProfile.is_verified.is_(True))
+    if district:
+        query = query.where(BuyerProfile.district == district)
+    return db.execute(query).scalars().all()
