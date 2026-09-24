@@ -24,6 +24,41 @@ export default function SchemeMatching() {
     fetchMatches();
   }, []);
 
+  const [claimingId, setClaimingId] = useState(null);
+
+  // Official government portal URLs for each scheme
+  const SCHEME_PORTALS = {
+    'pm-kisan': 'https://pmkisan.gov.in/',
+    'pmfby': 'https://pmfby.gov.in/',
+    'kcc': 'https://www.jansamarth.in/home',
+    'pm-kusum': 'https://pmkusum.mnre.gov.in/',
+    'rytabandhu': 'https://rythu.telangana.gov.in/',
+    'rythu': 'https://rythu.telangana.gov.in/',
+    'uzhavar': 'https://www.tn.gov.in/scheme/data_view/3577',
+    'smam': 'https://agrimachinery.nic.in/',
+    'mechaniz': 'https://agrimachinery.nic.in/',
+    'sinchayee': 'https://pmksy.gov.in/',
+    'pmksy': 'https://pmksy.gov.in/',
+    'default': 'https://www.india.gov.in/spotlight/kisan-yojnas',
+  };
+
+  const getSchemePortalUrl = (schemeName) => {
+    const lower = schemeName.toLowerCase();
+    for (const [key, url] of Object.entries(SCHEME_PORTALS)) {
+      if (key !== 'default' && lower.includes(key)) return url;
+    }
+    return SCHEME_PORTALS['default'];
+  };
+
+  const handleVerifyClaim = (scheme) => {
+    setClaimingId(scheme.id);
+    const url = getSchemePortalUrl(scheme.name);
+    setTimeout(() => {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setClaimingId(null);
+    }, 600);
+  };
+
   const toggleAccordion = (id) => {
     setExpandedAccordions(prev => ({
       ...prev,
@@ -124,9 +159,23 @@ export default function SchemeMatching() {
             </span>
           </div>
           
-          <button className="w-full h-14 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-bold flex items-center justify-center gap-1.5 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all" type="button">
-            <span>Verify &amp; Claim</span>
-            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          <button 
+            onClick={() => handleVerifyClaim(scheme)}
+            disabled={claimingId === scheme.id}
+            className="w-full h-14 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-bold flex items-center justify-center gap-1.5 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-70" 
+            type="button"
+          >
+            {claimingId === scheme.id ? (
+              <>
+                <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <span>Opening Portal...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                <span>Verify &amp; Claim on Gov Portal</span>
+              </>
+            )}
           </button>
         </div>
       </article>
@@ -149,21 +198,25 @@ export default function SchemeMatching() {
               </p>
             </div>
           </div>
-          <div className="bg-surface-container-lowest p-space-md grid grid-cols-3 gap-2 divide-x divide-surface-container-high">
-            <div className="flex flex-col">
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Matched</span>
-              <span className="font-headline-sm text-headline-sm text-primary font-bold">{matchData?.eligible_schemes?.length || 0} Schemes</span>
-            </div>
-            <div className="flex flex-col pl-3">
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Est. Value</span>
-              <span className="font-headline-sm text-headline-sm text-secondary font-bold">₹11,85,000</span>
-            </div>
-            <div className="flex flex-col pl-3">
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Top Priority</span>
-              <span className="font-headline-sm text-headline-sm text-primary font-bold">3 High</span>
+            <div className="bg-surface-container-lowest p-space-md grid grid-cols-3 gap-2 divide-x divide-surface-container-high">
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Matched</span>
+                <span className="font-headline-sm text-headline-sm text-primary font-bold">{matchData?.eligible_schemes?.length || 0} Schemes</span>
+              </div>
+              <div className="flex flex-col pl-3">
+                <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Est. Value</span>
+                <span className="font-headline-sm text-headline-sm text-secondary font-bold">
+                  ₹{(matchData?.eligible_schemes?.reduce((sum, s) => sum + (s.benefit_amount || 0), 0) || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="flex flex-col pl-3">
+                <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Top Priority</span>
+                <span className="font-headline-sm text-headline-sm text-primary font-bold">
+                  {matchData?.eligible_schemes?.filter(s => s.deadline && (new Date(s.deadline) - new Date()) / (1000 * 60 * 60 * 24) <= 90).length || 0} High
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-margin px-margin">
           <button 

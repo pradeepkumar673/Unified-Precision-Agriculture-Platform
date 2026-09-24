@@ -1,276 +1,323 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createSupportTicket } from '../../api/communityApi';
+﻿import { useState, useRef, useEffect } from "react";
+import { getFarmProfile } from "../../api/farmApi";
+import { createSupportTicket } from "../../api/communityApi";
+
+const GROQ_API_KEY = "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";
+const GROQ_MODEL = "llama3-8b-8192";
+
+function buildSystemPrompt(farm) {
+  const farmInfo = farm
+    ? `The farmer's farm is named "${farm.name || "this farm"}", located in ${farm.district || "their district"}, ${farm.state || "India"}. The farm covers ${farm.total_area_acres || "unknown"} acres and grows ${farm.primary_crop || "various crops"}.`
+    : "The farmer has not yet set up their farm profile.";
+
+  return `You are KhetSaathi Digital Sakhi, a friendly and knowledgeable AI agricultural assistant for Indian farmers. 
+You speak like a caring, experienced village-level Krishi Sakhi (agricultural community helper).
+${farmInfo}
+Your role:
+- Answer farming questions about crops, pests, diseases, irrigation, fertilizers, weather, government schemes.
+- Give practical, actionable advice suited for Indian conditions.
+- Reference the farmer's actual farm data when relevant.
+- Keep responses concise (2-4 sentences), warm, and in simple language.
+- Use Indian farming terminology naturally (Rabi, Kharif, mandi, quintal, etc.).
+- When uncertain, suggest consulting the local KVK or agricultural officer.
+Do NOT: make up specific numerical data you don't have, hallucinate weather forecasts, or give medical advice.
+Respond in English unless the farmer writes in Hindi/Marathi, in which case respond in that language.`;
+}
 
 export default function DigitalSakhi() {
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState([
-    {
-      sender: 'agent',
-      name: 'Sunita Devi',
-      initials: 'SD',
-      time: '10:15 AM',
-      text: 'Namaste Ramesh ji! I reviewed your Plot 1 satellite stress map. Did you get a chance to check Line 4 drip emitters as recommended?',
-      hasAudio: true
-    },
-    {
-      sender: 'user',
-      time: '10:18 AM',
-      text: 'Yes Sunita didi, flushed the emitters this morning. But I noticed slight yellow flecks on the lower leaves in the north corner. Should I spray Propiconazole today?'
-    },
-    {
-      sender: 'agent',
-      name: 'Sunita Devi',
-      initials: 'SD',
-      time: '10:20 AM',
-      text: 'Good that you noticed early! Based on weather forecast, rain is unlikely for 3 days. I advise 1 ml/L spray tomorrow morning before 9 AM. I can also come inspect your parcel tomorrow afternoon if you need help calibrating the sprayer.',
-      weather: { title: 'Dry Canopy Window: 72 Hours', desc: 'Optimal fungicide uptake conditions' },
-      resource: { title: 'Yellow Rust Field Protocol', meta: 'PDF • 1.2 MB • ICAR Verified' }
-    }
-  ]);
-  const [inputValue, setInputValue] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
+  const farmId = localStorage.getItem("farmId") || "";
+  const [farmData, setFarmData] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const [bookingStatus, setBookingStatus] = useState(null);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 50);
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await getFarmProfile(farmId).catch(() => ({ data: null }));
+        if (res.data) setFarmData(res.data);
+        // Greet with real farm name
+        const farmerName = res.data?.owner_name || res.data?.name || "Kisan ji";
+        const cropName = res.data?.primary_crop || "your crops";
+        setMessages([{
+          role: "assistant",
+          content: `Namaste ${farmerName}! I am your KhetSaathi Digital Sakhi. I can help you with questions about ${cropName}, pests, irrigation, weather, and government schemes. What would you like to know today?`,
+          time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+        }]);
+      } catch (e) {
+        setMessages([{
+          role: "assistant",
+          content: "Namaste Kisan ji! I am your KhetSaathi Digital Sakhi. Ask me anything about farming, crops, pests, or government schemes!",
+          time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+        }]);
+      }
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
+
+  const callGroq = async (history) => {
+    const systemPrompt = buildSystemPrompt(farmData);
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history.map(m => ({ role: m.role, content: m.content })),
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Groq API error ${response.status}`);
+    }
+    const data = await response.json();
+    return data.choices[0]?.message?.content || "Sorry, I could not generate a response.";
   };
 
-  const handleSendMessage = (e) => {
+  const handleSend = async (e, overrideText) => {
     e?.preventDefault();
-    const msg = inputValue.trim();
-    if (!msg) return;
+    const msg = (overrideText || inputValue).trim();
+    if (!msg || isTyping) return;
 
-    setMessages(prev => [...prev, { sender: 'user', text: msg, time: 'Just now' }]);
-    setInputValue('');
-    scrollToBottom();
-  };
+    const userMsg = {
+      role: "user",
+      content: msg,
+      time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+    };
 
-  const handleQuickReply = (text) => {
-    setMessages(prev => [...prev, { sender: 'user', text, time: 'Just now' }]);
-    scrollToBottom();
-  };
+    const updatedHistory = [...messages, userMsg];
+    setMessages(updatedHistory);
+    setInputValue("");
+    setIsTyping(true);
+    setError(null);
 
-  const toggleRecordingState = () => {
-    setIsRecording(!isRecording);
-  };
-
-  const triggerCameraSimulation = () => {
-    setInputValue('📷 [Leaf photo captured: North parcel corner flecks]');
-  };
-
-  const confirmVisitRequest = async () => {
     try {
-      setBookingStatus('loading');
-      const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
-      await createSupportTicket({
-        farm_id: farmId,
-        issue: 'Farm Visit Request - Tomorrow, 2:30 PM',
-      });
-      setBookingStatus('confirmed');
+      const reply = await callGroq(updatedHistory);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: reply,
+        time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+      }]);
     } catch (err) {
-      console.error(err);
-      setBookingStatus('error');
+      setError("Could not connect to AI. Check your internet connection.");
+      console.error("Groq error:", err);
+    } finally {
+      setIsTyping(false);
+      inputRef.current?.focus();
     }
   };
+
+  const handleVisitRequest = async () => {
+    setBookingStatus("loading");
+    try {
+      await createSupportTicket({
+        farm_id: farmId || "00000000-0000-0000-0000-000000000000",
+        issue: "Farm Visit Request - Field assistance needed",
+      });
+      setBookingStatus("confirmed");
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Your farm visit request has been submitted! A Krishi Sakhi will contact you within 24 hours to confirm a convenient time.",
+        time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+      }]);
+    } catch {
+      setBookingStatus("error");
+    }
+  };
+
+  const QUICK_REPLIES = [
+    "What fertilizer should I apply now?",
+    "How do I identify yellow rust on wheat?",
+    "What is the MSP for my crop this season?",
+    "How much water should I give today?",
+    "Which pest spray is safe before harvest?",
+  ];
+
+  const farmerName = farmData?.owner_name || farmData?.name || "Kisan";
+  const farmName = farmData?.name || "Your Farm";
 
   return (
-    <div className="min-h-screen bg-background font-body-md text-on-surface flex flex-col antialiased">
-      
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col antialiased">
+      <main className="flex flex-col relative w-full pt-20 pb-4 px-margin bg-surface flex-1 gap-space-md">
 
-      <main className="flex flex-col relative w-full pt-20 pb-safe px-margin bg-background flex-1 gap-space-md">
-        
-        <section className="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-surface-container/30">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-shrink-0 w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-headline-sm shadow-sm">
-                <span className="absolute inset-0 flex items-center justify-center">SD</span>
-                <img 
-                  alt="Sunita Devi, Verified Digital Sakhi" 
-                  className="relative w-full h-full object-cover rounded-full z-10" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv85ZCVyGFOrQ-7NfxtIA0wMyoqzC1ynaHgGGsQIuoLOLGCBQquG6K-xZN6_b7JoRm06h0vhK67Hq88kIgsMmswT4a5MJwzv-LBMj-eB2ELHuJbTj6jhYHK1iMCILtbHhKHK1O8TQtXu-0aIEsRvAQGhYK1HZ-sy8mglfkzBy1nA1jc4OZcqUtn7QXYyylCOUdBTh93Wj1LdRqVog8slLGhSnebqU6Pu0QoQdws_Uf_p7ZeOjTixEp" 
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-primary-container rounded-full border-2 border-surface-container-lowest z-20" title="Available Online"></span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">Sunita Devi</h1>
-                  <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                </div>
-                <p className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                  <span>Verified Digital Sakhi</span>
-                  <span>•</span>
-                  <span>Niphad Block</span>
-                </p>
-                <div className="mt-1 flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
-                  <span className="material-symbols-outlined text-[15px] text-tertiary">translate</span>
-                  <span>Marathi, Hindi, English</span>
-                </div>
-              </div>
+        {/* AI Sakhi Header Card */}
+        <section className="w-full bg-gradient-to-r from-primary/10 to-secondary/5 rounded-2xl p-space-md shadow-sm border border-primary/15">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-md">
+              <span className="material-symbols-outlined text-on-primary text-[30px]">smart_toy</span>
             </div>
-            <a className="flex-shrink-0 flex items-center justify-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2.5 rounded-full shadow-sm active:scale-95 transition-transform" href="tel:18001801551">
-              <span className="material-symbols-outlined text-[18px]">call</span>
-              <span>Call</span>
-            </a>
-          </div>
-          
-          <div className="mt-3.5 pt-3 bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-secondary-container flex-shrink-0"></span>
-              <div className="flex flex-col min-w-0">
-                <span className="font-label-sm text-label-sm text-on-surface font-semibold truncate">Plot 1 Consultation Active</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant truncate">Assigned Village Krishi Sakhi</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-headline-sm text-headline-sm text-on-surface font-bold">KhetSaathi Digital Sakhi</h1>
+                <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
               </div>
-            </div>
-            <div className="flex items-center gap-1 bg-surface-container-lowest px-2.5 py-1 rounded-full flex-shrink-0 shadow-sm">
-              <span className="material-symbols-outlined text-[16px] text-secondary-container" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-              <span className="font-label-sm text-label-sm text-on-surface font-bold">4.9</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">(180+)</span>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">
+                AI Agricultural Advisor • {farmData?.district ? farmData.district + " District" : "Your Farm"}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                <span className="font-label-sm text-label-sm text-primary font-semibold">Online — Powered by Groq AI</span>
+              </div>
             </div>
           </div>
+          {/* Farm context chip */}
+          {farmData && (
+            <div className="mt-3 bg-surface-container-lowest rounded-xl p-2.5 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[18px]">agriculture</span>
+              <span className="font-label-sm text-label-sm text-on-surface">
+                Advising for <strong>{farmName}</strong> • {farmData.primary_crop || "General crops"} • {farmData.total_area_acres || "?"} acres
+              </span>
+            </div>
+          )}
         </section>
 
-        <div className="flex items-center justify-center my-1">
-          <span className="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-3 py-1 rounded-full">
-            Today • 10:15 AM
+        {/* Date separator */}
+        <div className="flex items-center justify-center">
+          <span className="bg-surface-container text-on-surface-variant font-label-sm text-label-sm px-3 py-1 rounded-full">
+            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
           </span>
         </div>
 
-        <section className="w-full flex flex-col space-y-3.5">
-          {messages.map((msg, idx) => {
-            if (msg.sender === 'agent') {
-              return (
-                <div key={idx} className={`flex items-end gap-2 ${msg.resource ? 'max-w-[92%]' : 'max-w-[88%]'} self-start`}>
-                  <div className="w-7 h-7 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center flex-shrink-0">
-                    {msg.initials}
-                  </div>
-                  <div className="bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl rounded-bl-sm shadow-sm flex flex-col space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-label-sm text-label-sm text-primary font-bold">{msg.name}</span>
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">{msg.time}</span>
-                    </div>
-                    <p className="font-body-md text-body-md leading-relaxed text-on-surface">{msg.text}</p>
-                    
-                    {msg.hasAudio && (
-                      <button aria-label="Listen to voice message" className="self-start flex items-center gap-1 text-tertiary mt-1 font-label-sm text-label-sm hover:opacity-80 transition-colors focus:outline-none" onClick={(e) => { e.stopPropagation(); e.currentTarget.classList.toggle('text-secondary'); }} type="button">
-                        <span className="material-symbols-outlined text-[16px]">volume_up</span>
-                        <span>Audio readout</span>
-                      </button>
-                    )}
-
-                    {msg.weather && (
-                      <div className="bg-surface-container-low rounded-lg p-2 flex items-center gap-2 text-on-surface">
-                        <span className="material-symbols-outlined text-secondary text-[20px]">sunny</span>
-                        <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm font-semibold">{msg.weather.title}</span>
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">{msg.weather.desc}</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {msg.resource && (
-                      <a className="bg-surface-container rounded-xl p-2.5 flex items-center justify-between gap-3 hover:bg-surface-container-high transition-colors" href="#download-protocol" role="button">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-8 h-8 rounded-lg bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0">
-                            <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-label-md text-label-md text-on-surface truncate">{msg.resource.title}</span>
-                            <span className="font-label-sm text-label-sm text-on-surface-variant">{msg.resource.meta}</span>
-                          </div>
-                        </div>
-                        <span className="material-symbols-outlined text-primary text-[22px] flex-shrink-0">download</span>
-                      </a>
-                    )}
-                  </div>
+        {/* Messages */}
+        <section className="w-full flex flex-col space-y-3">
+          {messages.map((msg, idx) => (
+            msg.role === "assistant" ? (
+              <div key={idx} className="flex items-end gap-2 max-w-[88%] self-start">
+                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-on-primary text-[16px]">smart_toy</span>
                 </div>
-              );
-            }
-
-            return (
+                <div className="bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl rounded-bl-sm shadow-sm">
+                  <p className="font-body-md text-body-md leading-relaxed">{msg.content}</p>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant mt-1 block text-right">{msg.time}</span>
+                </div>
+              </div>
+            ) : (
               <div key={idx} className="flex flex-col items-end self-end max-w-[85%]">
-                <div className="bg-primary text-on-primary p-3.5 rounded-2xl rounded-br-sm shadow-sm flex flex-col space-y-1">
-                  <p className="font-body-md text-body-md leading-relaxed text-on-primary">{msg.text}</p>
-                  <div className="flex items-center justify-end gap-1 text-on-primary-container font-label-sm text-label-sm pt-0.5">
+                <div className="bg-primary text-on-primary p-3.5 rounded-2xl rounded-br-sm shadow-sm">
+                  <p className="font-body-md text-body-md leading-relaxed">{msg.content}</p>
+                  <div className="flex items-center justify-end gap-1 text-on-primary/70 font-label-sm text-label-sm pt-0.5 mt-1">
                     <span>{msg.time}</span>
-                    <span className="material-symbols-outlined text-[15px]">done_all</span>
+                    <span className="material-symbols-outlined text-[14px]">done_all</span>
                   </div>
                 </div>
               </div>
-            );
-          })}
+            )
+          ))}
+
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className="flex items-end gap-2 max-w-[88%] self-start">
+              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-on-primary text-[16px]">smart_toy</span>
+              </div>
+              <div className="bg-surface-container-lowest p-3.5 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }}></span>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-error-container text-on-error-container rounded-xl p-3 flex items-center gap-2 font-body-sm text-body-sm">
+              <span className="material-symbols-outlined text-[20px]">error</span>
+              {error}
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </section>
 
-        <div className="flex items-center gap-2 overflow-x-auto py-1 -mx-margin px-margin hide-scrollbar">
-          <button className="bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md px-3.5 py-2 rounded-full whitespace-nowrap shadow-sm transition-colors flex items-center gap-1.5" onClick={() => handleQuickReply('Please book 2:30 PM slot')} type="button">
-            <span>👋 Please book 2:30 PM slot</span>
-          </button>
-          <button className="bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md px-3.5 py-2 rounded-full whitespace-nowrap shadow-sm transition-colors" onClick={() => handleQuickReply('What nozzle pressure to use?')} type="button">
-            <span>What nozzle pressure to use?</span>
-          </button>
-          <button className="bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md px-3.5 py-2 rounded-full whitespace-nowrap shadow-sm transition-colors" onClick={() => handleQuickReply('Share dosage calculation')} type="button">
-            <span>Share dosage calculation</span>
-          </button>
-        </div>
+        {/* Quick replies */}
+        {messages.length <= 2 && (
+          <div className="flex items-center gap-2 overflow-x-auto py-1 -mx-margin px-margin no-scrollbar">
+            {QUICK_REPLIES.map((r, i) => (
+              <button key={i} type="button"
+                onClick={() => handleSend(null, r)}
+                disabled={isTyping}
+                className="bg-surface-container text-on-surface font-label-md text-label-md px-3.5 py-2 rounded-full whitespace-nowrap shadow-sm hover:bg-surface-container-high transition-colors flex-shrink-0 disabled:opacity-50">
+                {r}
+              </button>
+            ))}
+          </div>
+        )}
 
-        <section className="w-full bg-gradient-to-r from-surface-container to-surface-container-low rounded-xl p-3.5 shadow-sm">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-[20px]">agriculture</span>
-              </div>
-              <div>
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Need Hands-on Field Assistance?</h2>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">Next free slot: Tomorrow, 2:30 PM • Free Govt/FPO assisted</p>
-              </div>
+        {/* Farm Visit Request */}
+        <section className="w-full bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-secondary text-[22px]">calendar_month</span>
+            </div>
+            <div>
+              <h2 className="font-label-lg text-label-lg text-on-surface font-bold">Need Hands-on Field Help?</h2>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">Request a free Krishi Sakhi farm visit</p>
             </div>
           </div>
-          <button 
-            disabled={bookingStatus === 'loading' || bookingStatus === 'confirmed'}
-            className={`mt-3 w-full font-label-lg text-label-lg py-3 rounded-lg shadow-sm flex items-center justify-center gap-2 active:opacity-90 transition-opacity ${bookingStatus === 'confirmed' ? 'bg-primary-container text-on-primary-container' : 'bg-secondary-container text-on-secondary'} disabled:opacity-80`} 
-            onClick={confirmVisitRequest} 
+          <button
+            onClick={handleVisitRequest}
+            disabled={bookingStatus === "loading" || bookingStatus === "confirmed"}
             type="button"
+            className={`w-full h-12 rounded-xl font-label-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 ${
+              bookingStatus === "confirmed"
+                ? "bg-primary-fixed text-on-primary-fixed"
+                : "bg-secondary text-on-secondary active:scale-[0.98]"
+            }`}
           >
-            <span className="material-symbols-outlined text-[20px]">
-              {bookingStatus === 'loading' ? 'sync' : bookingStatus === 'confirmed' ? 'check_circle' : 'calendar_month'}
+            <span className={`material-symbols-outlined text-[20px] ${bookingStatus === "loading" ? "animate-spin" : ""}`}>
+              {bookingStatus === "confirmed" ? "check_circle" : bookingStatus === "loading" ? "progress_activity" : "support_agent"}
             </span>
-            <span className={bookingStatus === 'loading' ? 'animate-pulse' : ''}>
-              {bookingStatus === 'confirmed' ? '✅ Visit Scheduled for Tomorrow, 2:30 PM' : bookingStatus === 'loading' ? 'Requesting...' : 'Request a Farm Visit'}
+            <span>
+              {bookingStatus === "confirmed"
+                ? "Visit Requested! We will contact you."
+                : bookingStatus === "loading"
+                ? "Submitting..."
+                : "Request a Farm Visit"}
             </span>
           </button>
         </section>
-        <section className="w-full bg-surface-container-lowest rounded-2xl p-2 shadow-md">
-            <form className="flex items-center gap-1.5" onSubmit={handleSendMessage}>
-              <button aria-label="Send Leaf Photo" className="w-11 h-11 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high transition-colors flex-shrink-0" onClick={triggerCameraSimulation} title="Send Leaf Photo" type="button">
-                <span className="material-symbols-outlined text-[22px]">photo_camera</span>
-              </button>
-              
-              <button aria-label="Record voice note in your dialect" className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${isRecording ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-primary hover:bg-surface-container-high'}`} onClick={toggleRecordingState} title="Voice Message" type="button">
-                <span className="material-symbols-outlined text-[22px]">mic</span>
-              </button>
-              
+
+        {/* Input bar — sticky at bottom */}
+        <div className="sticky bottom-[72px] w-full bg-surface pb-2">
+          <section className="w-full bg-surface-container-lowest rounded-2xl p-2 shadow-md border border-surface-container-high">
+            <form className="flex items-center gap-1.5" onSubmit={handleSend}>
               <div className="flex-1 min-w-0">
-                <label className="sr-only" htmlFor="farmerMessageInput">Ask Sunita a question</label>
-                <input 
-                  className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md rounded-full px-4 py-2.5 focus:outline-none focus:bg-surface-container-lowest" 
-                  id="farmerMessageInput" 
-                  placeholder="Ask Sunita a question..." 
+                <input
+                  ref={inputRef}
+                  className="w-full bg-surface-container text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder={`Ask about ${farmData?.primary_crop || "your crops"}, pests, weather...`}
                   type="text"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={e => setInputValue(e.target.value)}
+                  disabled={isTyping}
                 />
               </div>
-              
-              <button aria-label="Send message" className="w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm flex-shrink-0 active:scale-95 transition-transform" type="submit">
-                <span className="material-symbols-outlined text-[20px]">send</span>
+              <button
+                type="submit"
+                disabled={isTyping || !inputValue.trim()}
+                className="w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm flex-shrink-0 active:scale-95 transition-transform disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {isTyping ? "pending" : "send"}
+                </span>
               </button>
             </form>
           </section>
+        </div>
       </main>
     </div>
   );
