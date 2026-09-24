@@ -75,6 +75,7 @@ export default function AppShell({
     if (path.startsWith('/iot/shelves')) return 'Vertical Farm Shelf Monitor';
     if (path.startsWith('/ai/causal-lab')) return 'Counterfactual Simulator';
     if (path.startsWith('/ai/multimodal-query')) return 'Multimodal Query';
+    if (path.startsWith('/ai/federated-learning')) return 'Federated Learning';
     if (path.startsWith('/ai')) return 'Voice Assistant';
     return 'KhetSaathi';
   };

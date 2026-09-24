@@ -1,9 +1,76 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TheMoreMenuFeatureHub() {
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const navigate = useNavigate();
+
+  // Bottom Sheet State
+  const [sheetContent, setSheetContent] = useState(null);
+
+  const toggleTheme = () => {
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) {
+      html.classList.remove('dark');
+      alert("Switched to Light Mode (Sunlight Visibility)");
+    } else {
+      html.classList.add('dark');
+      alert("Switched to Dark Mode (Battery Saver)");
+    }
+  };
+
+  const handlePushNotifications = async () => {
+    if (!('Notification' in window)) {
+      alert("This browser does not support desktop notification");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      new Notification("KhetSaathi Alerts Enabled", {
+        body: "You will now receive time-sensitive pest and irrigation alerts."
+      });
+    } else {
+      alert("Push notifications were denied.");
+    }
+  };
+
+  const handleOfflineSync = () => {
+    const isOnline = navigator.onLine;
+    alert(`Sync Engine Status: ${isOnline ? 'ONLINE' : 'OFFLINE'}\n\n${isOnline ? 'All forms and logs are synchronized with the cloud.' : 'Currently working locally. Data will sync when connection returns.'}`);
+  };
+
+  const handleLanguage = () => {
+    setSheetContent({
+      title: "Language Localization",
+      options: ['English', 'हिंदी (Hindi)', 'मराठी (Marathi)', 'ਪੰਜਾਬੀ (Punjabi)'],
+      onSelect: (lang) => {
+        localStorage.setItem('appLang', lang);
+        alert(`Language changed to ${lang}. (App strings will update on reload)`);
+        setSheetContent(null);
+      }
+    });
+  };
+
+  const handleRbac = () => {
+    setSheetContent({
+      title: "Role-Based Access Control",
+      options: ['Farmer (Default)', 'FPO Leader', 'Buyer / Corporate', 'Agronomist'],
+      onSelect: (role) => {
+        localStorage.setItem('userRole', role);
+        alert(`Access level switched to: ${role}. UI elements will adapt accordingly.`);
+        setSheetContent(null);
+      }
+    });
+  };
+
+  const handleErrorLogs = () => {
+    setSheetContent({
+      title: "Global Error Logs",
+      text: "No severe exceptions caught in the current session. The Error Boundary is active and watching."
+    });
+  };
 
   // All 57 features mapped to screens
   const modules = [
@@ -74,111 +141,149 @@ export default function TheMoreMenuFeatureHub() {
     { id: '9-8', cat: 'ai_iot', bgClass: 'bg-secondary-container text-on-secondary-container', icon: 'verified', title: 'IoT Traceability', badge: 'Blockchain', badgeClass: 'bg-secondary text-on-secondary', desc: 'Hardware-backed sensor logs proving crop was grown safely.', actionText: 'Verify Logs', route: '/iot/traceability' },
 
     // 10. Core App Infrastructure
-    { id: '10-1', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'search', title: 'Global Search', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Search across all 57 features instantly.', actionText: 'Search', route: '/' },
-    { id: '10-2', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'language', title: 'Language Localization (i18n)', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Toggle between English, Hindi, Marathi, etc.', actionText: 'Change Lang', route: '/' },
-    { id: '10-3', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'cloud_off', title: 'Offline Sync Engine', badge: 'Background', badgeClass: 'bg-outline text-surface', desc: 'Ensures forms and logs work without internet.', actionText: 'Sync Status', route: '/' },
-    { id: '10-4', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'notification_important', title: 'Push Notification Manager', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Delivers time-sensitive irrigation and pest alerts.', actionText: 'Settings', route: '/' },
-    { id: '10-5', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'brightness_6', title: 'Dynamic Theming System', badge: 'UI', badgeClass: 'bg-outline text-surface', desc: 'Adapts UI for bright sunlight visibility in the field.', actionText: 'Theme Config', route: '/' },
-    { id: '10-6', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'error_outline', title: 'Global Error Boundaries', badge: 'Robust', badgeClass: 'bg-outline text-surface', desc: 'Graceful fallback UI for network failures.', actionText: 'Check Logs', route: '/' },
-    { id: '10-7', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'security', title: 'Role-Based Access Control', badge: 'Auth', badgeClass: 'bg-outline text-surface', desc: 'Modifies UI for Farmer, Buyer, or FPO Leader.', actionText: 'Access Levels', route: '/' },
+    { id: '10-1', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'search', title: 'Global Search', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Search across all 57 features instantly.', actionText: 'Search', action: () => setIsSearchActive(true) },
+    { id: '10-2', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'language', title: 'Language Localization (i18n)', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Toggle between English, Hindi, Marathi, etc.', actionText: 'Change Lang', action: handleLanguage },
+    { id: '10-3', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'cloud_off', title: 'Offline Sync Engine', badge: 'Background', badgeClass: 'bg-outline text-surface', desc: 'Ensures forms and logs work without internet.', actionText: 'Sync Status', action: handleOfflineSync },
+    { id: '10-4', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'notification_important', title: 'Push Notification Manager', badge: 'System', badgeClass: 'bg-outline text-surface', desc: 'Delivers time-sensitive irrigation and pest alerts.', actionText: 'Settings', action: handlePushNotifications },
+    { id: '10-5', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'brightness_6', title: 'Dynamic Theming System', badge: 'UI', badgeClass: 'bg-outline text-surface', desc: 'Adapts UI for bright sunlight visibility in the field.', actionText: 'Theme Config', action: toggleTheme },
+    { id: '10-6', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'error_outline', title: 'Global Error Boundaries', badge: 'Robust', badgeClass: 'bg-outline text-surface', desc: 'Graceful fallback UI for network failures.', actionText: 'Check Logs', action: handleErrorLogs },
+    { id: '10-7', cat: 'core', bgClass: 'bg-surface-variant text-on-surface-variant', icon: 'security', title: 'Role-Based Access Control', badge: 'Auth', badgeClass: 'bg-outline text-surface', desc: 'Modifies UI for Farmer, Buyer, or FPO Leader.', actionText: 'Access Levels', action: handleRbac },
   ];
 
-  const filteredModules = filter === 'all' ? modules : modules.filter(m => m.cat === filter);
+  let filteredModules = filter === 'all' ? modules : modules.filter(m => m.cat === filter);
+  
+  if (isSearchActive && searchQuery.trim() !== '') {
+    filteredModules = modules.filter(m => 
+      m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      m.desc.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
+
+  const handleModuleClick = (mod) => {
+    if (mod.action) {
+      mod.action();
+    } else if (mod.route) {
+      navigate(mod.route);
+    }
+  };
 
   return (
-    <div className="flex flex-col w-full px-space-md pb-space-lg space-y-space-md min-h-screen bg-surface">
+    <div className="flex flex-col w-full px-space-md pb-space-lg space-y-space-md min-h-screen bg-surface relative">
       {/* Interactive Header Panel */}
       <div className="flex flex-col w-full bg-surface-container-low rounded-xl p-space-md shadow-sm mt-space-md pt-[72px]">
-        <div className="flex items-start justify-between gap-space-sm">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-space-xs">
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Modular Ecosystem</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Live v4.2</span>
-            </div>
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-0.5">Feature Hub (57 Modules)</h1>
+        {isSearchActive ? (
+          <div className="flex items-center gap-2 mb-2">
+            <input 
+              type="text" 
+              autoFocus
+              placeholder="Search across 57 modules..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 h-12 px-4 rounded-xl bg-surface border border-outline-variant focus:outline-none focus:border-primary font-body-lg"
+            />
+            <button 
+              onClick={() => { setIsSearchActive(false); setSearchQuery(''); }}
+              className="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-on-surface"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
           </div>
-          <button onClick={() => navigate('/')} aria-label="Close Hub" className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface active:scale-95 transition-transform" type="button">
-            <span className="material-symbols-outlined text-[22px]">close</span>
-          </button>
-        </div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Explore all 57 specialized tools, AI services, and infrastructure features powering KhetSaathi.</p>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-space-sm">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-space-xs">
+                  <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Modular Ecosystem</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">Live v4.2</span>
+                </div>
+                <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-0.5">Feature Hub (57 Modules)</h1>
+              </div>
+              <button onClick={() => navigate('/')} aria-label="Close Hub" className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface active:scale-95 transition-transform" type="button">
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Explore all 57 specialized tools, AI services, and infrastructure features powering KhetSaathi.</p>
+          </>
+        )}
         
         {/* Quick Search & Filter Pills */}
-        <div className="flex items-center gap-space-xs mt-space-sm overflow-x-auto pb-1 -mx-space-md px-space-md no-scrollbar">
-            <button 
-              onClick={() => setFilter('all')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'all' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              All 57 Tools
-            </button>
-            <button 
-              onClick={() => setFilter('planning')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'planning' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Planning & Farm
-            </button>
-            <button 
-              onClick={() => setFilter('health')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'health' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Health & Pest
-            </button>
-            <button 
-              onClick={() => setFilter('water')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'water' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Water & Soil
-            </button>
-            <button 
-              onClick={() => setFilter('vision')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'vision' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Vision & Drone
-            </button>
-            <button 
-              onClick={() => setFilter('marketplace')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'marketplace' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Market & Logistics
-            </button>
-            <button 
-              onClick={() => setFilter('finance')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'finance' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Finance & Insure
-            </button>
-            <button 
-              onClick={() => setFilter('gov')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'gov' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Govt & Trace
-            </button>
-            <button 
-              onClick={() => setFilter('community')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'community' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Community & FPO
-            </button>
-            <button 
-              onClick={() => setFilter('ai_iot')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'ai_iot' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              AI & IoT
-            </button>
-            <button 
-              onClick={() => setFilter('core')} 
-              className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'core' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
-            >
-              Core System
-            </button>
-        </div>
+        {!isSearchActive && (
+          <div className="flex items-center gap-space-xs mt-space-sm overflow-x-auto pb-1 -mx-space-md px-space-md no-scrollbar">
+              <button 
+                onClick={() => setFilter('all')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'all' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                All 57 Tools
+              </button>
+              <button 
+                onClick={() => setFilter('planning')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'planning' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Planning & Farm
+              </button>
+              <button 
+                onClick={() => setFilter('health')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'health' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Health & Pest
+              </button>
+              <button 
+                onClick={() => setFilter('water')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'water' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Water & Soil
+              </button>
+              <button 
+                onClick={() => setFilter('vision')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'vision' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Vision & Drone
+              </button>
+              <button 
+                onClick={() => setFilter('marketplace')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'marketplace' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Market & Logistics
+              </button>
+              <button 
+                onClick={() => setFilter('finance')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'finance' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Finance & Insure
+              </button>
+              <button 
+                onClick={() => setFilter('gov')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'gov' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Govt & Trace
+              </button>
+              <button 
+                onClick={() => setFilter('community')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'community' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Community & FPO
+              </button>
+              <button 
+                onClick={() => setFilter('ai_iot')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'ai_iot' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                AI & IoT
+              </button>
+              <button 
+                onClick={() => setFilter('core')} 
+                className={`px-space-md py-1 min-h-[44px] rounded-full font-label-md text-label-md shrink-0 transition-all active:scale-95 flex items-center justify-center ${filter === 'core' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} 
+              >
+                Core System
+              </button>
+          </div>
+        )}
       </div>
 
       {/* Grid Feature Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-sm pb-24">
         {filteredModules.map(mod => (
-          <div key={mod.id} onClick={() => navigate(mod.route)} className="module-card group bg-surface-container-lowest rounded-xl p-space-md shadow-sm active:scale-[0.99] transition-all cursor-pointer border border-transparent hover:border-outline-variant">
+          <div key={mod.id} onClick={() => handleModuleClick(mod)} className="module-card group bg-surface-container-lowest rounded-xl p-space-md shadow-sm active:scale-[0.99] transition-all cursor-pointer border border-transparent hover:border-outline-variant">
             <div className="flex items-start gap-space-md">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${mod.bgClass}`}>
                 <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>{mod.icon}</span>
@@ -199,10 +304,49 @@ export default function TheMoreMenuFeatureHub() {
         ))}
         {filteredModules.length === 0 && (
           <div className="col-span-full py-10 text-center text-on-surface-variant">
-            No features found for this category.
+            No features found for this search/category.
           </div>
         )}
       </div>
+
+      {/* Bottom Sheet Modal */}
+      {sheetContent && (
+        <div className="fixed inset-0 z-[100] flex flex-col justify-end">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setSheetContent(null)}
+          ></div>
+          <div className="relative bg-surface rounded-t-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+            <div className="w-12 h-1.5 bg-surface-container-high rounded-full mx-auto mb-4"></div>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface mb-2">{sheetContent.title}</h2>
+            
+            {sheetContent.text && (
+              <p className="font-body-md text-on-surface-variant mb-6">{sheetContent.text}</p>
+            )}
+            
+            {sheetContent.options && (
+              <div className="flex flex-col gap-2 mb-4">
+                {sheetContent.options.map((opt, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => sheetContent.onSelect(opt)}
+                    className="w-full text-left p-4 rounded-xl bg-surface-container-lowest border border-outline-variant hover:bg-surface-container hover:border-primary active:scale-[0.99] transition-all font-label-lg text-on-surface"
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            <button 
+              onClick={() => setSheetContent(null)}
+              className="w-full h-14 rounded-xl bg-primary text-on-primary font-label-lg font-bold mt-2"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,25 +1,25 @@
-import { useState, useEffect, useRef } from 'react';
-import AppShell from '../../layouts/AppShell';
-import { useNavigate } from 'react-router-dom';
-import { saveFarmBoundary, getFarmZones, updateFarmProfile } from '../../api/farmApi';
-import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import area from '@turf/area';
-import { polygon } from '@turf/helpers';
-import L from 'leaflet';
+﻿import { useState, useEffect, useRef } from "react";
+import AppShell from "../../layouts/AppShell";
+import { useNavigate } from "react-router-dom";
+import { saveFarmBoundary, getFarmZones, updateFarmProfile, getFarmProfile } from "../../api/farmApi";
+import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import area from "@turf/area";
+import { polygon } from "@turf/helpers";
+import L from "leaflet";
 
 // Fix Leaflet default icon issue in React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
 function MapEvents({ onAddPoint, mode }) {
   useMapEvents({
     click(e) {
-      if (mode === 'tap') {
+      if (mode === "tap") {
         onAddPoint([e.latlng.lat, e.latlng.lng]);
       }
     },
@@ -29,8 +29,9 @@ function MapEvents({ onAddPoint, mode }) {
 
 export default function FieldMapping() {
   const navigate = useNavigate();
-  const farmId = localStorage.getItem('farmId');
-  const [mode, setMode] = useState('tap'); // 'walk' | 'tap'
+  const farmId = localStorage.getItem("farmId");
+  const [farmData, setFarmData] = useState(null);
+  const [mode, setMode] = useState("tap"); // 'walk' | 'tap'
   const [isPaused, setIsPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0); // seconds
   const [saving, setSaving] = useState(false);
@@ -44,6 +45,7 @@ export default function FieldMapping() {
 
   useEffect(() => {
     if (farmId) {
+      getFarmProfile(farmId).then(res => setFarmData(res.data)).catch(console.error);
       getFarmZones(farmId).then(res => {
         if (res.data && res.data.length > 0) {
           const zone = res.data[0];
@@ -80,7 +82,7 @@ export default function FieldMapping() {
         }
         setPerimeter(Math.round(perim));
       } catch (e) {
-        console.error('Area calculation error', e);
+        console.error("Area calculation error", e);
       }
     } else {
       setCalculatedArea(0);
@@ -97,8 +99,8 @@ export default function FieldMapping() {
   };
 
   const formatElapsed = (s) => {
-    const m = Math.floor(s / 60).toString().padStart(2, '0');
-    const sec = (s % 60).toString().padStart(2, '0');
+    const m = Math.floor(s / 60).toString().padStart(2, "0");
+    const sec = (s % 60).toString().padStart(2, "0");
     return `${m}m ${sec}s`;
   };
 
@@ -116,22 +118,22 @@ export default function FieldMapping() {
       try {
         const geoRes = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${centLat}&lon=${centLng}&format=json`,
-          { headers: { 'Accept-Language': 'en' } }
+          { headers: { "Accept-Language": "en" } }
         );
         const geoData = await geoRes.json();
         if (geoData && geoData.address && farmId) {
           const addr = geoData.address;
           await updateFarmProfile(farmId, {
-            village: addr.village || addr.town || addr.suburb || addr.hamlet || '',
-            district: addr.county || addr.district || addr.city || '',
-            state: addr.state || '',
+            village: addr.village || addr.town || addr.suburb || addr.hamlet || "",
+            district: addr.county || addr.district || addr.city || "",
+            state: addr.state || "",
           });
         }
       } catch (geoErr) {
-        console.warn('Reverse geocoding failed, location not auto-filled', geoErr);
+        console.warn("Reverse geocoding failed, location not auto-filled", geoErr);
       }
 
-      navigate('/farm/profile');
+      navigate("/farm/profile");
     } catch {
       setSaving(false);
     }
@@ -161,20 +163,15 @@ export default function FieldMapping() {
           </div>
 
           {/* Telemetry Strip & RTK Accuracy Header Bar */}
-          <section className="px-margin pt-space-sm pb-space-xs flex flex-col gap-space-xs bg-surface shadow-sm">
+          <section className="px-margin pt-space-sm pb-space-xs flex flex-col gap-space-xs bg-surface shadow-sm relative z-20">
             <div className="flex items-center justify-between">
               {/* High precision RTK GNSS Pill */}
-              <div className="inline-flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-sm">
+              <div className="inline-flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-sm border border-surface-container">
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
                 </span>
-                <span className="font-label-sm text-label-sm text-primary tracking-wide">RTK FIX • ±0.38m</span>
-              </div>
-              {/* Satellites Badge */}
-              <div className="flex items-center gap-1.5 bg-surface-container px-3 py-1.5 rounded-full">
-                <span className="material-symbols-outlined text-primary text-[18px]">satellite_alt</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">18 Sats (L1/L5)</span>
+                <span className="font-label-sm text-label-sm text-primary tracking-wide">GPS Active</span>
               </div>
               {/* Audio Guidance Pill */}
               <button aria-label="Listen to voice navigation guidance" className="flex items-center justify-center w-11 h-11 rounded-full bg-primary-container text-on-primary shadow-sm active:scale-95 transition-transform">
@@ -184,16 +181,16 @@ export default function FieldMapping() {
           </section>
 
         {/* Leaflet Map */}
-        <div className="relative w-full bg-surface-container" style={{ height: '40vh', zIndex: 0 }}>
+        <div className="relative w-full bg-surface-container" style={{ height: "45vh", zIndex: 0 }}>
           <MapContainer 
             center={[20.5937, 78.9629]} 
             zoom={5} 
             scrollWheelZoom={true} 
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: "100%", height: "100%" }}
             zoomControl={false}
           >
             <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
+              attribution='&copy; OpenStreetMap'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
             <MapEvents onAddPoint={handleAddPoint} mode={mode} />
@@ -206,18 +203,18 @@ export default function FieldMapping() {
           </MapContainer>
 
           {/* Mode toggle */}
-          <div className="absolute top-3 left-3 bg-surface rounded-xl shadow-md p-1 flex gap-1">
+          <div className="absolute top-3 left-3 bg-surface rounded-xl shadow-md p-1 flex gap-1 z-10">
             <button
-              onClick={() => setMode('walk')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-4 min-h-[44px] rounded-lg transition-all ${mode === 'walk' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:bg-surface-container-highest'}`}
+              onClick={() => setMode("walk")}
+              className={`flex items-center justify-center gap-1.5 py-2 px-4 min-h-[44px] rounded-lg transition-all ${mode === "walk" ? "bg-surface-container-lowest shadow-sm text-primary" : "text-on-surface-variant hover:bg-surface-container-highest"}`}
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">directions_walk</span>
               <span className="font-label-md text-label-md">Walk</span>
             </button>
             <button
-              onClick={() => setMode('tap')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-4 min-h-[44px] rounded-lg transition-all ${mode === 'tap' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:bg-surface-container-highest'}`}
+              onClick={() => setMode("tap")}
+              className={`flex items-center justify-center gap-1.5 py-2 px-4 min-h-[44px] rounded-lg transition-all ${mode === "tap" ? "bg-surface-container-lowest shadow-sm text-primary" : "text-on-surface-variant hover:bg-surface-container-highest"}`}
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">touch_app</span>
@@ -226,13 +223,13 @@ export default function FieldMapping() {
           </div>
 
           {/* Live label */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-surface/90 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+          <div className="absolute top-3 right-16 bg-surface/90 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm z-10">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            <span className="font-label-sm text-label-sm font-semibold text-on-surface">Khasra 219/14 · Kharif</span>
+            <span className="font-label-sm text-label-sm font-semibold text-on-surface truncate max-w-[120px]">{farmData?.name || "Farm"} Mapping</span>
           </div>
 
           {/* Right toolbar */}
-          <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-auto">
+          <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-auto z-10">
             <button aria-label="Reset North" className="w-11 h-11 rounded-xl bg-surface shadow-md flex items-center justify-center text-primary active:scale-95 transition-transform" type="button">
               <span className="material-symbols-outlined text-[20px]">navigation</span>
             </button>
@@ -248,54 +245,48 @@ export default function FieldMapping() {
           </div>
 
           {/* Voice toast */}
-          <div className="absolute bottom-3 left-3 right-3 bg-surface/95 backdrop-blur-sm px-3.5 py-2 rounded-xl shadow-md flex items-center gap-2.5">
+          <div className="absolute bottom-3 left-3 right-3 bg-surface/95 backdrop-blur-sm px-3.5 py-2 rounded-xl shadow-md flex items-center gap-2.5 z-10">
             <div className="w-7 h-7 rounded-full bg-tertiary-container flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-on-tertiary text-[16px]">record_voice_over</span>
             </div>
             <p className="font-body-sm text-[13px] text-on-surface leading-tight truncate">
-              "Continue along the canal bund. Turn right at the corner neem tree."
+              {mode === "walk" ? "Continue along the field boundary to complete the loop." : "Tap on the map corners to create the boundary."}
             </p>
           </div>
         </div>
 
         {/* Telemetry card */}
-        <section className="px-margin -mt-2 z-10">
-          <div className="bg-surface-container-lowest rounded-2xl p-space-md shadow-md">
+        <section className="px-margin relative z-20 mt-4">
+          <div className="bg-surface-container-lowest border border-surface-container rounded-2xl p-space-md shadow-sm">
             <div className="flex items-center justify-between pb-space-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
-                <span className="font-label-md text-label-md text-on-surface font-bold">Surveying Plot 1 Boundary</span>
+                <span className="font-label-md text-label-md text-on-surface font-bold">Surveying Plot Boundary</span>
               </div>
               <div className="flex items-center gap-1 text-primary">
                 <span className="material-symbols-outlined text-[16px]">verified</span>
-                <span className="font-label-sm text-label-sm font-semibold">99.4% Loop Fit</span>
+                <span className="font-label-sm text-label-sm font-semibold">Active</span>
               </div>
             </div>
             <div className="flex items-baseline justify-between mt-1 pt-1">
               <div>
-                <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">{calculatedArea.toFixed(2)}</span>
-                <span className="font-headline-sm text-headline-sm text-on-surface font-semibold ml-1">Acres</span>
+                <span className="font-headline-lg-mobile text-[32px] text-primary font-bold tracking-tight">{calculatedArea.toFixed(2)}</span>
+                <span className="font-headline-sm text-[16px] text-on-surface font-semibold ml-1">Acres</span>
               </div>
               <span className="font-label-md text-label-md text-on-surface-variant font-medium bg-surface-container px-2.5 py-1 rounded-md">≈ {(calculatedArea * 0.404686).toFixed(2)} Hectares</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-3 pt-3 bg-surface-container-low p-2.5 rounded-xl">
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 bg-surface-container-low p-2.5 rounded-xl border border-surface-container-high">
               <div className="flex flex-col">
-                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">straighten</span> Perimeter
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 font-semibold">
+                  <span className="material-symbols-outlined text-[16px]">straighten</span> Perimeter
                 </span>
-                <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">{perimeter} m</span>
+                <span className="font-title-md text-[18px] font-bold text-on-surface mt-0.5">{perimeter} m</span>
               </div>
               <div className="flex flex-col">
-                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">pin_drop</span> Waypoints
+                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 font-semibold">
+                  <span className="material-symbols-outlined text-[16px]">pin_drop</span> Waypoints
                 </span>
-                <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">{waypoints.length} Points</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">speed</span> Walk Speed
-                </span>
-                <span className="font-label-lg text-label-lg font-bold text-on-surface mt-0.5">3.2 km/h</span>
+                <span className="font-title-md text-[18px] font-bold text-on-surface mt-0.5">{waypoints.length} Points</span>
               </div>
             </div>
           </div>
@@ -303,22 +294,22 @@ export default function FieldMapping() {
 
         {/* Timer row */}
         <section className="px-margin mt-space-sm">
-          <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-surface-container border border-surface-container-high rounded-xl shadow-sm">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-[20px]">timer</span>
+              <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary shadow-sm border border-surface-container-highest">
+                <span className="material-symbols-outlined text-[24px]">timer</span>
               </div>
-              <div>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">Active Elapsed Time</p>
-                <p className="font-label-md text-label-md text-on-surface font-semibold">{formatElapsed(elapsed)} · {isPaused ? 'Paused' : 'Smooth tracking'}</p>
+              <div className="flex flex-col justify-center">
+                <p className="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-bold">Elapsed Time</p>
+                <p className="font-label-md text-[15px] text-on-surface font-bold">{formatElapsed(elapsed)} <span className="font-normal text-on-surface-variant text-[12px] ml-1">{isPaused ? "(Paused)" : "(Tracking)"}</span></p>
               </div>
             </div>
             <button
               onClick={() => setIsPaused(p => !p)}
-              className="px-4 py-2 min-h-[44px] rounded-lg bg-surface-container-highest text-on-surface text-label-sm font-semibold active:bg-surface-variant flex items-center gap-1"
+              className="px-4 py-2 min-h-[44px] rounded-lg bg-surface text-on-surface text-label-sm font-bold shadow-sm active:bg-surface-variant flex items-center gap-1 border border-surface-container-highest"
             >
-              <span className="material-symbols-outlined text-[16px]">{isPaused ? 'play_arrow' : 'pause'}</span>
-              <span>{isPaused ? 'Resume' : 'Pause'}</span>
+              <span className="material-symbols-outlined text-[18px]">{isPaused ? "play_arrow" : "pause"}</span>
+              <span>{isPaused ? "Resume" : "Pause"}</span>
             </button>
           </div>
         </section>
@@ -327,20 +318,17 @@ export default function FieldMapping() {
         <footer className="mt-space-md px-margin flex flex-col gap-space-xs pb-space-sm">
           <button
             onClick={handleFinish}
-            disabled={saving}
-            className="w-full h-14 bg-secondary-container hover:opacity-95 text-on-secondary rounded-xl font-label-lg text-label-lg font-bold shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+            disabled={saving || waypoints.length < 3}
+            className="w-full h-14 bg-secondary hover:brightness-110 text-on-secondary rounded-xl font-label-lg text-[16px] font-bold shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {saving ? (
-              <><span className="w-5 h-5 rounded-full border-2 border-on-secondary border-t-transparent animate-spin"></span><span>Saving...</span></>
+              <><span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span><span>Saving...</span></>
             ) : (
-              <><span>Finish &amp; Save Boundary ({calculatedArea.toFixed(2)} Ac)</span><span className="material-symbols-outlined text-[22px]">arrow_forward</span></>
+              <><span>Finish &amp; Save Boundary</span><span className="material-symbols-outlined text-[22px]">arrow_forward</span></>
             )}
           </button>
           <div className="flex items-center justify-between gap-2 mt-1">
-            <button className="flex-1 py-3 text-center rounded-xl bg-surface-container text-on-surface font-label-md text-label-md font-semibold active:bg-surface-variant" type="button">
-              Add Manual Corner
-            </button>
-            <button onClick={() => setWaypoints([])} className="flex-1 py-3 text-center rounded-xl bg-surface-container text-error font-label-md text-label-md font-semibold active:bg-surface-variant" type="button">
+            <button onClick={() => setWaypoints([])} className="flex-1 py-3 text-center rounded-xl bg-surface-container text-error font-label-md text-label-md font-bold active:bg-surface-variant shadow-sm border border-error/10" type="button">
               Discard &amp; Restart
             </button>
           </div>
