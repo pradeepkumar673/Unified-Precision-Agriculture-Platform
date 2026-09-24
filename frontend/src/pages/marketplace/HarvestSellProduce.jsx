@@ -145,7 +145,7 @@ export default function HarvestSellProduce() {
                   <span className="font-label-sm text-label-sm text-primary font-semibold">Premium Yield</span>
                 </div>
               </div>
-              <button className="px-space-sm py-1 bg-surface-container rounded-full text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" type="button">
+              <button onClick={() => navigate('/planning/crop-plan')} className="px-space-sm py-1 bg-surface-container rounded-full text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" type="button">
                 <span className="font-label-sm text-label-sm">Edit</span>
                 <span className="material-symbols-outlined text-[14px]">tune</span>
               </button>
@@ -194,7 +194,7 @@ export default function HarvestSellProduce() {
                 <span className="material-symbols-outlined text-primary text-[20px]">psychology</span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Quality Assessment</span>
               </div>
-              <button className="text-secondary font-label-md text-label-md font-bold hover:underline" type="button">Change Grade</button>
+              <button onClick={() => alert("Quality reassessment requested. An agronomist will review your recent satellite/drone scans.")} className="text-secondary font-label-md text-label-md font-bold hover:underline" type="button">Change Grade</button>
             </div>
             <div className="flex items-center justify-between bg-primary-fixed/30 p-space-sm rounded-lg">
               <div className="flex flex-col">

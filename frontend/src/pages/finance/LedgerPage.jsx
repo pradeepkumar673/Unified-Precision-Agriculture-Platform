@@ -42,21 +42,44 @@ export default function LedgerPage() {
         amount: txn.amount,
         type: txn.type || 'marketplace'
       });
-      if (res.data.checkout_url) {
-        // In test/mock mode, open the URL and show order ID
-        const orderId = res.data.razorpay_order_id;
-        const isMock = orderId?.includes('mock');
-        if (isMock) {
-          setError('');
-          alert(`[TEST MODE] Mock order created: ${orderId}\nIn production this opens Razorpay checkout.\nTransaction ID: ${res.data.transaction_id}`);
-          // Refresh ledger to show new transaction
-          fetchLedger();
-        } else {
-          window.open(res.data.checkout_url, '_blank');
-        }
-      } else {
-        setError('Payment gateway did not return a checkout URL.');
+      
+      const orderId = res.data.razorpay_order_id;
+      if (orderId?.includes('mock')) {
+        alert(`[TEST MODE] Mock order created: ${orderId}\nTransaction ID: ${res.data.transaction_id}`);
+        fetchLedger();
+        return;
       }
+      
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => {
+        const options = {
+          key: "rzp_test_RMHdBS5ea7cEEb", // Real Razorpay Key
+          amount: Math.round(txn.amount * 100),
+          currency: "INR",
+          name: "KhetSaathi Agri Platform",
+          description: "Ledger Payment",
+          order_id: res.data.razorpay_order_id,
+          handler: function (response) {
+            console.log("Payment Successful", response);
+            alert('Payment successfully completed!');
+            fetchLedger();
+          },
+          theme: {
+            color: "#1F4228"
+          }
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response){
+          alert('Payment Failed: ' + response.error.description);
+        });
+        rzp.open();
+      };
+      script.onerror = () => {
+        alert('Failed to load Razorpay SDK');
+      };
+      document.body.appendChild(script);
+      
     } catch (err) {
       setError(err.response?.data?.detail || 'Razorpay payment initialization failed.');
     }

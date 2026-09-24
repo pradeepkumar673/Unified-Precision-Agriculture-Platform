@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLedger, exportLedgerPdf } from '../../api/financeApi';
+import { getLedger, exportLedgerPdf, initiatePayment } from '../../api/financeApi';
 
 export default function WalletTransactionLedger() {
   const navigate = useNavigate();
@@ -8,20 +8,78 @@ export default function WalletTransactionLedger() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchLedger = async () => {
+    try {
+      const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+      const res = await getLedger(farmId);
+      setTransactions(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch ledger:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchLedger = async () => {
-      try {
-        const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
-        const res = await getLedger(farmId);
-        setTransactions(res.data || []);
-      } catch (err) {
-        console.error('Failed to fetch ledger:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchLedger();
   }, []);
+
+  const handleAddMoney = async () => {
+    const input = window.prompt("Enter amount to add to Wallet (₹):", "5000");
+    if (!input) return;
+    const amount = parseFloat(input);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Invalid amount.");
+      return;
+    }
+    
+    try {
+      const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
+      const res = await initiatePayment({
+        related_entity_id: farmId,
+        amount: amount,
+        type: 'scheme_dbt' // Using a type that represents incoming funds
+      });
+      
+      const orderId = res.data.razorpay_order_id;
+      if (orderId?.includes('mock')) {
+        alert(`[TEST MODE] Mock order created: ${orderId}\nTransaction ID: ${res.data.transaction_id}`);
+        fetchLedger();
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => {
+        const options = {
+          key: "rzp_test_RMHdBS5ea7cEEb", // Real Razorpay Key
+          amount: Math.round(amount * 100),
+          currency: "INR",
+          name: "KhetSaathi Agri Wallet",
+          description: "Add Money to Wallet",
+          order_id: res.data.razorpay_order_id,
+          handler: function (response) {
+            console.log("Payment Successful", response);
+            alert('Wallet funded successfully!');
+            fetchLedger();
+          },
+          theme: {
+            color: "#1F4228"
+          }
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response){
+          alert('Payment Failed: ' + response.error.description);
+        });
+        rzp.open();
+      };
+      script.onerror = () => alert('Failed to load Razorpay SDK');
+      document.body.appendChild(script);
+      
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Razorpay initialization failed.');
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -173,7 +231,7 @@ export default function WalletTransactionLedger() {
             </div>
             
             <div className="grid grid-cols-2 gap-space-sm mt-2">
-              <button className="h-12 bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm active:scale-[0.98] transition-transform">
+              <button onClick={handleAddMoney} className="h-12 bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm active:scale-[0.98] transition-transform">
                 <span className="material-symbols-outlined text-[20px]">add_circle</span>
                 <span>Add Money</span>
               </button>

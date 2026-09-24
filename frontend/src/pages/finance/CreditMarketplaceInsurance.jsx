@@ -9,6 +9,7 @@ export default function CreditMarketplaceInsurance() {
   const [isFiling, setIsFiling] = useState(false);
   const [creditProfile, setCreditProfile] = useState(null);
   const [insuranceProfile, setInsuranceProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -22,6 +23,8 @@ export default function CreditMarketplaceInsurance() {
         if (insuranceRes.data) setInsuranceProfile(insuranceRes.data);
       } catch (err) {
         console.error('Failed to load profiles', err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -44,16 +47,24 @@ export default function CreditMarketplaceInsurance() {
 
   const handleFileClaim = async () => {
     if (isFiling) return;
+    if (!insuranceProfile?.active_policy?.policy_id) {
+      alert('No active policy found to claim against.');
+      return;
+    }
     setIsFiling(true);
     try {
       const farmId = localStorage.getItem('farmId') || '00000000-0000-0000-0000-000000000000';
       await fileInsuranceClaim({
         farm_id: farmId,
-        policy_id: 'PMFBY-MH-2024-99481',
+        policy_id: insuranceProfile.active_policy.policy_id,
         loss_event_date: new Date().toISOString().split('T')[0],
-        photo_paths: ['/mock/gps/evidence1.jpg']
+        photo_paths: [`/mock/gps/evidence_${Date.now()}.jpg`]
       });
       alert('Claim filed successfully!');
+      
+      // Refresh insurance profile to see the new claim
+      const res = await getInsuranceProfile(farmId);
+      if (res.data) setInsuranceProfile(res.data);
     } catch (err) {
       console.error('Failed to file claim', err);
       alert('Failed to file claim.');
@@ -61,6 +72,14 @@ export default function CreditMarketplaceInsurance() {
       setIsFiling(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center pt-[64px]">
+        <span className="material-symbols-outlined animate-spin text-primary text-[32px]">progress_activity</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col relative">
@@ -316,7 +335,7 @@ export default function CreditMarketplaceInsurance() {
                       </div>
                       {claim.settlement_amount && (
                         <div className="flex items-center justify-between pt-1">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">Direct Credit to SBI A/c •••• 4410</span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Direct Credit to Linked Bank A/c</span>
                           <span className="font-headline-sm text-headline-sm text-primary font-bold">₹{claim.settlement_amount.toLocaleString()}</span>
                         </div>
                       )}

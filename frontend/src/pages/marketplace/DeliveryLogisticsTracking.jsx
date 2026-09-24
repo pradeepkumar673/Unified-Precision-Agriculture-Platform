@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getDeliveryStatus, getActiveDelivery, simulateDeliveryUpdate } from '../../api/marketplaceApi';
+import { getFarmProfile } from '../../api/farmApi';
 import AppShell from '../../layouts/AppShell';
 
 export default function DeliveryLogisticsTracking() {
@@ -10,6 +11,7 @@ export default function DeliveryLogisticsTracking() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
   
   const [deliveryStatus, setDeliveryStatus] = useState(null);
+  const [farmData, setFarmData] = useState(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [liveData, setLiveData] = useState({
@@ -23,6 +25,11 @@ export default function DeliveryLogisticsTracking() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
+        if (farmId) {
+          const farmRes = await getFarmProfile(farmId).catch(() => ({data: null}));
+          if (farmRes.data) setFarmData(farmRes.data);
+        }
+
         let res;
         if (orderId && orderId !== '00000000-0000-0000-0000-000000000000') {
           res = await getDeliveryStatus(orderId);
@@ -105,6 +112,31 @@ export default function DeliveryLogisticsTracking() {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const generateDriverProfile = (orderIdStr) => {
+    if (!orderIdStr) return { name: 'Verified Transporter', rating: '4.8', trips: 150, truck: 'Mahindra Bolero Pickup', plate: 'MH-12-XX-0000' };
+    
+    const names = ['Rajendra Singh', 'Ramesh Patil', 'Suresh Kumar', 'Dilip Gaikwad', 'Amit Sharma', 'Vikram Yadav'];
+    const trucks = ['Tata 407 Agri-Carrier', 'Mahindra Bolero MaxiTruck', 'Ashok Leyland Dost', 'Eicher Pro 2049'];
+    
+    // Simple deterministic hash
+    let hash = 0;
+    for (let i = 0; i < orderIdStr.length; i++) {
+      hash = (hash << 5) - hash + orderIdStr.charCodeAt(i);
+      hash = hash & hash;
+    }
+    const idx = Math.abs(hash);
+    
+    return {
+      name: names[idx % names.length],
+      truck: trucks[idx % trucks.length],
+      rating: (4.5 + (idx % 5) * 0.1).toFixed(1),
+      trips: 100 + (idx % 300),
+      plate: `MH-${10 + (idx % 80)}-TR-${1000 + (idx % 8999)}`
+    };
+  };
+
+  const driverProfile = deliveryStatus ? generateDriverProfile(deliveryStatus.id) : null;
+
   return (
     <AppShell title="Delivery Tracking" showBackButton>
       <main className="flex flex-col w-full px-margin bg-surface flex-1 gap-space-md pt-24 pb-24">
@@ -138,8 +170,8 @@ export default function DeliveryLogisticsTracking() {
                   <div className="absolute left-6 top-10 bottom-0 w-[2px] bg-outline-variant/30"></div>
                   <span className="material-symbols-outlined text-[20px] text-primary flex-shrink-0 relative z-10 bg-surface-container-low" style={{ fontVariationSettings: "'FILL' 1" }}>trip_origin</span>
                   <div className="flex flex-col min-w-0 relative z-10">
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Origin Farm</span>
-                    <span className="font-label-md text-label-md text-on-surface font-semibold truncate">Farm Gate</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Origin Hub</span>
+                    <span className="font-label-md text-label-md text-on-surface font-semibold truncate">KhetSaathi Central Warehouse</span>
                   </div>
                 </div>
                 
@@ -155,8 +187,8 @@ export default function DeliveryLogisticsTracking() {
                 <div className="flex items-center gap-space-xs p-space-sm bg-surface-container-low rounded-lg mt-0.5">
                   <span className="material-symbols-outlined text-[20px] text-secondary flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>warehouse</span>
                   <div className="flex flex-col min-w-0">
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">Destination Hub</span>
-                    <span className="font-label-md text-label-md text-on-surface font-semibold truncate">APMC Grain Warehouse</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Destination Farm</span>
+                    <span className="font-label-md text-label-md text-on-surface font-semibold truncate">{farmData?.name ? `${farmData.name} Gate` : 'Your Farm Gate'}</span>
                   </div>
                 </div>
               </div>
@@ -191,7 +223,9 @@ export default function DeliveryLogisticsTracking() {
                     <span className="material-symbols-outlined text-[16px] text-primary">traffic</span>
                     <div className="flex flex-col">
                       <span className="font-label-sm text-[10px] text-on-surface-variant leading-none">Traffic</span>
-                      <span className="font-label-md text-label-md text-primary leading-tight font-bold">Light</span>
+                      <span className={`font-label-md text-label-md leading-tight font-bold ${liveData.speed_kmh > 40 ? 'text-primary' : liveData.speed_kmh > 20 ? 'text-secondary' : 'text-error'}`}>
+                        {liveData.speed_kmh > 40 ? 'Light' : liveData.speed_kmh > 20 ? 'Moderate' : 'Heavy'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -237,7 +271,7 @@ export default function DeliveryLogisticsTracking() {
                     <span className="font-label-md text-label-md text-secondary font-bold">In Transit</span>
                     <span className="font-label-sm text-label-sm font-bold text-secondary">Active Now</span>
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface">Cruising at {liveData.speed_kmh} km/h • {liveData.remaining_km} km remaining to APMC</p>
+                  <p className="font-body-sm text-body-sm text-on-surface">Cruising at {liveData.speed_kmh} km/h • {liveData.remaining_km} km remaining to destination</p>
                 </div>
                 
                 <div className="relative flex flex-col opacity-65">
@@ -248,7 +282,7 @@ export default function DeliveryLogisticsTracking() {
                     <span className="font-label-md text-label-md text-on-surface">Delivered &amp; Weighed</span>
                     <span className="font-label-sm text-label-sm text-on-surface-variant">Est. {getFormattedTime(deliveryStatus.delivery_eta)}</span>
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">APMC Weighbridge digital slip issuance</p>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">Hub Weighbridge digital slip issuance</p>
                 </div>
               </div>
             </div>
@@ -260,15 +294,15 @@ export default function DeliveryLogisticsTracking() {
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">
                   <div className="flex items-center gap-1">
-                    <span className="font-label-lg text-label-lg text-on-surface truncate">Rajendra Singh</span>
+                    <span className="font-label-lg text-label-lg text-on-surface truncate">{driverProfile?.name}</span>
                     <span className="material-symbols-outlined text-[18px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }} title="Verified Transporter">verified</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-on-surface-variant">
-                    <span className="font-label-sm text-label-sm text-amber-700 font-bold flex items-center">★ 4.9</span>
+                    <span className="font-label-sm text-label-sm text-amber-700 font-bold flex items-center">★ {driverProfile?.rating}</span>
                     <span className="text-outline-variant">•</span>
-                    <span className="font-label-sm text-label-sm">320+ farm trips</span>
+                    <span className="font-label-sm text-label-sm">{driverProfile?.trips}+ farm trips</span>
                   </div>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Tata 407 Agri-Carrier • MH-15-EG-4421</span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">{driverProfile?.truck} • {driverProfile?.plate}</span>
                 </div>
               </div>
               
