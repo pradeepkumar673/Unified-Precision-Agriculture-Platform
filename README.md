@@ -1,6 +1,6 @@
 # KhetSaathi — Unified Precision Agriculture Platform
 
-**Team:** 99xEngineers | **Hackathon:** Smart India Hackathon (SIH) 2024 PS-1
+**Team:** 99xEngineers | **Hackathon:** Smart India Hackathon (SIH) 2026 PS-1
 
 > Empowering India's 140 million farmers with AI-first, offline-capable precision agriculture — from seed to sale.
 
